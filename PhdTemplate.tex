@@ -1,0 +1,125 @@
+% !Mode:: "TeX:UTF-8"
+%% 请使用 XeLaTeX 编译本文. 适用于 TeX Live 2015 . 本模板的更新下载地址: http://aff.whu.edu.cn/huangzh/
+\documentclass{WHUPhd}  % 选项 [forprint]: 交付打印时, 加上此选项, 以消除链接文字之彩色, 避免打印偏淡.
+                                      % 选项 [forlib]: 提交给图书馆的电子版, 需要加上选项 forlib, 以消除空白页和彩色链接.
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{euscript}
+\usepackage{multirow}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+% \usepackage[ruled, linesnumbered]{algorithm2e}
+% \usepackage{algpseudocode}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\input{settings.clo}
+\setlength{\headheight}{14.5pt} % 调整页眉高度以适应页眉内容(todo)
+% \usepackage{subfig}
+%%%=== 参考文献=== %%%
+% \bibliographystyle{abbrv}        % 参考文献样式,  plain,unsrt,alpha,abbrv 等等
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+%%%%%%%-------------------------------------------------
+
+\fenleihao{O159}  % 分类号:《中国图书资料分类法》的类号. 必填. 要根据自己的学科方向填写!!
+\miji{}                % 密级
+\UDC{}               %《国际十进制分类法UDC》的类号. 选填.
+\bianhao{10486}  % 学校编号, 10486是武汉大学的编号. 不用改动.
+
+\title{基于神经网络的复杂偏微分系统建模与计算方法研究}
+\Etitle{A \LaTeX~Thesis Template for Wuhan University} % 英文题目
+\author{宋鹏程}
+\Eauthor{HUANG Zhenghua}            %作者英文名
+\Csupervisor{吕锡亮\quad 教授}        %指导教师中文名、职称
+\Esupervisor{Prof.~Lv Xi Liang}     %指导教师英文名、职称
+\Cmajor{数学、计算数学}                   %  学科、专业名称
+\Emajor{Computational Mathematics}% 专业英文名
+\Cspeciality{深度学习与科学计算}                     % 研究方向
+\Especiality{Deep Learning and Scientific Computing}   % 研究方向
+\Schoolname{School of Mathematics and Statistics} %学院英文名. 不确定的话, 请看一下自己学院的网页上是怎么写的. 别搞错了!
+\date{二〇二六年五月一日}               %  要注意和英文日期一致!!
+\Edate{May 1, 2026}                 % 英文封面日期
+
+%-----------------------------------------------------------------------------
+\pdfbookmark[0]{封面}{title}         % 封面页加到 pdf 书签
+
+\maketitle
+
+%-----------------------------------------------------------------------------
+\include{includefile/frontmatter}    % 加入英文封面, 论文创新点, 等等目录之前的部分.
+\frontmatter
+\pagenumbering{Roman}               % 正文之前的页码用大写罗马字母编号.
+%---把目录加入到书签---%%%%%%%%%%%%%%
+\pdfbookmark[0]{目录}{toc}%%%%%%%%%%%%
+\pagestyle{oldplain}
+\tableofcontents
+\pagestyle{oldplain}\cleardoublepage
+\newpage  \pagestyle{fancy} \fancyfancy
+%------------------------------------------------------------------------------
+\include{includefile/midmatter}      % 加入中英文摘要.
+%------------------------------------------------------------------------------
+\mainmatter %% 以下是正文
+\baselineskip=20pt  % 正文行距为 20 磅
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{chapter1.tex}
+% \input{chapter2.tex}
+% \input{chapter3.tex}
+\input{chapter4.tex}
+
+%%%------------附录. 不需要的话, 可以删除.--------
+\appendix
+
+%%%=== 参考文献 ========%%%
+% \cleardoublepage\phantomsection
+% \addcontentsline{toc}{chapter}{参考文献}
+% \begin{thebibliography}{000}\zihao{5}
+
+%   \bibitem{r1} 刘海洋, 《\LaTeX{} 入门》, 电子工业出版社, 2013.
+
+%   \bibitem{r2} ctex.org, 《\CTeX{} 宏集手册》, V2.2, 2015/07/01, \url{http://www.ctan.org/pkg/ctex}.
+
+%   \bibitem{r3} 邓建松, 《\LaTeXe~用户手册》.
+%              \url{http://math.ecnu.edu.cn/~latex/docs/LaTeX2e_manual.zip}.
+
+%   \bibitem{r4} Karl Berry 编写, 江疆~翻译, 《\TeX{} Live 指南\ —\ 2015》.
+%               \url{http://tug.org/texlive/}.
+
+%   \bibitem{r5} Herbert Vo\ss, 《Mathmode》, V2.47, 2014, \url{http://www.ctan.org/pkg/voss-mathmode}.
+
+%   \bibitem{r6} P. GROHS, F. HORNUNG, A. JENTZEN, AND P. VON WURSTEMBERGER, Aproofthatartificial
+%  neural networks overcome the curse of dimensionality in the numerical approximation of
+%  black-scholes partial differential equations, arXiv:1809.02362, (2018).
+
+% \end{thebibliography}
+
+
+
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{参考文献}
+
+% 开始参考文献设置
+{
+    \zihao{5}  % 保持你原来的五号字体设置
+    
+    % 1. 设置样式
+    % 如果你的文档是中文为主，强烈推荐使用符合国标的样式：
+    % \bibliographystyle{gbt7714-numerical} 
+    % 或者如果你想保持简单的顺序排列：
+    \bibliographystyle{unsrt} 
+    
+    % 2. 导入 .bib 文件 (假设文件名为 ref.bib)
+    \bibliography{ref}
+}
+
+
+
+\backmatter
+
+\include{includefile/backmatter} %%%致谢、作品列表 ．
+
+\cleardoublepage
+
+\end{document}

@@ -1,0 +1,289 @@
+% \usepackage{multirow} % for multirow cells
+% \usepackage[utf8]{inputenc}
+% \usepackage[english]{babel}
+% \usepackage[T1]{fontenc}
+% \usepackage{lmodern}
+% \usepackage{geometry} 
+% \geometry{left=1.2in,right=1.2in,top=1.25in,bottom=1.50in} 
+% \geometry{left=1.0in,right=0.75in,top=1.0in,bottom=1.25in}
+% \usepackage[margin=0.80in]{geometry}
+% \usepackage{amssymb,latexsym}
+% \usepackage{amsmath}
+% \usepackage{cleveref}
+% \usepackage[foot]{amsaddr}
+% \usepackage[mathscr]{euscript}
+% \usepackage{mathtools}
+% \usepackage{enumerate}
+% \usepackage{hyperref}
+% \usepackage[capitalize,noabbrev,nameinlink]{cleveref}
+% \usepackage[compress]{natbib}
+% \setcitestyle{numbers,square,citesep={,},aysep={,},yysep={,}}
+% \usepackage{amsfonts, amssymb}
+% \usepackage{euscript}
+% \usepackage{multirow}
+% \usepackage{float}
+% \usepackage{graphicx}
+% \usepackage{subfigure}
+% \usepackage{booktabs}
+% \usepackage{algorithm}
+% \usepackage{algpseudocode}
+% \renewcommand{\algorithmicrequire}{\textbf{Input:}}
+% \renewcommand{\algorithmicensure}{\textbf{Output:}}
+% \usepackage{footnote}
+% \usepackage{iopams}
+
+% \usepackage{xcolor}
+% \definecolor{ClassicBlue}{HTML}{096191}
+% \definecolor{VivaMagenta}{HTML}{BB2649}
+% \colorlet{inlinkcolor}{VivaMagenta!85!ClassicBlue}
+% \colorlet{exlinkcolor}{VivaMagenta}
+% \colorlet{citecolor}{ClassicBlue!85!green}
+% \hypersetup{colorlinks=True,
+%             linkcolor=inlinkcolor,
+%             citecolor=citecolor,
+%             urlcolor=exlinkcolor,
+%             linktoc=page,
+%             breaklinks=true,
+%             plainpages=false}
+
+% \newtheorem{theorem}{Theorem}[section]
+% \newtheorem{proposition}[theorem]{Proposition}
+% \newtheorem{lemma}[theorem]{Lemma}
+% \newtheorem{corollary}[theorem]{Corollary}
+% \theoremstyle{definition}
+% \newtheorem{definition}[theorem]{Definition}
+% \newtheorem{example}[theorem]{Example}
+% \newtheorem{assumption}[theorem]{Assumption}
+% \theoremstyle{remark}
+% \newtheorem{remark}[theorem]{Remark}
+% \newenvironment{proof}{\textbf{Proof.}\quad}{$\square$}
+% \crefname{equation}{}{}
+% \crefname{assumption}{Assumption}{Assumptions}
+
+% \numberwithin{equation}{section}
+
+% \usepackage{hyperref}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% math command
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% NEW MATH DEFINITIONS %%%%%
+
+\def\ceil#1{\lceil #1 \rceil}
+\def\floor#1{\lfloor #1 \rfloor}
+
+% Vectors Matrix
+\usepackage{bm}
+\def\vzero{{\bm{0}}}
+\def\vone{{\bm{1}}}
+\def\va{{\bm{a}}}
+\def\vb{{\bm{b}}}
+\def\vc{{\bm{c}}}
+\def\vd{{\bm{d}}}
+\def\ve{{\bm{e}}}
+\def\vf{{\bm{f}}}
+\def\vg{{\bm{g}}}
+\def\vh{{\bm{h}}}
+\def\vi{{\bm{i}}}
+\def\vj{{\bm{j}}}
+\def\vk{{\bm{k}}}
+\def\vl{{\bm{l}}}
+\def\vell{{\bm{\ell}}}
+\def\vm{{\bm{m}}}
+\def\vn{{\bm{n}}}
+\def\vo{{\bm{o}}}
+\def\vp{{\bm{p}}}
+\def\vq{{\bm{q}}}
+\def\vr{{\bm{r}}}
+\def\vs{{\bm{s}}}
+\def\vt{{\bm{t}}}
+\def\vu{{\bm{u}}}
+\def\vv{{\bm{v}}}
+\def\vw{{\bm{w}}}
+\def\vx{{\bm{x}}}
+\def\vy{{\bm{y}}}
+\def\vz{{\bm{z}}}
+\def\mA{{\bm{A}}}
+\def\mB{{\bm{B}}}
+\def\mC{{\bm{C}}}
+\def\mD{{\bm{D}}}
+\def\mE{{\bm{E}}}
+\def\mF{{\bm{F}}}
+\def\mG{{\bm{G}}}
+\def\mH{{\bm{H}}}
+\def\mI{{\bm{I}}}
+\def\mJ{{\bm{J}}}
+\def\mK{{\bm{K}}}
+\def\mL{{\bm{L}}}
+\def\mM{{\bm{M}}}
+\def\mN{{\bm{N}}}
+\def\mO{{\bm{O}}}
+\def\mP{{\bm{P}}}
+\def\mQ{{\bm{Q}}}
+\def\mR{{\bm{R}}}
+\def\mS{{\bm{S}}}
+\def\mT{{\bm{T}}}
+\def\mU{{\bm{U}}}
+\def\mV{{\bm{V}}}
+\def\mW{{\bm{W}}}
+\def\mX{{\bm{X}}}
+\def\mY{{\bm{Y}}}
+\def\mZ{{\bm{Z}}}
+\def\mBeta{{\bm{\beta}}}
+\def\mPhi{{\bm{\Phi}}}
+\def\mLambda{{\bm{\Lambda}}}
+\def\mSigma{{\bm{\Sigma}}}
+
+% mathcal
+\def\calA{{\mathcal{A}}}
+\def\calB{{\mathcal{B}}}
+\def\calC{{\mathcal{C}}}
+\def\calD{{\mathcal{D}}}
+\def\calE{{\mathcal{E}}}
+\def\calF{{\mathcal{F}}}
+\def\calG{{\mathcal{G}}}
+\def\calH{{\mathcal{H}}}
+\def\calI{{\mathcal{I}}}
+\def\calJ{{\mathcal{J}}}
+\def\calK{{\mathcal{K}}}
+\def\calL{{\mathcal{L}}}
+\def\calM{{\mathcal{M}}}
+\def\calN{{\mathcal{N}}}
+\def\calO{{\mathcal{O}}}
+\def\calP{{\mathcal{P}}}
+\def\calQ{{\mathcal{Q}}}
+\def\calR{{\mathcal{R}}}
+\def\calS{{\mathcal{S}}}
+\def\calT{{\mathcal{T}}}
+\def\calU{{\mathcal{U}}}
+\def\calV{{\mathcal{V}}}
+\def\calW{{\mathcal{W}}}
+\def\calX{{\mathcal{X}}}
+\def\calY{{\mathcal{Y}}}
+\def\calZ{{\mathcal{Z}}}
+
+% mathbb
+\def\bbA{{\mathbb{A}}}
+\def\bbB{{\mathbb{B}}}
+\def\bbC{{\mathbb{C}}}
+\def\bbD{{\mathbb{D}}}
+\def\bbE{{\mathbb{E}}}
+\def\bbF{{\mathbb{F}}}
+\def\bbG{{\mathbb{G}}}
+\def\bbH{{\mathbb{H}}}
+\def\bbI{{\mathbb{I}}}
+\def\bbJ{{\mathbb{J}}}
+\def\bbK{{\mathbb{K}}}
+\def\bbL{{\mathbb{L}}}
+\def\bbM{{\mathbb{M}}}
+\def\bbN{{\mathbb{N}}}
+\def\bbO{{\mathbb{O}}}
+\def\bbP{{\mathbb{P}}}
+\def\bbQ{{\mathbb{Q}}}
+\def\bbR{{\mathbb{R}}}
+\def\bbS{{\mathbb{S}}}
+\def\bbT{{\mathbb{T}}}
+\def\bbU{{\mathbb{U}}}
+\def\bbV{{\mathbb{V}}}
+\def\bbW{{\mathbb{W}}}
+\def\bbX{{\mathbb{X}}}
+\def\bbY{{\mathbb{Y}}}
+\def\bbZ{{\mathbb{Z}}}
+
+% mathscr
+\usepackage{mathrsfs}
+\def\scrA{{\mathscr{A}}}
+\def\scrB{{\mathscr{B}}}
+\def\scrC{{\mathscr{C}}}
+\def\scrD{{\mathscr{D}}}
+\def\scrE{{\mathscr{E}}}
+\def\scrF{{\mathscr{F}}}
+\def\scrG{{\mathscr{G}}}
+\def\scrH{{\mathscr{H}}}
+\def\scrI{{\mathscr{I}}}
+\def\scrJ{{\mathscr{J}}}
+\def\scrK{{\mathscr{K}}}
+\def\scrL{{\mathscr{L}}}
+\def\scrM{{\mathscr{M}}}
+\def\scrN{{\mathscr{N}}}
+\def\scrO{{\mathscr{O}}}
+\def\scrP{{\mathscr{P}}}
+\def\scrQ{{\mathscr{Q}}}
+\def\scrR{{\mathscr{R}}}
+\def\scrS{{\mathscr{S}}}
+\def\scrT{{\mathscr{T}}}
+\def\scrU{{\mathscr{U}}}
+\def\scrV{{\mathscr{V}}}
+\def\scrW{{\mathscr{W}}}
+\def\scrX{{\mathscr{X}}}
+\def\scrY{{\mathscr{Y}}}
+\def\scrZ{{\mathscr{Z}}}
+
+% 
+\def\euA{{\EuScript{A}}}
+\def\euB{{\EuScript{B}}}
+\def\euC{{\EuScript{C}}}
+\def\euD{{\EuScript{D}}}
+\def\euE{{\EuScript{E}}}
+\def\euF{{\EuScript{F}}}
+\def\euG{{\EuScript{G}}}
+\def\euH{{\EuScript{H}}}
+\def\euI{{\EuScript{I}}}
+\def\euJ{{\EuScript{J}}}
+\def\euK{{\EuScript{K}}}
+\def\euL{{\EuScript{L}}}
+\def\euM{{\EuScript{M}}}
+\def\euN{{\EuScript{N}}}
+\def\euO{{\EuScript{O}}}
+\def\euP{{\EuScript{P}}}
+\def\euQ{{\EuScript{Q}}}
+\def\euR{{\EuScript{R}}}
+\def\euS{{\EuScript{S}}}
+\def\euT{{\EuScript{T}}}
+\def\euU{{\EuScript{U}}}
+\def\euV{{\EuScript{V}}}
+\def\euW{{\EuScript{W}}}
+\def\euX{{\EuScript{X}}}
+\def\euY{{\EuScript{Y}}}
+\def\euZ{{\EuScript{Z}}}
+
+% 
+\def\frakA{{\mathfrak{A}}}
+\def\frakB{{\mathfrak{B}}}
+\def\frakC{{\mathfrak{C}}}
+\def\frakD{{\mathfrak{D}}}
+\def\frakE{{\mathfrak{E}}}
+\def\frakF{{\mathfrak{F}}}
+\def\frakG{{\mathfrak{G}}}
+\def\frakH{{\mathfrak{H}}}
+\def\frakI{{\mathfrak{I}}}
+\def\frakJ{{\mathfrak{J}}}
+\def\frakK{{\mathfrak{K}}}
+\def\frakL{{\mathfrak{L}}}
+\def\frakM{{\mathfrak{M}}}
+\def\frakN{{\mathfrak{N}}}
+\def\frakO{{\mathfrak{O}}}
+\def\frakP{{\mathfrak{P}}}
+\def\frakQ{{\mathfrak{Q}}}
+\def\frakR{{\mathfrak{R}}}
+\def\frakS{{\mathfrak{S}}}
+\def\frakT{{\mathfrak{T}}}
+\def\frakU{{\mathfrak{U}}}
+\def\frakV{{\mathfrak{V}}}
+\def\frakW{{\mathfrak{W}}}
+\def\frakX{{\mathfrak{X}}}
+\def\frakY{{\mathfrak{Y}}}
+\def\frakZ{{\mathfrak{Z}}}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\dist}{dist} 
+\DeclareMathOperator{\sign}{sign}
+\DeclareMathOperator{\lip}{Lip}
+\DeclareMathOperator{\loss}{loss}
+\DeclareMathOperator{\st}{s.t.}
+\DeclareMathOperator{\subto}{subject~to}
+\DeclareMathOperator{\iid}{i.i.d.}
+\newcommand{\what}{\widehat}
+\DeclareMathOperator{\err}{err}
+\let\ab\allowbreak

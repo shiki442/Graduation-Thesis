@@ -1,0 +1,60 @@
+% !Mode:: "TeX:UTF-8"
+
+%%% 说明: 此部分需要自己填写的内容:  (1) 中文摘要及关键词 (2) 英文摘要及关键词
+%--------------------------------------------------------------------------
+%%%页眉设置
+%
+%\pagestyle{fancyplain}
+%\fancyhf{}  %清除以前对页眉页脚的设置
+%\renewcommand{\headrulewidth}{0.5pt}
+%\fancyfoot[C]{-\,\thepage\,-}
+%\fancypagestyle{plain}
+%{
+%\fancyhead[CE]{武汉大学博士学位论文}
+%\fancyhead[CO]{}
+%\renewcommand{\headrulewidth}{0.5pt}
+%\fancyfoot{}                                    % clear all footer fields
+%\fancyfoot[C]{-\,\thepage\,-}
+%}
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%%% ------------ 中文摘要 ---------------%%%
+%%%%%%%%%%%%%%%%%%%%%%%
+\begin{cnabstract}
+
+偏微分方程是描述物理、工程及金融等领域核心规律的重要数学工具。针对传统基于网格的数值方法（如有限元法、有限差分法）在高维问题中面临的“维数灾难”以及在处理复杂反问题时的局限性，本文深入研究了基于深度神经网络的椭圆型方程求解方法。本文不仅提出了针对特定问题的创新算法框架，还重点建立了严格的数学收敛性理论，并通过大量数值实验验证了方法的有效性。本文的主要工作包括以下三个方面：
+
+首先，针对椭圆算子的多重特征值问题，提出了一种基于深度里兹法（Deep Ritz Method）的通用求解框架 。为了克服传统瑞利商方法中的非凸性及正交性约束困难，设计了一种包含变分能量项、边界惩罚及正交惩罚的无瑞利商损失函数 。本文建立了详细的误差分析体系，将总误差分解为逼近误差、统计误差和累积误差 。利用逼近论和 Rademacher 复杂度，证明了在适当选择网络深度、宽度及样本量的情况下，算法能够收敛至真实的特征值与特征函数，且误差界不显式依赖于维数指数，从而在理论上证明了该方法克服维数灾难的能力。
+
+其次，针对带有 Dirichlet 和 Robin 边界条件的半线性椭圆方程，构建了基于惩罚变分形式的深度学习求解模型。利用具有 $\mathrm{ReLU}^2$ 激活函数的残差神经网络（ResNet），证明了变分问题极小值点的存在性与唯一性。本文推导了数值解与真实解之间 $H^1$ 范数误差的显式上界，该上界由逼近误差、统计误差和截断误差组成。理论分析表明，随着网络规模的增加和样本量的增大，数值解能够以确定的速率收敛于真实解。数值实验验证了该方法在高维及非光滑解情形下的高精度表现。
+
+最后，针对椭圆方程势函数重构的反问题，提出了结合 Tikhonov 正则化的物理信息神经网络方法（Tikhonov-PINNs）。该方法通过在损失函数中引入 $H^2$ 范数正则化项，解决了反问题的不适定性。本文建立了反势能问题的新稳定性估计，并利用统计学习理论推导了超额风险（Excess Risk）界。理论结果证明了重构解关于噪声水平的收敛率（例如 $O(\delta \log(1/\delta))$）。数值对比实验表明，与传统有限元方法相比，该方法在处理不连续势函数和高噪声测量数据时具有更强的鲁棒性和更高的精度。
+
+\end{cnabstract}
+\vspace{1em}\par\vfill
+
+%%%--------- 关键词 -------- %%%
+\cnkeywords{偏微分方程, 深度神经网络, 误差分析，收敛阶}
+
+%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%%% ------------ 英文摘要 ---------------%%%
+%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{enabstract}
+Partial Differential Equations (PDEs) are fundamental mathematical tools for describing core laws in fields such as physics, engineering, and finance. Addressing the "curse of dimensionality" faced by traditional mesh-based numerical methods (such as the Finite Element Method and Finite Difference Method) in high-dimensional problems, as well as their limitations in handling complex inverse problems, this thesis provides an in-depth study of methods for solving elliptic equations based on deep neural networks. This paper not only proposes innovative algorithmic frameworks for specific problems but also focuses on establishing a rigorous mathematical convergence theory. The effectiveness of these methods is verified through extensive numerical experiments. The main contributions of this work are summarized in the following three aspects:
+
+First, targeting the multiple eigenvalue problem of elliptic operators, a general solving framework based on the Deep Ritz Method is proposed. To overcome the difficulties associated with non-convexity and orthogonality constraints in traditional Rayleigh quotient methods, a Rayleigh-quotient-free loss function is designed, incorporating a variational energy term, a boundary penalty, and an orthogonality penalty. This paper establishes a detailed error analysis framework, decomposing the total error into approximation error, statistical error, and cumulative error. Utilizing approximation theory and Rademacher complexity, it is proved that with an appropriate selection of network depth, width, and sample size, the algorithm can converge to the true eigenvalues and eigenfunctions. Furthermore, the error bounds do not explicitly depend on the dimension exponent, theoretically demonstrating the method's capability to overcome the curse of dimensionality.
+
+Second, addressing semilinear elliptic equations with Dirichlet and Robin boundary conditions, a deep learning solving model based on a penalized variational form is constructed. Using Residual Neural Networks (ResNet) with the $\mathrm{ReLU}^2$ activation function, the existence and uniqueness of the minimizer for the variational problem are proved. This paper derives an explicit upper bound for the $H^1$ norm error between the numerical solution and the exact solution, which consists of approximation error, statistical error, and truncation error. Theoretical analysis indicates that as the network scale increases and the sample size grows, the numerical solution converges to the true solution at a determinate rate. Numerical experiments verify the high precision of this method in high-dimensional scenarios and cases with non-smooth solutions.
+
+Finally, regarding the inverse problem of potential function reconstruction for elliptic equations, a Physics-Informed Neural Network method combined with Tikhonov regularization (Tikhonov-PINNs) is proposed. This method addresses the ill-posedness of the inverse problem by introducing an $H^2$ norm regularization term into the loss function. This paper establishes a new stability estimate for the inverse potential problem and utilizes statistical learning theory to derive the Excess Risk bound. Theoretical results prove the convergence rate of the reconstructed solution with respect to the noise level (e.g., $O(\delta \log(1/\delta))$). Comparative numerical experiments demonstrate that, compared to traditional finite element methods, this method exhibits stronger robustness and higher accuracy when dealing with discontinuous potential functions and high-noise measurement data.
+\end{enabstract}
+\vspace{1em}\par\vfill
+
+%%%------ 英文关键词 ------- %%%
+\enkeywords{partial differential equations, deep neural networks, error analysis, convergence rate}
+
+
