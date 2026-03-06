@@ -1,257 +1,281 @@
 \chapter{深度里兹法求解拟线性偏微分方程}
-% \section{预备知识与记号}\label{sec:pre}
-% 在本文中，我们考虑如下半线性椭圆方程：
-% \begin{equation}\label{eq:maineq}
-% \left\{\begin{aligned}
-% -\Delta u+f(u) &=g & & \text { in } \Omega \\
-%  u + \frac{1}{\varepsilon}\frac{\partial u}{\partial n} &=h & & \text { on } \partial \Omega
-% \end{aligned}\right.
-% \end{equation}
-% 其中 $\varepsilon\in (0,+\infty]$。$\varepsilon$ 的区间包含了 Dirichlet 边界条件 ($\varepsilon=+\infty$) 和 Robin 边界条件 ($\varepsilon\in (0,+\infty)$) 的情形。
-% 我们对方程施加如下限制：
+\section{预备知识与记号}\label{sec:pre}
+非线性椭圆方程是偏微分方程（PDE）研究中非常核心且活跃的一个领域。其中，半线性方程（Semilinear Equations）指的是非线性仅出现在低阶项（如未知函数及其一阶导数）中的非线性椭圆方程。与高维特征值问题类似，传统的网格数值方法（如有限元法、有限差分法等）在高维问题上往往会遭遇严重的“维度灾难”（Curse of Dimensionality）。在这些基于网格的方法中，离散参数或自由度的数量随空间维度的增加呈指数级增长，导致其在实际的高维计算中面临难以克服的内存和算力瓶颈。
 
-% \begin{remark}\label{ass:f}
-% \begin{itemize}
-% \item $\Omega\subset \mathbb{R}^{d}$ 是有界且光滑的。
-% \item 对于某个常数 $C$，满足 $|f(x)|\leq C\left(|x|+1\right)^{\frac{d}{d-2}}$。$f$ 是 Lipschitz 连续且单调递增的。
-% \item 对于某个 $p\geq 2$，有 $g\in L^{p}$。
+\subsection{问题背景与物理意义}
+半线性椭圆方程在描述自然界众多复杂现象时扮演着基础性角色，广泛出现于物理学、几何学、流体力学和生物学等理论模型中。这类方程的求解对于理解自然规律、设计工程系统以及推动前沿科学研究具有不可替代的重要意义。以下是几个典型且具有深远物理背景的半线性椭圆方程实例：
+\begin{itemize}
+\item {\heiti 非线性薛定谔方程}：在量子力学和非线性光学中，稳态薛定谔型方程通常表示为：
+$$-\Delta u + V(x)u = f(x, u)$$
+其中，$V(x)$ 是外部势场函数，$f(x, u)$ 为非线性相互作用项（例如在研究玻色-爱因斯坦凝聚态时常用的立方非线性项 $f(x,u) = |u|^2u$）。求解该方程有助于研究微观粒子的稳态空间分布及波在非线性介质中的局域化特性。
+\item {\heiti 反应-扩散方程的稳态解}：在生物学、化学动力学以及生态学中，反应-扩散系统的稳态解广泛用于描述物质浓度或种群密度的空间分布平衡态。其数学模型可抽象为如下形式：
+$$-D \Delta u = R(x, u)$$
+其中，$D$ 是扩散系数（或矩阵），$R(x, u)$ 是非线性反应项。著名的图灵斑图便是通过此类方程系统中非线性反应项与扩散项的相互作用，在稳态下呈现出的宏观空间周期性结构。
+\item {\heiti 刘维尔方程}：在共形几何学、天体物理学（如等温气体球模型）以及燃烧理论（如 Frank-Kamenetskii 固体燃料点火模型）中，刘维尔方程是一个极具代表性的非线性模型：
+$$-\Delta u = e^u \quad \text{in } \mathbb{R}^n, \quad n \ge 3$$
+该方程的指数非线性项带来了极其剧烈的非线性增长特性，使其在高维空间下的理论分析和高效数值求解一直是计算数学领域的经典挑战。
+\end{itemize}
+
+\subsection{数学描述与问题假设}
+在本文中，我们主要考虑如下形式的半线性椭圆方程：
+\begin{equation}\label{eq:maineq}
+\left\{\begin{aligned}
+-\Delta u(x)+V\left(u(x)\right) &=g(x) & & \text { in } \Omega \\
+ u(x) + \frac{1}{\mu}\frac{\partial u(x)}{\partial n} &=h(x) & & \text { on } \partial \Omega
+\end{aligned}\right.
+\end{equation}
+其中参数 $\mu \in (0,+\infty]$。当 $\mu < +\infty$ 时，该条件为 Robin 边界条件；当 $\mu = +\infty$ 时，边界条件中的导数项系数趋于零，从而退化为 Dirichlet 边界条件
+
+为了确保神经网络能够进行有效的函数逼近，PDE 的解需要具备充分的正则性。为此，我们需对方程 \eqref{eq:maineq} 的求解区域、源项以及非线性项施加适当的假设，以从理论上保证解的存在性、唯一性及高阶可导性。后续分析均基于以下基本假设：
+\begin{assumption}[正则性条件]\label{ass:f}
+对于方程\ref{eq:maineq}，我们作如下假设
+\begin{enumerate}
+\item[(a)] 区域 $\Omega \subset \mathbb{R}^N$ 为有界开集，且其边界 $\partial \Omega$ 具有 $C^{1,1}$ 正则性，或 $\Omega$ 为凸多面体。
+\item[(b)] 内部源项满足 $g \in L^2(\Omega)$，边界函数满足 $h \in H^{1/2}(\partial \Omega)$。
+\item[(c)] 非线性项 $V(u)$ 的增长速度满足 Sobolev 次临界或临界增长条件。即存在常数 $C > 0$，使得对于任意 $s \in \mathbb{R}$，有：
+$$|V(s)| \le C(1 + |s|^p)$$
+其中，当空间维度 $N \ge 3$ 时，指数 $p \le \frac{N+2}{N-2}$；当 $N=1, 2$ 时，$p \in [1, +\infty)$ 可以为任意有限值。
+\item[(d)] $V(s)$ 是关于 $s$ 的单调函数。若 $V(s)$ 非单调递增，则要求其导数具有严格的下界，且该下界严格大于算子 $-\Delta$ 在对应边界条件下的第一主特征值的相反数（即 $V'(s) \ge -\gamma > -\lambda_1$）。
 % \item 在 $\Omega^{'}\supset \bar{\Omega}$ 上存在一个调和函数 $w$，使得
-% $
-% w+\frac{1}{\varepsilon}\frac{\partial w}{\partial n}=h
-% $
-% 在 $\partial \Omega$ 上成立。
-% \end{itemize}
+% $w+\frac{1}{\mu}\frac{\partial w}{\partial n}=h$ 在 $\partial \Omega$ 上成立。
+\end{enumerate}
+\end{assumption}
+值得强调的是，假设 \ref{ass:f}(d) 中对 $V(u)$ 的限制主要是为了确保能量泛函的严格凸性。若仅考察弱解的存在性，该条件可被适当弱化。
 
-% 我们记 $F$ 为 $f$ 的原函数，因此 $F$ 是一个凸函数。
-% \end{remark}
+基于变分法（Variational Methods），我们可以将方程 \eqref{eq:maineq} 的强形式转化为能量泛函的极小化问题。定义能量泛函 $J: H^1(\Omega) \to \mathbb{R}$ 如下：
+\begin{equation}\label{eq:ch3loss}
+J(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} u^2 \, dS + \int_{\Omega} W(u) \, dx - \int_{\Omega} gu \, dx - \mu \int_{\partial \Omega} hu \, dS
+\end{equation}
+其中 $W(s) = \int_0^s V(t) \, dt$。
+若能量泛函 $J(u)$ 在 $H^1(\Omega)$ 中存在全局极小值点 $u$，则该点必满足一阶变分驻值条件 $\delta J(u) = 0$。该驻值条件恰好对应于原偏微分方程的弱形式。因此，求解原 Robin 边值问题等价于寻找泛函 $J(u)$ 的极小值点。而接下来的定理确立了泛函 $J(u)$ 在 $H^1(\Omega)$ 中极小值点（即弱解）的存在性与唯一性，并给出了该解的高阶正则性先验估计。
 
-% 根据 Schauder 理论可得：
-
-% \begin{theorem}
-% 在假设 \ref{ass:f} 下，可知存在且唯一存在一个 $u^{\varepsilon} \in W^{2,2}(\Omega)$ 作为方程~\eqref{eq:maineq} 的解，且 $\|u^{\varepsilon}\|_{W^{2,2}}$ 可被 $g$ 和 $h$ 控制。
-% \end{theorem}
-% \begin{proof}
-% 参见 \cite{2013Roubiek} 中的命题 2.104。
-% \end{proof}
-
-% 接下来，介绍我们所使用的神经网络及其记号。深度神经网络 $u_{\phi}:\mathbb{R}^{d}\rightarrow\mathbb{R}$ 定义为
-% \begin{equation*}
-% \begin{aligned}
-% &u_{0}(\boldsymbol{x})=\boldsymbol{x} \\
-% &u_{\ell}(\boldsymbol{x})=\sigma_{\ell}\left(A_{\ell} u_{\ell-1}+b_{\ell}\right), \quad \ell=1,2, \ldots, L-1 \\
-% &u=u_{L}(\boldsymbol{x})=A_{L} u_{L-1}+b_{L}
-% \end{aligned}
-% \end{equation*}
-% 其中 $A_{\ell}\in\mathbb{R}^{N_{\ell}\times N_{\ell-1}}$, $b_{\ell}\in\mathbb{R}^{N_{\ell}}$，且 $\sigma_{\ell}$ 表示第 $\ell$ 层的激活函数。神经网络 $u_{\phi}$ 的深度 $\mathcal{D}$ 和宽度 $\mathcal{W}$ 定义为
-% \begin{equation*}
-% \mathcal{D}=L, \ \mathcal{W}=\max\{N_{\ell}:\ell=1,2,\ldots,L\}.
-% \end{equation*}
-% $\sum_{\ell=1}^{L}N_{\ell}$ 称为 $u_{\phi}$ 的单元数，而 $\phi=\{A_{\ell},b_{\ell}\}_{\ell=1}^{N}$ 称为网络的自由参数。
-% \begin{definition}
-% 类 $\mathcal{N}^{\alpha}(\mathcal{D},\mathcal{W},\mathcal{B})$ 是满足以下条件的神经网络 $u_{\phi}$ 的集合：
-% \begin{itemize}
-% \item[(i)] 深度和宽度分别为 $\mathcal{D}$ 和 $\mathcal{W}$；
-% \item[(ii)] $u_{\phi}(\boldsymbol{x})$ 的函数值及其导数 $\nabla u_{\phi}(\boldsymbol{x})$ 被 $\mathcal{B}$ 有界控制；
-% \item[(iii)] 激活函数由 $\mathrm{ReLU}^{\alpha}$ 给出，其中 $\alpha$ 是一个（多重）指标。
-% \end{itemize}
-% \end{definition}
-% 例如，$\mathcal{N}^{2}(\mathcal{D},\mathcal{W},\mathcal{B})$ 是激活函数为 $\mathrm{ReLU}^2$ 的网络类，而 $\mathcal{N}^{1,2}(\mathcal{D},\mathcal{W},\mathcal{B})$ 是激活函数为 $\mathrm{ReLU}^1$ 或 $\mathrm{ReLU}^2$ 的网络类。若无歧义，我们可以简单地使用 $\mathcal{N}^\alpha$。
-
-% \section{模型构建}\label{sec:mod}
-
-% \begin{theorem}\label{thm:model}
-% 对于 $v\in H^{1}(\Omega)$，令
-% \begin{equation}\label{eq:conloss}
-% \mathcal{L}^{\varepsilon}(v) = \int_{\Omega} \|\nabla v\|_{2}^{2} + 2F(v) - 2vg\,dx + \varepsilon \int_{\partial \Omega}v^{2} - 2vh\,ds.
-% \end{equation}
-% 则
-% \begin{itemize}
-% \item 对于 $\varepsilon\in (0,+\infty)$，$\mathcal{L}^{\varepsilon}$ 存在唯一的极小值点，记为 $u^{\varepsilon}$。它是方程 Eq.~\eqref{eq:maineq} 的解。
-% \item 当 $\varepsilon \rightarrow +\infty$ 时，设 $u^{\infty}$ 为具有 Dirichlet 边界条件的方程 Eq.~\eqref{eq:maineq} 的解。则我们有：
-
-% \textcolor{black}{\begin{equation*}
-% \|u^{\varepsilon}-u^{\infty}\|_{H^{1}}\leq C(\Omega,f,g,h)\frac{1}{\varepsilon}.
-% \end{equation*}}
-
-% \end{itemize}
-% \end{theorem}
-% \begin{proof}
-% 如果 $\varepsilon<+\infty$，Eq.~\eqref{eq:conloss} 的欧拉-拉格朗日方程可写为：
-% \begin{equation*}
-% \begin{array}{rcl}
-% \delta \mathcal{L}^{\varepsilon}(v)&=&\displaystyle 2\int_{\Omega}\nabla v^{T}\nabla \delta v + f(v) \delta v - g\delta v\,dx + 2\varepsilon\int_{\partial \Omega}(v-h)\delta v\,ds\\
-% {}&=&\displaystyle 2\int_{\Omega} \left(-\Delta v+f(v)-g\right)\delta v\,dx + 2\varepsilon\int_{\partial \Omega} \left(v+\frac{1}{\varepsilon}\frac{\partial v}{\partial n}-h\right) \delta v\,ds.\\
-% \end{array}
-% \end{equation*}
-
-% Eq.~\eqref{eq:conloss} 的所有临界点必须是 Eq.~\eqref{eq:maineq} 的解，反之亦然。因此，存在唯一的临界点。此外，Eq.~\eqref{eq:conloss} 的凸性保证了该临界点即为极小值点。
-
-% 考虑到 Dirichlet 边界条件，我们将 $w^{\varepsilon}$ 设置为满足以下方程的解：
-% \begin{equation*}
-% \left\{\begin{aligned}
-% -\Delta w^{\varepsilon} +f(u^{\infty})&=g \quad \text { 在 } \Omega \text{ 中} \\
-%  w^{\varepsilon}+\frac{1}{\varepsilon}\frac{\partial w^{\varepsilon}}{\partial n} &=h \quad \text { 在 } \partial \Omega \text{ 上},
-% \end{aligned}\right.
-% \end{equation*}
-% 已知（参见 \cite{Maury2009Numerical}（命题 2.3 的证明））：
-% $\|w^{\varepsilon}-u^{\infty}\|_{H^{1}}\leq C(\Omega,f(u^{\infty}),g,h)\frac{1}{\varepsilon}$。
-% 经典的线性椭圆理论为我们提供了：
-% \begin{equation*}
-% \int_{\Omega}\|\nabla (w^{\varepsilon}-u^{\varepsilon})\|_{2}^{2}\,dx + \varepsilon \int_{\partial \Omega}(w^{\varepsilon}-u^{\varepsilon})^{2}\,ds \leq \|f(u^{\infty})-f(u^{\varepsilon})\|^{2}_{H^{-1}}\leq C(\Omega,f,u^{\infty}),
-% \end{equation*}
-% 给定 $f(u^{\varepsilon}),f(u^{\infty})\in L^{2}$。
-% 则 $\{u^{\varepsilon}\}$ 是 $H^{1}$ 中的有界序列。但是
-% \begin{equation}\label{eq:seminormcontrol}
-% \begin{array}{rcl}
-% \displaystyle\int_{\Omega}\|\nabla(u^{\infty}-u^{\varepsilon})\|_{2}^{2}\,dx&=&\displaystyle\int_{\Omega}\nabla (u^{\infty}-u^{\varepsilon})^{T}\nabla u^{\infty}\,dx-\int_{\Omega}\nabla (u^{\infty}-u^{\varepsilon})^{T}\nabla u^{\varepsilon}\,dx\\
-% {}&{}&{}\\
-% {}&=&\displaystyle\int_{\Omega}-\left(u^{\infty}-u^{\varepsilon}\right)\Delta u^{\infty}\,dx-\int-\left( u^{\infty}-u^{\varepsilon}\right)\Delta u^{\varepsilon}\,dx +\\
-% {}&{}&\displaystyle\int_{\partial \Omega}\frac{\partial u^{\infty}}{\partial n}(u^{\infty}-u^{\varepsilon})\,ds-\int_{\partial \Omega}\frac{\partial u^{\varepsilon}}{\partial n}(u^{\infty}-u^{\varepsilon})\,ds\\
-% {}&{}&{}\\
-% {}&=&\displaystyle-\int_{\Omega} \left[f(u^{\infty})-f(u^{\varepsilon})\right]\left(u^{\infty}-u^{\varepsilon}\right)\,dx \\
-% {}&{}&\displaystyle+\frac{1}{\varepsilon} \int_{\partial \Omega}\frac{\partial u^{\infty}}{\partial n}\frac{\partial u^{\varepsilon}}{\partial n}\,ds-\frac{1}{\varepsilon} \int_{\partial \Omega}\left(\frac{\partial u^{\varepsilon}}{\partial n}\right)^{2}\,ds\\
-% {}&{}&{}\\
-% {}&\leq&\displaystyle\frac{1}{2\varepsilon}\left[\int_{\partial \Omega}\left(\frac{\partial u^{\infty}}{\partial n}\right)^{2}-\left(\frac{\partial u^{\varepsilon}}{\partial n}\right)^{2}\,ds\right]\leq C(\Omega,f,g,h)\frac{1}{\varepsilon},
-% \end{array}
-% \end{equation}
-% 注意到 $f$ 是非递减的。
-% 接下来，我们将 $u^{\infty}$ 代入 $\mathcal{L}^{\varepsilon}$，得到：
-% \begin{equation*}
-% \mathcal{L}^{\varepsilon}(u^{\varepsilon})\leq \mathcal{L}^{\varepsilon}(u^{\infty}) \leq C(\Omega,f,g,h) - \varepsilon\int_{\partial \Omega}h^{2}。
-% \end{equation*}
-% 因此
-% \begin{equation*}
-% \varepsilon\int_{\partial \Omega}(u^{\varepsilon}-h)^{2}\leq C(\Omega,f,g,h)。
-% \end{equation*}
-% 结合等式~\eqref{eq:seminormcontrol}，我们可以推导出所需的结论。
-
-% \end{proof}
-
-% 转到 DRM 的第二步，我们将试探函数替换为神经网络：
-% \begin{equation*}
-% u^{\varepsilon}_{\phi}\in \underset{v \in \mathcal{N}^{2}}{\operatorname{argmin}}\,\mathcal{L}^{\varepsilon}(v),
-% \end{equation*}
-% 损失函数的离散形式表示如下\cite{chen2021quasi}：
-% \begin{equation}\label{eq:disloss}
-% \begin{aligned}
-% \widehat{\mathcal{L}}_{K}^{\varepsilon}(v) = & \frac{|\Omega|}{N}\sum\limits_{i=1}^{N} \left[ \|\nabla v(X_{i})\|_{2}^{2}+2F\left(v(X_{i})\right)-2g_{K}(X_{i})v(X_{i})\right]\\
-% &+\varepsilon\frac{|\partial\Omega|}{M}\sum\limits_{j=1}^{M}\left[v^{2}(Y_{j})-2v(Y_{j})h(Y_{j})\right],
-% \end{aligned}
-% \end{equation}
-% 其中 $\{X_{k}\}_{k=1}^{N}\sim U(\Omega)$ 独立同分布，$\{Y_{j}\}_{j=1}^{M}\sim U(\partial\Omega)$ 独立同分布，且 $g_{K} = \min\{g,K\}$，$K$ 为某个常数。引入截断界 $K$ 是为了避免离散 $\mathcal{L}^{\varepsilon}$ 的不连续性。设 $\widehat{u}^{\varepsilon}_{\phi}$ 为 $\mathcal{N}^{2}$ 上该损失的极小值点：
-% \begin{equation}\label{eq:u_hat}
-% \widehat{u}^{\varepsilon}_{\phi}\in \underset{v \in \mathcal{N}^{2}}{\operatorname{argmin}}\,\widehat{\mathcal{L}}_{K}^{\varepsilon}(v),
-% \end{equation}
-% 在随后的讨论中，我们用 $n$ 表示样本数 $N$ 或 $M$。
-
-% \begin{lemma}\label{lemma:energyerr}
-% 令 $\widehat{u}^{\varepsilon}_{\phi}$ 为上文定义的函数，我们有：
-% \begin{equation*}
-% \begin{array}{rcl}
-% {}&{}&\mathcal{L}^{\varepsilon}\left(\widehat{u}_{\phi}^{\varepsilon}\right)-\mathcal{L}^{\varepsilon}(u^{\varepsilon})\\
-% {}&{}&{}\\
-% {}&\leq&\displaystyle\underbrace{ \inf _{u_{\phi} \in \mathcal{N}^{2}}\left[ \mathcal{L}^{\varepsilon}(u_{\phi})- \mathcal{L}^{\varepsilon}(u^{\varepsilon})\right]}_{\mathcal{E}_{\text{app}}}+\underbrace{2 \sup _{u_{\phi} \in \mathcal{N}^{2}}\left|\mathcal{L}^{\varepsilon}_{K}(u_{\phi})-\widehat{\mathcal{L}}^{\varepsilon}_{K}(u_{\phi})\right|}_{\mathcal{E}_{\text{sta}}}+\underbrace{C(g)\mathcal{B}K^{1-p}}_{\mathcal{E}_{\text{tru}}},\\
-% \end{array}
-% \end{equation*}
-% 它们分别被称为逼近误差、统计误差和截断误差。
-% \end{lemma}
-% \begin{proof}
-% 首先，我们介绍一个关于截断误差的简单引理：
-
-% \begin{lemma}\label{lemma:truerr}
-% 设 $1\leq q<p<\infty$。如果 $u\in L^{p}$ 且 $u_{N}=u1_{|u|<N}$，则我们有：
-% \begin{equation*}
-% \|u-u_{N}\|_{L^{q}}\leq C(u)\frac{1}{N^{p/q-1}}.
-% \end{equation*}
-% \end{lemma}
-% \begin{proof}
-% 设 $v = |u-u_{N}|$，$f_{v}(t)=m(\{x:v(x)<t\})$，其中 $m$ 是 \textcolor{black}{Lebesgue 测度}。
-% \begin{equation*}
-% \begin{array}{rcl}
-% \|v\|_{L^{q}}^{q}&=&\displaystyle q\int_{0}^{\infty}t^{q-1}f_{v}(t)\,dt\\
-% {}&{}&{}\\
-% {}&=&\displaystyle q\int_{N}^{\infty}t^{p-1}f_{v}(t)t^{q-p}\,dt\\
-% {}&{}&{}\\
-% {}&=&\displaystyle qN^{q-p}\int_{N}^{\infty}t^{p-1}f_{v}(t)\,dt\\
-% {}&{}&{}\\
-% {}&=&\displaystyle qN^{q-p}\|v\|_{L^{p}}^{p}
-% \end{array}
-% \end{equation*}
-% 这便导出了结论。
-% \end{proof}
-% 令
-% \begin{equation*}
-% \mathcal{L}_{K}^{\varepsilon}(v)=\int_{\Omega}\|\nabla v\|_{2}^{2}+2 F(v)-2 v g_{K}\,d x+\varepsilon \int_{\partial \Omega} v^{2}-2 v h d s.
-% \end{equation*}
-% 借助引理 \ref{lemma:truerr}，我们有：
-% \begin{equation*}
-% |\mathcal{L}_{K}^{\varepsilon}(u_{\phi})-\mathcal{L}^{\varepsilon}(u_{\phi})|\leq\int_{\Omega}|u_{\phi}(g-g_{K})|\,dx\leq C(g)\mathcal{B}K^{1-p},
-% \end{equation*}
-% 对于任意 $u_{\phi}\in \mathcal{N}^{2}(\mathcal{D},\mathcal{W},\mathcal{B})$。
-% 因此，对于任意 $u\in \mathcal{N}^{2}$：
-% \begin{equation*}
-% \begin{array}{rcl}
-% \mathcal{L}^{\varepsilon}\left(\widehat{u}_{\phi}^{\varepsilon}\right)-\mathcal{L}^{\varepsilon}(u^{\varepsilon})&=&\left[\mathcal{L}^{\varepsilon}\left(\widehat{u}_{\phi}^{\varepsilon}\right)-\mathcal{L}_{K}^{\varepsilon}\left(\widehat{u}_{\phi}^{\varepsilon}\right)\right]+\left[\mathcal{L}_{K}^{\varepsilon}\left(\widehat{u}_{\phi}^{\varepsilon}\right)-\widehat{\mathcal{L}}_{K}^{\varepsilon}\left(\widehat{u}_{\phi}^{\varepsilon}\right)\right]\\
-% {}&{}&{}\\
-% {}&&+\left[\widehat{\mathcal{L}}_{K}^{\varepsilon}\left(\widehat{u}_{\phi}^{\varepsilon}\right)-\widehat{\mathcal{L}}_{K}^{\varepsilon}\left(u_{\phi}\right)\right]+\left[\widehat{\mathcal{L}}_{K}^{\varepsilon}\left(u_{\phi}\right)-\mathcal{L}_{K}^{\varepsilon}\left(u_{\phi}\right)\right]\\
-% {}&{}&{}\\
-% {}&&+\left[\mathcal{L}_{K}^{\varepsilon}\left(u_{\phi}\right)-\mathcal{L}^{\varepsilon}\left(u_{\phi}\right)\right]+\left[\mathcal{L}^{\varepsilon}\left(u_{\phi}\right)-\mathcal{L}^{\varepsilon}(u^{\varepsilon})\right]\\
-% {}&{}&{}\\
-% \end{array}
-% \end{equation*}
-% 该表达式包含六项，其中第一项和第五项表示记为 $\mathcal{E}_{\text{tru}}$ 的真实误差，第二项和第四项对应于记为 $\mathcal{E}_{\text{sta}}$ 的统计误差，第三项为负，而最后一项的下确界恰好等于记为 $\mathcal{E}_{\text{app}}$ 的逼近误差。
-% \end{proof}
+\begin{theorem}[先验估计]\label{th:ch3reg}
+在假设 \ref{ass:f} 成立的条件下，方程 \eqref{eq:maineq} 存在唯一的解 $u \in H^2(\Omega)$，且满足如下正则性估计：
+$$\|u\|_{H^2(\Omega)} \le C \left( \|g - V(u)\|_{L^2(\Omega)} + \|h\|_{H^{1/2}(\partial \Omega)} + \|u\|_{H^1(\Omega)} \right)$$
+\end{theorem}
+\begin{proof}
+本定理的证明参考了 \cite{2013Roubiek}（第二节）、\cite{Evans2010PartialDE}（第八章） 以及 \cite{brezis2011functional}（第八、九章）中关于椭圆方程经典正则性理论的结论。为保持行文流畅，详细的推导过程参见附录 \ref{pf:th:ch3reg}。
+\end{proof}
 
 
+\section{模型构建}\label{sec:mod}
+\subsection{能量泛函及稳定性估计}
+建立方程的先验估计后，我们便可通过极小化泛函 \eqref{eq:ch3loss} 来求解 Robin 边值问题。然而，对于 Dirichlet 边值问题，通常需要通过引入带有大罚参数的惩罚项来对边界约束进行近似逼近。关于这一逼近过程的收敛性，我们有如下定理：
+\begin{theorem}\label{thm:model}
+对于 $u\in H^{1}(\Omega)$，定义引入边界惩罚项的能量泛函：
+\begin{equation}\label{eq:conloss}
+J^{\mu}(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} u^2 \, dS + \int_{\Omega} W(u) \, dx - \int_{\Omega} gu \, dx - \mu \int_{\partial \Omega} hu \, dS
+\end{equation}
+则有以下结论：
+\begin{itemize}
+\item 对于有限的惩罚参数 $\mu<+\infty$，$J^{\mu}$ 存在唯一的极小值点，记为 $u^{\mu}$。且该极小值点是方程 \eqref{eq:maineq} 的弱解。
+\item 当 $\mu \rightarrow +\infty$ 时，设 $u^{D}$ 为具有精确 Dirichlet 边界条件（即在 $\partial \Omega$ 上 $u=h$）的方程 \eqref{eq:maineq} 的解。则存在仅依赖于区域和已知函数的常数 $C(\Omega,V,g,h)$，使得：
+\begin{equation*}
+\|u^{\mu}-u^{D}\|_{H^{1}}\leq C(\Omega,V,g,h)\frac{1}{\mu}.
+\end{equation*}
+\end{itemize}
+\end{theorem}
+\begin{proof}
+首先证明第一部分。当 $\mu<+\infty$ 时，对泛函\eqref{eq:conloss} 沿任意测试函数 $v \in H^1(\Omega)$ 求变分，可得其 Euler-Lagrange 方程的弱形式：
+\begin{equation*}
+\begin{aligned}
+\langle \delta J^{\mu}(u), v \rangle &= \int_{\Omega} \big( \nabla u \cdot \nabla v + V(u) v - gv \big) \,dx + \mu\int_{\partial \Omega}(u-h)v \,dS \\
+&= \int_{\Omega} \left(-\Delta u+V(u)-g\right)v \,dx + \int_{\partial \Omega} \left(\frac{\partial u}{\partial n} + \mu(u-h)\right) v \,dS,
+\end{aligned}
+\end{equation*}
+
+其中 $V(u) = W'(u)$。由上式可知，泛函 $J^{\mu}$ 的驻点与方程 \eqref{eq:maineq} 配合 Robin 边界条件（$u+\frac{1}{\mu}\frac{\partial u}{\partial n}=h$）的弱解一一对应。由于泛函是严格凸的，该驻点存在且唯一，即为全局极小值点 $u^{\mu}$。
+
+其次，为了证明收敛率，我们引入一个辅助函数 $w^{\mu}$，它是以下线性椭圆方程的解：
+\begin{equation*}
+\left\{\begin{aligned}
+-\Delta w^{\mu} +V(u^{D})&=g \quad \text { 在 } \Omega \text{ 中} \\
+ w^{\mu}+\frac{1}{\mu}\frac{\partial w^{\mu}}{\partial n} &=h \quad \text { 在 } \partial \Omega \text{ 上},
+\end{aligned}\right.
+\end{equation*}
+根据 \cite{Maury2009Numerical}（命题 2.3 的证明）中的已知结论，我们有误差估计：
+\begin{equation}\label{eq:fuzhu}
+\|w^{\mu}-u^{D}\|_{H^{1}}\leq C(\Omega,f(u^{D}),g,h)\frac{1}{\mu}.
+\end{equation}
+由 $w^{\mu}$ 与 $u^{\mu}$ 所满足的弱形式相减，并选取测试函数为 $e^{\mu}=w^{\mu} - u^{\mu}$，结合边界条件可直接推得：
+$$\int_{\Omega} |\nabla e^{\mu}|^2 \,dx + \mu \int_{\partial \Omega} (e^{\mu})^2 \,dS = \int_{\Omega} -\left( V(u^{D}) - V(u^{\mu}) \right) e^{\mu} \,dx$$
+根据 $H^{-1}$ 空间（$H^1_0$ 或 $H^1$ 的对偶空间）的性质以及广义的 Cauchy-Schwarz 不等式，右侧可以被放缩为$\left| \int_{\Omega} \left( V(u^{D}) - V(u^{\mu}) \right) e^{\mu} \,dx \right| \leq \|V(u^{D}) - V(u^{\mu})\|_{H^{-1}} \|e^{\mu}\|_{H^{1}}$。
+利用 $ab \leq \frac{1}{2}a^2 + \frac{1}{2}b^2$ 并把 $\|e^{\mu}\|_{H^1}$ 吸收进左侧，我们最终就可以推导得出：
+$$\|e^{\mu}\|_{H^{1}}^2\leq C \|V(u^{D}) - V(u^{\mu})\|^2_{H^{-1}}\leq C(\Omega,V)$$
+结合上式和式\eqref{eq:fuzhu}，可以推知$\|u^{\mu}\|_{H^{1}}\leq C(\Omega,V,g,h)$，这表明 $\{u^{\mu}\}$ 在 $H^{1}$ 空间中是一致有界的。
+
+下面，我们着手估计误差项$e^{\mu}$的$H^1$ 半范数误差。利用格林公式以及边界条件 $u^D = h$，可得如下展开：
+\begin{equation}\label{eq:seminormcontrol}
+\begin{aligned}
+\int_{\Omega}|\nabla(u^{D}-u^{\mu})|^{2}\,dx &= \int_{\Omega}\nabla (u^{D}-u^{\mu}) \cdot \nabla u^{D}\,dx - \int_{\Omega}\nabla (u^{D}-u^{\mu}) \cdot \nabla u^{\mu}\,dx\\
+&= \int_{\Omega} -(u^{D}-u^{\mu})\Delta u^{D}\,dx - \int_{\Omega} -(u^{D}-u^{\mu})\Delta u^{\mu}\,dx \\
+&\quad + \int_{\partial \Omega}\frac{\partial u^{D}}{\partial n}(u^{D}-u^{\mu})\,dS - \int_{\partial \Omega}\frac{\partial u^{\mu}}{\partial n}(u^{D}-u^{\mu})\,dS\\
+&= -\int_{\Omega} \left[V(u^{D})-V(u^{\mu})\right]\left(u^{D}-u^{\mu}\right)\,dx \\
+&\quad + \frac{1}{\mu} \int_{\partial \Omega}\frac{\partial u^{D}}{\partial n}\frac{\partial u^{\mu}}{\partial n}\,dS - \frac{1}{\mu} \int_{\partial \Omega}\left(\frac{\partial u^{\mu}}{\partial n}\right)^{2}\,dS\\
+&\leq \frac{1}{2\mu}\left[\int_{\partial \Omega}\left(\frac{\partial u^{D}}{\partial n}\right)^{2}\,dS - \int_{\partial \Omega}\left(\frac{\partial u^{\mu}}{\partial n}\right)^{2}\,dS \right] \\
+&\leq C(\Omega,V,g,h)\frac{1}{\mu}.
+\end{aligned}
+\end{equation}
+推导的最后一步利用了函数 $V$ 的单调性：$\left(V(u^{D})-V(u^{\mu})\right)\left(u^{D}-u^{\mu}\right) \geq 0$。
+
+然后考虑边界项的控制，记$E(u)=\frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \int_{\Omega} W(u) \, dx - \int_{\Omega} g\, dx$，由于 $u^{\mu}$ 为泛函 $J^{\mu}$ 全局极小值点，利用在边界上有 $u^{D}=h$，将精确解 $u^{D}$ 代入$J^{\mu}(u)$可得：
+$$J^{\mu}(u^{\mu})=E(u^{\mu}) + \frac{\mu}{2}\int_{\partial \Omega} (u^{\mu} - h)^2 \, dS - \frac{\mu}{2}\int_{\partial \Omega} h^2 \, dS \leq E(u^{D})- \frac{\mu}{2}\int_{\partial \Omega} h^2 \, dS$$
+由于前面已经证明了序列 $\{u^{\mu}\}$ 在 $H^1(\Omega)$ 中是一致有界的，内部能量泛函 $E(u^{\mu})$ 必然存在一个不依赖于 $\mu$ 的下界，因此可以推导出：
+\begin{equation}\label{eq:bdcontrol}
+\mu\int_{\partial \Omega}(u^{\mu}-h)^{2}\,dS \leq E(u^{D})-E(u^{\mu}) \leq C(\Omega,V,g,h).
+\end{equation}
+
+根据广义的 Poincaré 不等式，$H^1$ 空间中函数的 $L^2$ 范数可由其半范数与边界上的 $L^2$ 范数共同控制。
+% $$\|u^{\mu} - u^{D}\|_{L^2(\Omega)}^2 \leq C \left( \|\nabla (u^{\mu} - u^{D})\|_{L^2(\Omega)}^2 + \|u^{\mu} - u^{D}\|_{L^2(\partial \Omega)}^2 \right).$$
+结合半范数估计 \eqref{eq:seminormcontrol} 与边界误差估计\eqref{eq:bdcontrol}，即可得出定理所需的 $H^1$ 收敛率结论。证毕。
+\end{proof}
+
+下面这个定理给出了能量泛函 $J^{\mu}$ 在其极小值点附近的稳定性估计。
+\begin{theorem}[稳定性估计]\label{thm:staerr}
+设 $u^{\mu}$ 是方程 \eqref{eq:maineq} 的弱解（即泛函 $J^{\mu}$ 的极小值点），且函数$V$满足假设 \ref{ass:f} 中的单调性条件。则对于任意 $v \in H^1(\Omega)$，存在常数 $C(\Omega,\mu)>0$ 使得以下稳定性估计成立：
+\begin{equation*}
+J^{\mu}(u^{\mu}+v)-J^{\mu}(u^{\mu}) \geq C(\Omega,\mu)\|v\|_{H^{1}}^{2}.
+\end{equation*}
+\end{theorem}
+\begin{proof}
+根据泛函 $J^{\mu}$ 的定义\eqref{eq:conloss}，我们可以将 $J^{\mu}(u^{\mu}+v)$ 展开并与 $J^{\mu}(u^{\mu})$ 作差，得到：
+\begin{equation*}
+\begin{aligned}
+J^{\mu}(u^{\mu}+v) - J^{\mu}(u^{\mu}) 
+&= \frac{1}{2}\int_{\Omega} |\nabla v|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} v^2 \, dS \\
+&\quad + \int_{\Omega} \big( \nabla u^{\mu} \cdot \nabla v - gv \big) \, dx + \mu \int_{\partial \Omega} (u^{\mu}-h) v \, dS \\
+&\quad + \int_{\Omega} \big( W(u^{\mu}+v) - W(u^{\mu}) \big) \, dx.
+\end{aligned}
+\end{equation*}
+由于 $u^{\mu}$ 是 $J^{\mu}$ 的极小值点，满足 Euler-Lagrange 方程。因此，将其沿测试函数 $v$ 的变分代入，上述一阶项可以转化为
+\begin{equation*}
+\int_{\Omega} \big( \nabla u^{\mu} \cdot \nabla v - gv \big) \, dx + \mu \int_{\partial \Omega} (u^{\mu}-h) v \, dS = -\int_{\Omega} V(u^{\mu})v \, dx.
+\end{equation*}
+将此等式代回展开式中，我们得到：
+\begin{equation*}
+J^{\mu}(u^{\mu}+v) - J^{\mu}(u^{\mu}) = \frac{1}{2}\int_{\Omega} |\nabla v|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} v^2 \, dS + \int_{\Omega} \big( W(u^{\mu}+v) - W(u^{\mu}) - V(u^{\mu})v \big) \, dx.
+\end{equation*}
+
+由中值定理可知，存在 $\theta \in (0,1)$ 使得 $W(u^{\mu}+v) - W(u^{\mu}) = V(u^{\mu}+\theta v)v$。因此，积分项中的非线性部分可以改写为：
+\begin{equation*}
+\int_{\Omega} \big( V(u^{\mu}+\theta v) - V(u^{\mu}) \big) v \, dx.
+\end{equation*}
+鉴于函数 $V$ 是单调的，对于任意 $\theta \in (0,1)$，$\big( V(u^{\mu}+\theta v) - V(u^{\mu}) \big) v \geq 0$ 在 $\Omega$ 上几乎处处成立。
+由此可推断出：
+\begin{equation*}
+J^{\mu}(u^{\mu}+v) - J^{\mu}(u^{\mu}) \geq \frac{1}{2}\int_{\Omega} |\nabla v|^2 \, dx + \frac{\mu}{2} \int_{\partial \Omega} v^2 \, dS.
+\end{equation*}
+最后，由于惩罚参数 $\mu > 0$，根据广义 Poincaré 不等式，存在仅依赖于区域 $\Omega$ 和 $\mu$ 的常数 $C(\Omega,\mu)>0$，使得上式右侧以 $C(\Omega,\mu)\|v\|_{H^{1}}^{2}$ 为下界。证毕。
+\end{proof}
 
 
-% \section{主要结果}\label{sec:mainres}
-% \subsection{主要定理}
-% 针对 Robin 边界条件，我们有：
-% \begin{theorem}\label{mainthm:robin}
-% 设假设 \ref{ass:f} 成立，且 $\widehat{u}_{\phi}^{\varepsilon}$ 为式 \eqref{eq:u_hat} 中定义的函数。我们有：
-% \begin{equation*}
-% \|\widehat{u}_{\phi}^{\varepsilon}-u^{\varepsilon}\|_{H^{1}}\leq C(\Omega,u^{\varepsilon},f,g,h)\sqrt{\delta},
-% \end{equation*}
-% 其中
-% \begin{equation*}
-% \begin{array}{rcl}
-% \delta&\leq&\displaystyle C\left(\Omega, u^{\varepsilon}, f, g, h\right) \varepsilon\left(\mathcal{B}^{-2 / (d-2)}+\mathcal{W}^{-1 / d}\right)+C(g) \mathcal{B}K^{1-p}\\
-% {}&{}&{}\\
-% {}&{}&\displaystyle+C(\Omega, f, h)(K+\varepsilon \mathcal{B}) \mathcal{B} \mathcal{D}^{2} \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}} \sqrt{\frac{\log n}{n}}.
-% \end{array}
-% \end{equation*}
-% \end{theorem}
+\subsection{离散损失函数}
+与前文处理特征值问题的方法相类似，我们利用离散化版本的能量泛函来构建神经网络的训练目标。设 $\mathcal{N}^{2}=\mathcal{N}(\mathcal{D},\mathcal{W},\{2\},m)$，并令 $U(\Omega)$ 与 $U(\partial\Omega)$ 分别表示区域 $\Omega$ 及其边界 $\partial\Omega$ 上的均匀分布。通过引入独立同分布的样本集 $\{X_{i}\}_{i=1}^{N}\sim U(\Omega)$ 与 $\{Y_{j}\}_{j=1}^{M}\sim U(\partial\Omega)$，方程 \eqref{eq:ch3loss} 对应的离散经验损失函数可表示为 \cite{chen2021quasi}：
+\begin{equation}\label{eq:disloss0}
+\begin{aligned}
+\widehat{J}^{\mu}(u) = & \frac{|\Omega|}{N}\sum\limits_{i=1}^{N} \left[ |\nabla u(X_{i})|_{2}^{2}+2W(u(X_{i}))-2g(X_{i})u(X_{i})\right]\\
+&+\mu\frac{|\partial\Omega|}{M}\sum\limits_{j=1}^{M}\left[u^{2}(Y_{j})-2u(Y_{j})h(Y_{j})\right].
+\end{aligned}
+\end{equation}
 
-% \begin{proof}
-% 由引理 \ref{lemma:energyerr} 以及第 \ref{sec:apperr} 节中逼近误差和第 \ref{sec:staerr} 节中统计误差的估计，我们有：
-% \begin{equation*}
-% \mathcal{L}^{\varepsilon}\left(\widehat{u}_{\phi}^{\varepsilon}\right)-\mathcal{L}^{\varepsilon}\left(u^{\varepsilon}\right)\leq C\left(\Omega, u^{\varepsilon}, f, g, h\right)\delta.
-% \end{equation*}
-% 令
-% \begin{equation*}
-% \mathcal{L}^{\varepsilon}_{0}\left(u\right)=\mathcal{L}^{\varepsilon}\left(u\right)-2\int_{\Omega}F(u)\,dx.
-% \end{equation*}
-% 我们可以推导出：
-% \begin{equation*}
-% \begin{array}{rcl}
-% {}&{}&\displaystyle\mathcal{L}^{\varepsilon}\left(u^{\varepsilon}+v\right)-\mathcal{L}^{\varepsilon}\left(u^{\varepsilon}\right)\\
-% {}&{}&{}\\
-% {}&=&\displaystyle\mathcal{L}^{\varepsilon}_{0}\left(u^{\varepsilon}+v\right)-\mathcal{L}^{\varepsilon}_{0}\left(u^{\varepsilon}\right) + 2\int_{\Omega}F\left(u^{\varepsilon}+v\right) - F\left(u^{\varepsilon}\right) \,dx\\
-% {}&{}&{}\\
-% {}&=&\displaystyle\int_{\Omega}\|\nabla \left(u^{\varepsilon}+v\right)\|_{2}^{2}-2 \left(u^{\varepsilon}+ v\right) g\,d x+\varepsilon \int_{\partial \Omega} \left(u^{\varepsilon}+ v\right)^{2}\\
-% {}&{}&\displaystyle-2 \left(u^{\varepsilon}+ v\right) h\,d s-\mathcal{L}^{\varepsilon}_{0}\left(u^{\varepsilon}\right)+2\int_{\Omega}f\left(u^{\varepsilon}+\theta v\right)v \,dx\\
-% {}&{}&{}\\
-% {}&=&\displaystyle\int_{\Omega}\|\nabla v\|_{2}^{2}-2 vg\,d x+\varepsilon \int_{\partial \Omega} v^{2}-2v\left(h-u^{\varepsilon}\right)\, d s\\
-% {}&{}&\displaystyle+ 2\int_{\Omega}\nabla v^{T}\nabla u^{\varepsilon}\,dx +2\int_{\Omega}f\left(u^{\varepsilon}+\theta v\right)v \,dx\\
-% {}&{}&{}\\
-% {}&=&\displaystyle\int_{\Omega}\|\nabla v\|_{2}^{2}d x+\varepsilon \int_{\partial \Omega} v^{2}\, ds+2\int_{\Omega}\left[f\left(u^{\varepsilon}+\theta v\right)-f\left(u^{\varepsilon}\right)\right]v \,dx\\
-% {}&{}&{}\\
-% {}&\geq &\displaystyle\int_{\Omega}\|\nabla v\|_{2}^{2}\,d x+\varepsilon \int_{\partial \Omega} v^{2}\, d s\gtrsim C(\Omega,\varepsilon)\|v\|_{H^{1}}^{2}, \\
-% \end{array}
-% \end{equation*}
-% 其中 $\theta\in(0,1)$ 是拉格朗日余项的参数。\textcolor{black}{倒数第二个不等式成立基于以下理由：鉴于 $f$ 是单调函数，因此对于任意 $\theta>0$，$f(u^{\varepsilon}+v)-f(u^{\varepsilon})$ 与 $v$ 具有相同的符号，从而使得 $[f(u^{\varepsilon}+v)-f(u^{\varepsilon})]v\geq 0$。}
-% \end{proof}
+需要注意的是，假设 \ref{ass:f} 仅要求 $g\in L^2(\Omega)$，因此无法保证 $g$ 在 $\Omega$ 上本性有界。这可能导致离散泛函 $\widehat{J}^{\mu}$ 缺乏连续性。为克服该问题，我们对函数 $g$ 引入截断界 $K$，定义截断函数 $g^K = \min\{g, K\}$。由此得到带有截断的离散损失函数：
+\begin{equation}\label{eq:dislossK}
+\begin{aligned}
+\widehat{J}_{K}^{\mu}(u) = & \frac{|\Omega|}{N}\sum\limits_{i=1}^{N} \left[ |\nabla u(X_{i})|_{2}^{2}+2W(u(X_{i}))-2g^K(X_{i})u(X_{i})\right]\\
+&+\mu\frac{|\partial\Omega|}{M}\sum\limits_{j=1}^{M}\left[u^{2}(Y_{j})-2u(Y_{j})h(Y_{j})\right].
+\end{aligned}
+\end{equation}
+该截断操作不可避免地会引入误差，其具体影响将在后续定理中予以量化评估。
+
+令 $u_{\text{nn}}$ 与 $\widehat{u}^{K}_{\text{nn}}$ 分别表示连续损失泛函 $J^{\mu}$ 和截断离散损失泛函 $\widehat{J}_{K}^{\mu}$ 在神经网络假设空间 $\mathcal{N}^{2}$ 中的极小值点：
+\begin{equation}\label{eq:u_hat}
+u_{\text{nn}}= \underset{u \in \mathcal{N}^{2}}{\operatorname{argmin}}\,J^{\mu}(u),\quad
+\widehat{u}^{K}_{\text{nn}}= \underset{u \in \mathcal{N}^{2}}{\operatorname{argmin}}\,\widehat{J}_{K}^{\mu}(u).
+\end{equation}
+在后续讨论中，我们将统一使用 $n=O(N,M)$ 来表征样本量 $N$ 与 $M$ 的渐近规模。
+
+\subsection{误差分解}
+首先，我们介绍一个关于截断误差的简单引理：
+\begin{lemma}\label{lemma:truerr}
+设 $1\leq q<p<\infty$。若 $u\in L^{p}(\Omega)$ 且定义截断函数 $u_{K}=u \mathbb{1}_{\{|u|<K\}}$，则存在常数 $C(u)>0$，使得：
+\begin{equation*}
+\|u-u_{K}\|_{L^{q}} \leq C(u)\frac{1}{K^{p/q-1}}.
+\end{equation*}
+\end{lemma}
+\begin{proof}
+根据截断函数 $u_{K}$ 的定义，只需在集合 $\{x \in \Omega : |u(x)| \geq K\}$ 上计算 $L^q$ 范数。由于 $q < p$，在该集合上有 $|u|^{q-p} \leq K^{q-p}$，故
+\begin{equation*}
+\begin{aligned}
+\|u-u_{K}\|_{L^{q}}^{q} &= \int_{\{|u| \geq K\}} |u|^{q} \, dx \\
+&= \int_{\{|u| \geq K\}} |u|^{p} |u|^{q-p} \, dx \\
+&\leq K^{q-p} \int_{\{|u| \geq K\}} |u|^{p} \, dx \\
+&\leq K^{q-p} \|u\|_{L^{p}}^{p}.
+\end{aligned}
+\end{equation*}
+两边同时取 $1/q$ 次方，可得：
+\begin{equation*}
+\|u-u_{K}\|_{L^{q}} \leq K^{\frac{q-p}{q}} \|u\|_{L^{p}}^{\frac{p}{q}} = \|u\|_{L^{p}}^{\frac{p}{q}} \frac{1}{K^{p/q-1}}.
+\end{equation*}
+令常数 $C(u) = \|u\|_{L^{p}}^{p/q}$，即得结论。证毕。
+\end{proof}
+
+\begin{theorem}[误差分解]\label{th:energyerr}
+设 $\widehat{u}^{K}_{\text{nn}}$ 为上一节所定义的极小值点，$u^{*}$ 为原偏微分方程的精确弱解，则有以下误差分解成立：
+\begin{equation*}
+\begin{aligned}
+&J^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)-J^{\mu}(u^{*})&\\
+\leq&\displaystyle\underbrace{ \inf _{u_{\text{nn}} \in \mathcal{N}^{2}}\left[ J^{\mu}(u_{\text{nn}})- J^{\mu}(u^{*})\right]}_{\mathcal{E}_{\text{app}}}+\underbrace{2 \sup _{u_{\text{nn}} \in \mathcal{N}^{2}}\left|J^{\mu}_{K}(u_{\text{nn}})-\widehat{J}^{\mu}_{K}(u_{\text{nn}})\right|}_{\mathcal{E}_{\text{sta}}}+\underbrace{C(g)\mathcal{B}K^{1-p}}_{\mathcal{E}_{\text{tru}}},&\\
+\end{aligned}
+\end{equation*}
+上述不等式右侧的三项分别对应于逼近误差（$\mathcal{E}_{\text{app}}$）、统计误差（$\mathcal{E}_{\text{sta}}$）以及截断误差（$\mathcal{E}_{\text{tru}}$）。
+\end{theorem}
+\begin{proof}
+首先定义带有截断的连续能量泛函：
+\begin{equation*}
+J_{K}^{\mu}(v)=\frac{1}{2}\int_{\Omega} |\nabla v|_{2}^{2} \,dx + \int_{\Omega} \big(W(v) - v g^K\big)\,dx + \frac{\mu}{2} \int_{\partial \Omega} \big(v^{2}-2 v h\big)\,ds.
+\end{equation*}
+由引理 \ref{lemma:truerr} 可知，对于任意给定的 $u_{\text{nn}}\in \mathcal{N}^{2}(\mathcal{D},\mathcal{W},\mathcal{B})$，均有如下截断误差界：
+\begin{equation*}
+|J_{K}^{\mu}(u_{\text{nn}})-J^{\mu}(u_{\text{nn}})|\leq\int_{\Omega}|u_{\text{nn}}(g-g^K)|\,dx\leq C(g)\mathcal{B}K^{1-p}.
+\end{equation*}
+因此，对于任意给定的 $u_{\text{nn}}\in \mathcal{N}^{2}$，目标误差可作如下分解：
+\begin{equation*}
+\begin{aligned}
+J^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)-J^{\mu}(u^{*}) = &\left[J^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)-J_{K}^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)\right]+\left[J_{K}^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)-\widehat{J}_{K}^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)\right]\\
+&+\left[\widehat{J}_{K}^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)-\widehat{J}_{K}^{\mu}\left(u_{\text{nn}}\right)\right]+\left[\widehat{J}_{K}^{\mu}\left(u_{\text{nn}}\right)-J_{K}^{\mu}\left(u_{\text{nn}}\right)\right]\\
+&+\left[J_{K}^{\mu}\left(u_{\text{nn}}\right)-J^{\mu}\left(u_{\text{nn}}\right)\right]+\left[J^{\mu}\left(u_{\text{nn}}\right)-J^{\mu}(u^{*})\right].
+\end{aligned}
+\end{equation*}
+上述分解式共包含六项。具体而言，第一项与第五项的绝对值受限于截断误差 $\mathcal{E}_{\text{tru}}$；第二项与第四项受限于统计误差 $\mathcal{E}_{\text{sta}}$；由 $\widehat{u}^{K}_{\text{nn}}$ 作为 $\widehat{J}_{K}^{\mu}$ 极小值点的定义可知，第三项非正；而由于 $u_{\text{nn}}$ 的任意性，最后一项在取下确界后恰好对应于逼近误差 $\mathcal{E}_{\text{app}}$。综合以上各项的放缩结果，即可完成本定理的证明。
+\end{proof}
+
+
+
+\section{主要结果}\label{sec:mainres}
+\subsection{主要定理}
+针对 Robin 边界条件，我们有：
+\begin{theorem}\label{mainthm:robin}
+设假设 \ref{ass:f} 成立，且 $\widehat{u}_{\phi}^{\varepsilon}$ 为式 \eqref{eq:u_hat} 中定义的函数。我们有：
+\begin{equation*}
+\|\widehat{u}_{\phi}^{\varepsilon}-u^{\varepsilon}\|_{H^{1}}\leq C(\Omega,u^{\varepsilon},f,g,h)\sqrt{\delta},
+\end{equation*}
+其中
+\begin{equation*}
+\begin{array}{rcl}
+\delta&\leq&\displaystyle C\left(\Omega, u^{\varepsilon}, f, g, h\right) \varepsilon\left(\mathcal{B}^{-2 / (d-2)}+\mathcal{W}^{-1 / d}\right)+C(g) \mathcal{B}K^{1-p}\\
+{}&{}&{}\\
+{}&{}&\displaystyle+C(\Omega, f, h)(K+\varepsilon \mathcal{B}) \mathcal{B} \mathcal{D}^{2} \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}} \sqrt{\frac{\log n}{n}}.
+\end{array}
+\end{equation*}
+\end{theorem}
+
+\begin{proof}
+由引理 \ref{th:energyerr} 以及第 \ref{sec:apperr} 节中逼近误差和第 \ref{sec:staerr} 节中统计误差的估计，我们有：
+\begin{equation*}
+\mathcal{L}^{\varepsilon}\left(\widehat{u}_{\phi}^{\varepsilon}\right)-\mathcal{L}^{\varepsilon}\left(u^{\varepsilon}\right)\leq C\left(\Omega, u^{\varepsilon}, f, g, h\right)\delta.
+\end{equation*}
+
+\end{proof}
 
 % \begin{corollary}\label{cor:corrobin}
 % 在与定理 \ref{mainthm:robin} 相同的条件下，若我们取：
@@ -626,233 +650,233 @@
 
 
 
-\section{数值实验}\label{sec:num}
-\textcolor{black}{正如引言所述，由于维数灾难，传统的依赖网格的 PDE 数值解法在高维情况下面临挑战。然而，通过我们的全面分析，我们在理论上建立了 Deep Ritz 方法的与维数无关的收敛性分析。为了进一步验证我们的理论在高维情形下的有效性，我们进行了一系列数值实验。}
+% \section{数值实验}\label{sec:num}
+% \textcolor{black}{正如引言所述，由于维数灾难，传统的依赖网格的 PDE 数值解法在高维情况下面临挑战。然而，通过我们的全面分析，我们在理论上建立了 Deep Ritz 方法的与维数无关的收敛性分析。为了进一步验证我们的理论在高维情形下的有效性，我们进行了一系列数值实验。}
 
-在本节中，我们提供了逼近半线性椭圆方程解的算例，包括具有齐次和非齐次边界条件的 Dirichlet 问题。
+% 在本节中，我们提供了逼近半线性椭圆方程解的算例，包括具有齐次和非齐次边界条件的 Dirichlet 问题。
 
-我们利用一个包含两个模块的神经网络来求解方程。每个模块包含两个线性变换、两个激活函数和一个残差连接，这可以被视为一个四层的深度神经网络。在优化过程中，我们使用 Adagrad 或 Adam 算法，配合逐步衰减的学习率来最小化等式~\eqref{eq:conloss}。
+% 我们利用一个包含两个模块的神经网络来求解方程。每个模块包含两个线性变换、两个激活函数和一个残差连接，这可以被视为一个四层的深度神经网络。在优化过程中，我们使用 Adagrad 或 Adam 算法，配合逐步衰减的学习率来最小化等式~\eqref{eq:conloss}。
 
-所有实验和实现均基于 CentOS 系统上的 Python 3.9.12 和 PyTorch 进行，使用的硬件包括两个主频为 2.40 GHz 的 Intel(R) Xeon(R) E5-2640 v4 x86\_64 处理器和一块拥有 16 GB 显存的 Nvidia Tesla V100 GPU。
+% 所有实验和实现均基于 CentOS 系统上的 Python 3.9.12 和 PyTorch 进行，使用的硬件包括两个主频为 2.40 GHz 的 Intel(R) Xeon(R) E5-2640 v4 x86\_64 处理器和一块拥有 16 GB 显存的 Nvidia Tesla V100 GPU。
 
-\subsection{双峰问题}
-\begin{equation}\label{eq:eq1}
-\left\{\begin{aligned}
--\Delta u + \text{exp}(u) & = g_1(x) & \text{in } & \Omega,\\
-Tu& = 0 & \text{on }  & \partial\Omega.\\
-\end{aligned}\right.
-\end{equation}
+% \subsection{双峰问题}
+% \begin{equation}\label{eq:eq1}
+% \left\{\begin{aligned}
+% -\Delta u + \text{exp}(u) & = g_1(x) & \text{in } & \Omega,\\
+% Tu& = 0 & \text{on }  & \partial\Omega.\\
+% \end{aligned}\right.
+% \end{equation}
 
-这里$\Omega=[0,1]^5$，$u$的精确解$u_1(x)=\text{sin}(2\pi x_1)\prod_{i=2}^{d}4x_i(1-x_i)$，
+% 这里$\Omega=[0,1]^5$，$u$的精确解$u_1(x)=\text{sin}(2\pi x_1)\prod_{i=2}^{d}4x_i(1-x_i)$，
 
-$\displaystyle g_1(x)=-4\pi^2u_1(x)+2\sum_{i=2}^{d}\frac{u_1(x)}{x_i(1-x_i)}+\text{exp}(u_1(x))$
+% $\displaystyle g_1(x)=-4\pi^2u_1(x)+2\sum_{i=2}^{d}\frac{u_1(x)}{x_i(1-x_i)}+\text{exp}(u_1(x))$
 
-\subsection{不光滑问题}
-\begin{equation}\label{eq:eq2}
-\left\{\begin{aligned}
--\Delta u + 2\text{sin}(\frac{\pi}{2}u) & = g_2(x) & \text{in } & \Omega,\\
-Tu& = 0 & \text{on }  & \partial\Omega.\\
-\end{aligned}\right.
-\end{equation}
+% \subsection{不光滑问题}
+% \begin{equation}\label{eq:eq2}
+% \left\{\begin{aligned}
+% -\Delta u + 2\text{sin}(\frac{\pi}{2}u) & = g_2(x) & \text{in } & \Omega,\\
+% Tu& = 0 & \text{on }  & \partial\Omega.\\
+% \end{aligned}\right.
+% \end{equation}
 
-这里$\Omega=[0,1]^5$，$u$的精确解
-\[
-u_2=\begin{array}{lll}
-\frac{1}{2}-r^2  &,& r^2>\frac{1}{6},\\
-\frac{1}{3} &,& r^2\leq\frac{1}{6}.\\
-\end{array}
-\]
+% 这里$\Omega=[0,1]^5$，$u$的精确解
+% \[
+% u_2=\begin{array}{lll}
+% \frac{1}{2}-r^2  &,& r^2>\frac{1}{6},\\
+% \frac{1}{3} &,& r^2\leq\frac{1}{6}.\\
+% \end{array}
+% \]
 
-% $u_2(x)=0.5-\sum_{i=1}^{d}x_i^2*1_{r>1/3}$，
+% % $u_2(x)=0.5-\sum_{i=1}^{d}x_i^2*1_{r>1/3}$，
 
-$g_1(x)=-4\pi^2u_1(x)+2\sum_{i=2}^{d}\frac{u_1(x)}{x_i(1-x_i)}+\text{exp}(u_1(x))$
+% $g_1(x)=-4\pi^2u_1(x)+2\sum_{i=2}^{d}\frac{u_1(x)}{x_i(1-x_i)}+\text{exp}(u_1(x))$
 
-\subsection{liouville方程}
-在几何中，它描述了常曲率曲面的度量变换。例如，当你在平面上寻找一个共形变换，使得新度量的曲率为常数（如构造双曲几何模型）时，就需要解这个方程。
+% \subsection{liouville方程}
+% 在几何中，它描述了常曲率曲面的度量变换。例如，当你在平面上寻找一个共形变换，使得新度量的曲率为常数（如构造双曲几何模型）时，就需要解这个方程。
 
-在物理中，它也出现在二维量子引力理论和等离子体物理中。
-\begin{equation}\label{eq:eq3}
-\left\{\begin{aligned}
-\Delta u + \text{exp}(u) & = 0 & \text{in } & \Omega,\\
-Tu& = h_3(x) & \text{on }  & \partial\Omega.\\
-\end{aligned}\right.
-\end{equation}
+% 在物理中，它也出现在二维量子引力理论和等离子体物理中。
+% \begin{equation}\label{eq:eq3}
+% \left\{\begin{aligned}
+% \Delta u + \text{exp}(u) & = 0 & \text{in } & \Omega,\\
+% Tu& = h_3(x) & \text{on }  & \partial\Omega.\\
+% \end{aligned}\right.
+% \end{equation}
 
-$u_3 = -2 * \text{log}(1 + r^2)$
+% $u_3 = -2 * \text{log}(1 + r^2)$
 
-\subsection{Yamabe方程}
-\begin{equation}\label{eq:eq4}
-\left\{\begin{aligned}
-\Delta u + u^{\frac{d+2}{d-2}} & = 0 & \text{in } & \Omega,\\
-Tu& = h_4(x) & \text{on }  & \partial\Omega.\\
-\end{aligned}\right.
-\end{equation}
+% \subsection{Yamabe方程}
+% \begin{equation}\label{eq:eq4}
+% \left\{\begin{aligned}
+% \Delta u + u^{\frac{d+2}{d-2}} & = 0 & \text{in } & \Omega,\\
+% Tu& = h_4(x) & \text{on }  & \partial\Omega.\\
+% \end{aligned}\right.
+% \end{equation}
 
-$u_4 = \left(\frac{\sqrt{d(d-2)}}{1 + |x-x_0|^2} \right)^{\frac{d}{2}-1}$
+% $u_4 = \left(\frac{\sqrt{d(d-2)}}{1 + |x-x_0|^2} \right)^{\frac{d}{2}-1}$
 
-\subsection{具有齐次边界条件的 Dirichlet 问题}
-我们首先考虑以下具有齐次边界条件的 Dirichlet 问题：
-\begin{equation}\label{eq:example1}
-\left\{\begin{aligned}
--\Delta u + S(u) & = g_1(x) & \text{在 } & \Omega \text{ 中},\\
-Tu& = 0 & \text{在 }  & \partial\Omega \text{ 上}.\\
-\end{aligned}\right.
-\end{equation}
-其中 $\Omega=[0,1]^{10}$ 且 $S(x)$ 是 Sigmoid 函数：
-\begin{equation*}
-S(x) = \frac{1}{1+e^{-x}}.
-\end{equation*}
-并且
-\begin{equation*}
-g_1(x)=8\sum_{\stackrel{1\leq i\leq d}{i\neq j}}\prod_{j=1}^{d}x_{j}(1-x_{j})+S\left(\prod_{i=1}^{d}4x_{i}(1-x_{i})\right),
-\end{equation*}
-\textcolor{black}{$S(x)$ 是 $L^{\infty}(\Omega)$ 中的非线性函数，且是 Lipschitz 连续和非递减的。因此，它满足假设 \ref{ass:f}。方程 \eqref{eq:example1} 的精确解为 $u_1(x)=\prod_{i=1}^{d}4x_{i}(1-x_{i})$。}
+% \subsection{具有齐次边界条件的 Dirichlet 问题}
+% 我们首先考虑以下具有齐次边界条件的 Dirichlet 问题：
+% \begin{equation}\label{eq:example1}
+% \left\{\begin{aligned}
+% -\Delta u + S(u) & = g_1(x) & \text{在 } & \Omega \text{ 中},\\
+% Tu& = 0 & \text{在 }  & \partial\Omega \text{ 上}.\\
+% \end{aligned}\right.
+% \end{equation}
+% 其中 $\Omega=[0,1]^{10}$ 且 $S(x)$ 是 Sigmoid 函数：
+% \begin{equation*}
+% S(x) = \frac{1}{1+e^{-x}}.
+% \end{equation*}
+% 并且
+% \begin{equation*}
+% g_1(x)=8\sum_{\stackrel{1\leq i\leq d}{i\neq j}}\prod_{j=1}^{d}x_{j}(1-x_{j})+S\left(\prod_{i=1}^{d}4x_{i}(1-x_{i})\right),
+% \end{equation*}
+% \textcolor{black}{$S(x)$ 是 $L^{\infty}(\Omega)$ 中的非线性函数，且是 Lipschitz 连续和非递减的。因此，它满足假设 \ref{ass:f}。方程 \eqref{eq:example1} 的精确解为 $u_1(x)=\prod_{i=1}^{d}4x_{i}(1-x_{i})$。}
 
-\textcolor{black}{我们首先考察 $d=2$ 的情形。我们在各种网络参数配置下进行了大量的数值实验。这些经验结果为我们算法的收敛性质提供了有力的证据支持。}
+% \textcolor{black}{我们首先考察 $d=2$ 的情形。我们在各种网络参数配置下进行了大量的数值实验。这些经验结果为我们算法的收敛性质提供了有力的证据支持。}
 
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=\textwidth]{./figures2/func1_2d/HeatFig_n.eps}
-    \caption{$($具有齐次边界条件的 Dirichlet 问题, $d=2)$。在不同样本量 $n$ 下，Deep Ritz 解 $u_{DRM}$ 与真解 $u_1(x)$ 之间的逐点差。} \label{fig:fig_n}
-\end{figure}
+% \begin{figure}[htbp]
+%     \centering
+%     \includegraphics[width=\textwidth]{./figures2/func1_2d/HeatFig_n.eps}
+%     \caption{$($具有齐次边界条件的 Dirichlet 问题, $d=2)$。在不同样本量 $n$ 下，Deep Ritz 解 $u_{DRM}$ 与真解 $u_1(x)$ 之间的逐点差。} \label{fig:fig_n}
+% \end{figure}
 
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.5\textwidth]{./figures2/func1_2d/solution_err_under_diff_n.eps}
-    \caption{$($具有齐次边界条件的 Dirichlet 问题, $d=2)$。在不同样本量 $n$ 下的 $L_2$ 解误差。} \label{fig:fig_n1}
-\end{figure}
+% \begin{figure}[htbp]
+%     \centering
+%     \includegraphics[width=0.5\textwidth]{./figures2/func1_2d/solution_err_under_diff_n.eps}
+%     \caption{$($具有齐次边界条件的 Dirichlet 问题, $d=2)$。在不同样本量 $n$ 下的 $L_2$ 解误差。} \label{fig:fig_n1}
+% \end{figure}
 
-\textcolor{black}{首先，我们重点评估采样大小 $n$ 对解精度的影响。我们将网络参数设置为 $\mathcal{W} = 120$ 和 $\mathcal{D} = 4$，同时采用不同的采样大小来解决问题 \ref{eq:example1}。结果如图 \ref{fig:fig_n} 所示，且正如 图 \ref{fig:fig_n1} 中所预期的那样，较大的采样大小会导致较高的精度。这一观察结果与定理 \ref{mainthm:diri} 的结论一致。}
+% \textcolor{black}{首先，我们重点评估采样大小 $n$ 对解精度的影响。我们将网络参数设置为 $\mathcal{W} = 120$ 和 $\mathcal{D} = 4$，同时采用不同的采样大小来解决问题 \ref{eq:example1}。结果如图 \ref{fig:fig_n} 所示，且正如 图 \ref{fig:fig_n1} 中所预期的那样，较大的采样大小会导致较高的精度。这一观察结果与定理 \ref{mainthm:diri} 的结论一致。}
 
-\textcolor{black}{值得注意的是，在上述数值实验中，我们在计算开始时仅对 $\{X_i\}_{i=1}^{n}$ 进行了一次采样。当 $n$ 较小时，算法表现不佳且收敛缓慢。为了同时提高算法的精度和效率，我们实施了一种在每个训练步或每几个训练步后对 $\{X_i\}_{i=1}^{n}$ 进行重采样的策略。这个过程类似于在无限样本集上的批量训练。通过采用这种方法，我们可以利用相对适度的计算资源有效地实现更大的 $n$，从而提高算法的泛化性能。我们的大量实验也证实了这种技术的有效性。除非另有说明，我们后续实验中提到的采样大小 $n$ 均指重采样的 $n$。}
+% \textcolor{black}{值得注意的是，在上述数值实验中，我们在计算开始时仅对 $\{X_i\}_{i=1}^{n}$ 进行了一次采样。当 $n$ 较小时，算法表现不佳且收敛缓慢。为了同时提高算法的精度和效率，我们实施了一种在每个训练步或每几个训练步后对 $\{X_i\}_{i=1}^{n}$ 进行重采样的策略。这个过程类似于在无限样本集上的批量训练。通过采用这种方法，我们可以利用相对适度的计算资源有效地实现更大的 $n$，从而提高算法的泛化性能。我们的大量实验也证实了这种技术的有效性。除非另有说明，我们后续实验中提到的采样大小 $n$ 均指重采样的 $n$。}
 
-\textcolor{black}{网络宽度 $\mathcal{W}$ 对该方法的影响如图 \ref{fig:fig_w} 和图 \ref{fig:fig_w1} 所示。我们在 $\mathcal{D} = 4$ 和 $n = 150000$ 的条件下进行了实验。实验结果表明，更宽的网络可以获得更高的精度并收敛得更快。这一发现与我们先前的结论一致。}
+% \textcolor{black}{网络宽度 $\mathcal{W}$ 对该方法的影响如图 \ref{fig:fig_w} 和图 \ref{fig:fig_w1} 所示。我们在 $\mathcal{D} = 4$ 和 $n = 150000$ 的条件下进行了实验。实验结果表明，更宽的网络可以获得更高的精度并收敛得更快。这一发现与我们先前的结论一致。}
 
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=\textwidth]{./figures2/func1_2d/HeatFig_w_5wstep.eps}
-    \caption{$($具有齐次边界条件的 Dirichlet 问题， $d=2)$。在不同网络宽度 $\mathcal{W}$ 下，Deep Ritz 解 $u_{DRM}$ 与真解 $u_1(x)$ 之间的逐点差。} \label{fig:fig_w}
-\end{figure}
+% \begin{figure}[htbp]
+%     \centering
+%     \includegraphics[width=\textwidth]{./figures2/func1_2d/HeatFig_w_5wstep.eps}
+%     \caption{$($具有齐次边界条件的 Dirichlet 问题， $d=2)$。在不同网络宽度 $\mathcal{W}$ 下，Deep Ritz 解 $u_{DRM}$ 与真解 $u_1(x)$ 之间的逐点差。} \label{fig:fig_w}
+% \end{figure}
 
-\begin{figure}[htbp]
-    \centering
+% \begin{figure}[htbp]
+%     \centering
     
-    % --- 子图 1: L2 误差 ---
-    % 建议使用 0.45\textwidth 到 0.48\textwidth
-    \begin{subfigure}{0.48\textwidth}
-        \centering
-        % width=\linewidth 让图片自动充满子图容器(即上面的 0.48\textwidth)
-        \includegraphics[width=\linewidth]{./figures2/func1_2d/solution_err_under_diff_w.eps}
-        \caption{$L_2$ 解误差}
-        \label{fig:l2_error_w}
-    \end{subfigure}
-    \hfill % 弹性间距，将两张图撑开
-    % --- 子图 2: 训练误差 ---
-    \begin{subfigure}{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{./figures2/func1_2d/Fig_w_5wstep.eps}
-        \caption{训练过程中的误差}
-        \label{fig:training_error_w}
-    \end{subfigure}
+%     % --- 子图 1: L2 误差 ---
+%     % 建议使用 0.45\textwidth 到 0.48\textwidth
+%     \begin{subfigure}{0.48\textwidth}
+%         \centering
+%         % width=\linewidth 让图片自动充满子图容器(即上面的 0.48\textwidth)
+%         \includegraphics[width=\linewidth]{./figures2/func1_2d/solution_err_under_diff_w.eps}
+%         \caption{$L_2$ 解误差}
+%         \label{fig:l2_error_w}
+%     \end{subfigure}
+%     \hfill % 弹性间距，将两张图撑开
+%     % --- 子图 2: 训练误差 ---
+%     \begin{subfigure}{0.48\textwidth}
+%         \centering
+%         \includegraphics[width=\linewidth]{./figures2/func1_2d/Fig_w_5wstep.eps}
+%         \caption{训练过程中的误差}
+%         \label{fig:training_error_w}
+%     \end{subfigure}
     
-    \caption{(具有齐次边界条件的 Dirichlet 问题， $d=2$)。Deep Ritz 方法在不同网络宽度 $\mathcal{W}$ 下的收敛性能。}
-    \label{fig:fig_w1}
-\end{figure}
+%     \caption{(具有齐次边界条件的 Dirichlet 问题， $d=2$)。Deep Ritz 方法在不同网络宽度 $\mathcal{W}$ 下的收敛性能。}
+%     \label{fig:fig_w1}
+% \end{figure}
 
-\textcolor{black}{随后我们研究 $d=10$ 的情形。由于高维性以及 $S(x)$ 引入的非线性，求解该方程变得极具挑战性。传统的计算技术，如有限差分法 (FDM) 和有限元法 (FEM)，已被证明难以奏效。尽管面临这些挑战，Deep Ritz 方法依然有效，如图 \ref{fig:func1} 所示。我们在 $\Omega$ 的对角线上绘制了近似解和精确解，如图 \ref{fig:func1} (a) 所示。$L^{2}$ 误差随训练轮次的变化趋势如图 \ref{fig:func1} (b) 所示，损失函数如图 \ref{fig:func1} (c) 所示}
+% \textcolor{black}{随后我们研究 $d=10$ 的情形。由于高维性以及 $S(x)$ 引入的非线性，求解该方程变得极具挑战性。传统的计算技术，如有限差分法 (FDM) 和有限元法 (FEM)，已被证明难以奏效。尽管面临这些挑战，Deep Ritz 方法依然有效，如图 \ref{fig:func1} 所示。我们在 $\Omega$ 的对角线上绘制了近似解和精确解，如图 \ref{fig:func1} (a) 所示。$L^{2}$ 误差随训练轮次的变化趋势如图 \ref{fig:func1} (b) 所示，损失函数如图 \ref{fig:func1} (c) 所示}
 
-\textcolor{black}{该数值实验的参数配置如下：$\varepsilon=2000$，深度 $\mathcal{D}=4$，宽度 $\mathcal{W}=80$，样本量为 $200000$，边界样本量为 $80000$。我们采用 Adam 算法来最小化目标函数，初始学习率设定为 1.8e-3。采用了等间隔学习率衰减策略，其中学习率每隔 $5000$ 步衰减为原来的 $0.9$。}
+% \textcolor{black}{该数值实验的参数配置如下：$\varepsilon=2000$，深度 $\mathcal{D}=4$，宽度 $\mathcal{W}=80$，样本量为 $200000$，边界样本量为 $80000$。我们采用 Adam 算法来最小化目标函数，初始学习率设定为 1.8e-3。采用了等间隔学习率衰减策略，其中学习率每隔 $5000$ 步衰减为原来的 $0.9$。}
 
-\begin{figure}[htbp]
-    \centering
+% \begin{figure}[htbp]
+%     \centering
     
-    % --- 子图 1: 解的近似 ---
-    \begin{subfigure}{0.32\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{./figures2/func1/unn.eps}
-        \caption{对角线上的解近似值}
-        \label{fig:func1_approx}
-    \end{subfigure}
-    \hfill % 弹性间距
-    % --- 子图 2: L2 误差 ---
-    \begin{subfigure}{0.32\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{./figures2/func1/solution_err.eps}
-        \caption{训练期间的 $L_2$ 误差}
-        \label{fig:func1_err}
-    \end{subfigure}
-    \hfill % 弹性间距
-    % --- 子图 3: 损失 ---
-    \begin{subfigure}{0.32\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{./figures2/func1/loss.eps}
-        \caption{训练期间的损失函数}
-        \label{fig:func1_loss}
-    \end{subfigure}
+%     % --- 子图 1: 解的近似 ---
+%     \begin{subfigure}{0.32\textwidth}
+%         \centering
+%         \includegraphics[width=\linewidth]{./figures2/func1/unn.eps}
+%         \caption{对角线上的解近似值}
+%         \label{fig:func1_approx}
+%     \end{subfigure}
+%     \hfill % 弹性间距
+%     % --- 子图 2: L2 误差 ---
+%     \begin{subfigure}{0.32\textwidth}
+%         \centering
+%         \includegraphics[width=\linewidth]{./figures2/func1/solution_err.eps}
+%         \caption{训练期间的 $L_2$ 误差}
+%         \label{fig:func1_err}
+%     \end{subfigure}
+%     \hfill % 弹性间距
+%     % --- 子图 3: 损失 ---
+%     \begin{subfigure}{0.32\textwidth}
+%         \centering
+%         \includegraphics[width=\linewidth]{./figures2/func1/loss.eps}
+%         \caption{训练期间的损失函数}
+%         \label{fig:func1_loss}
+%     \end{subfigure}
     
-    \caption{具有齐次边界条件的 Dirichlet 问题 ($d=10$)。由于无法直接可视化高维空间中的函数，此处展示立方体区域对角线上的值并与真实解对比。}
-    \label{fig:func1}
-\end{figure}
+%     \caption{具有齐次边界条件的 Dirichlet 问题 ($d=10$)。由于无法直接可视化高维空间中的函数，此处展示立方体区域对角线上的值并与真实解对比。}
+%     \label{fig:func1}
+% \end{figure}
 
 
-\subsection{具有非齐次边界条件的 Dirichlet 问题}
-\textcolor{black}{为了说明我们理论的通用性，我们考虑以下非齐次 Dirichlet 问题。}
-\begin{equation}\label{eq:example2}
-\left\{\begin{aligned}
--\Delta u + S(u) & = g_2(x) & \text{在 } & \Omega \text{ 上},\\
-Tu& = T g_2(x) & \text{在 } & \partial\Omega \text{ 上},\\
-\end{aligned}\right.
-\end{equation}
+% \subsection{具有非齐次边界条件的 Dirichlet 问题}
+% \textcolor{black}{为了说明我们理论的通用性，我们考虑以下非齐次 Dirichlet 问题。}
+% \begin{equation}\label{eq:example2}
+% \left\{\begin{aligned}
+% -\Delta u + S(u) & = g_2(x) & \text{在 } & \Omega \text{ 上},\\
+% Tu& = T g_2(x) & \text{在 } & \partial\Omega \text{ 上},\\
+% \end{aligned}\right.
+% \end{equation}
 
-其中 $\Omega=[-1,1]^{10}$，并且
-\begin{equation*}
-g_2(x)=\left\{\begin{array}{lll}
-\frac{2}{d} + S \left( \left(\frac{1}{d}\sum_{i=1}^{d}x_{i}\right)^{2} \right), & \left| \frac{1}{d}\sum_{i=1}^{d}x_{i} \right|> \sqrt{0.3},\\
-S(0.3), & \left| \frac{1}{d}\sum_{i=1}^{d}x_{i} \right|\leq \sqrt{0.3},\\
-\end{array}\right.
-\end{equation*}
-上述非齐次问题的解由下式给出：
-\begin{equation*}
-u_2(x)=\left\{\begin{array}{lll}
-\left(\frac{1}{d}\sum_{i=1}^{d}x_{i}\right)^{2}, & \left| \frac{1}{d}\sum_{i=1}^{d}x_{i} \right|> \sqrt{0.3},\\
-0.3, & \left| \frac{1}{d}\sum_{i=1}^{d}x_{i} \right|\leq \sqrt{0.3},\\
-\end{array}\right.
-\end{equation*}
-与前一个方程相比，问题 \ref{eq:example2} 不仅是一个非齐次边界问题，而且涉及非光滑解。
+% 其中 $\Omega=[-1,1]^{10}$，并且
+% \begin{equation*}
+% g_2(x)=\left\{\begin{array}{lll}
+% \frac{2}{d} + S \left( \left(\frac{1}{d}\sum_{i=1}^{d}x_{i}\right)^{2} \right), & \left| \frac{1}{d}\sum_{i=1}^{d}x_{i} \right|> \sqrt{0.3},\\
+% S(0.3), & \left| \frac{1}{d}\sum_{i=1}^{d}x_{i} \right|\leq \sqrt{0.3},\\
+% \end{array}\right.
+% \end{equation*}
+% 上述非齐次问题的解由下式给出：
+% \begin{equation*}
+% u_2(x)=\left\{\begin{array}{lll}
+% \left(\frac{1}{d}\sum_{i=1}^{d}x_{i}\right)^{2}, & \left| \frac{1}{d}\sum_{i=1}^{d}x_{i} \right|> \sqrt{0.3},\\
+% 0.3, & \left| \frac{1}{d}\sum_{i=1}^{d}x_{i} \right|\leq \sqrt{0.3},\\
+% \end{array}\right.
+% \end{equation*}
+% 与前一个方程相比，问题 \ref{eq:example2} 不仅是一个非齐次边界问题，而且涉及非光滑解。
 
-\textcolor{black}{本次数值实验的参数配置如下：$\varepsilon=2000$，深度 $\mathcal{D}=4$，宽度 $\mathcal{W}=150$，样本量为 $150000$，边界样本量为 $40000$。其他参数与之前相同。如图 \ref{fig:func2} 所示，在此设置下，所提方法也能准确地逼近解。}
+% \textcolor{black}{本次数值实验的参数配置如下：$\varepsilon=2000$，深度 $\mathcal{D}=4$，宽度 $\mathcal{W}=150$，样本量为 $150000$，边界样本量为 $40000$。其他参数与之前相同。如图 \ref{fig:func2} 所示，在此设置下，所提方法也能准确地逼近解。}
 
-\begin{figure}[htbp]
-    \centering
+% \begin{figure}[htbp]
+%     \centering
     
-    % --- 第一张子图 ---
-    % 设置宽度为 0.32 倍文本宽度，留出空隙给间距
-    \begin{subfigure}{0.32\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{./figures2/func2/unn.eps}
-        \caption{立方体区域对角线上的解逼近}
-        \label{fig:func2_approx}
-    \end{subfigure}
-    \hfill % 弹性间距
-    % --- 第二张子图 ---
-    \begin{subfigure}{0.32\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{./figures2/func2/solution_err.eps}
-        \caption{训练过程中的 $L_2$ 误差}
-        \label{fig:func2_err}
-    \end{subfigure}
-    \hfill % 弹性间距
-    % --- 第三张子图 ---
-    \begin{subfigure}{0.32\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{./figures2/func2/loss.eps}
-        \caption{训练过程中的损失值}
-        \label{fig:func2_loss}
-    \end{subfigure}
+%     % --- 第一张子图 ---
+%     % 设置宽度为 0.32 倍文本宽度，留出空隙给间距
+%     \begin{subfigure}{0.32\textwidth}
+%         \centering
+%         \includegraphics[width=\linewidth]{./figures2/func2/unn.eps}
+%         \caption{立方体区域对角线上的解逼近}
+%         \label{fig:func2_approx}
+%     \end{subfigure}
+%     \hfill % 弹性间距
+%     % --- 第二张子图 ---
+%     \begin{subfigure}{0.32\textwidth}
+%         \centering
+%         \includegraphics[width=\linewidth]{./figures2/func2/solution_err.eps}
+%         \caption{训练过程中的 $L_2$ 误差}
+%         \label{fig:func2_err}
+%     \end{subfigure}
+%     \hfill % 弹性间距
+%     % --- 第三张子图 ---
+%     \begin{subfigure}{0.32\textwidth}
+%         \centering
+%         \includegraphics[width=\linewidth]{./figures2/func2/loss.eps}
+%         \caption{训练过程中的损失值}
+%         \label{fig:func2_loss}
+%     \end{subfigure}
     
-    \caption{非齐次边界条件下的 Dirichlet 问题 ($d=10$)}
-    \label{fig:func2}
-\end{figure}
+%     \caption{非齐次边界条件下的 Dirichlet 问题 ($d=10$)}
+%     \label{fig:func2}
+% \end{figure}
 
 
 
@@ -860,217 +884,307 @@ u_2(x)=\left\{\begin{array}{lll}
 在本文中，我们研究了利用具有 $\mathrm{ReLU}^2$ 激活函数的 ResNet 求解半线性椭圆问题。我们提出了一种基于惩罚变分形式的通用公式，用于计算半线性椭圆方程的解。随后，我们使用 Deep Ritz 方法对该惩罚变分形式进行求解。我们根据 $\mathrm{ReLU}^2$ ResNet 的深度 $\mathcal{D}$ 和宽度 $\mathcal{W}$ 以及训练样本数量 $n$，推导了估计解与真解之间误差的上界。我们的数值模拟结果证明了所提方法在克服维数灾难方面的有效性，并验证了我们的理论结果。
 
 \section{附录}\label{sec:appd}
-\textcolor{black}{在本附录中，我们给出了 4.3 节中引入的几个引理的完整证明。Deep Ritz 方法的统计误差分析遵循标准化流程，因此，正文中省略了这一部分。}
+\subsection{定理\ref{th:ch3reg}的证明}\label{pf:th:ch3reg}
+\begin{theorem}[先验估计]
+在假设 \ref{ass:f} 成立的条件下，方程 \eqref{eq:maineq} 存在唯一的解 $u \in H^2(\Omega)$，且满足如下正则性估计：
+$$\|u\|_{H^2(\Omega)} \le C \left( \|g - V(u)\|_{L^2(\Omega)} + \|h\|_{H^{1/2}(\partial \Omega)} + \|u\|_{H^1(\Omega)} \right)$$
+\end{theorem}
+\begin{proof}[Robin边界条件]
+定义泛函 $J: H^1(\Omega) \to \mathbb{R}$ 为：
+$$J(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} u^2 \, dS + \int_{\Omega} W(u) \, dx - \int_{\Omega} gu \, dx - \mu \int_{\partial \Omega} hu \, dS$$
+其中 $W(s) = \int_0^s V(t) \, dt$。我们将泛函分为二次项 $Q(u)$、非线性项 $N(u)$ 以及线性项 $L(u)$。通过计算 $J(u)$ 的 Gâteaux 变分可知，$J(u)$ 的驻点即为方程 \eqref{eq:maineq} 的弱解。下文将基于变分法直接法分步证明解的存在性、唯一性与正则性。
 
-引理 \ref{lemma:staerr:Rad234} 的证明。
-\begin{proof}\label{pf:lemma:staerr:Rad234}
-我们将分两部分给出证明，每一部分都可以利用两个不同的事实单独获得。
-第一个事实是 Rademacher 复杂度可以通过 Lipschitz 连续函数传递。这一事实使我们能够建立最后四个不等式：
-\begin{lemma}\label{lemma:staerr:liprad}
-假设 $\psi:\mathbb{R}^{d}\times\mathbb{R}\rightarrow\mathbb{R}$, $(x,y)\mapsto\psi(x,y)$ 对于所有 $x$ 在 $y$ 上是 $\ell$-Lipschitz 连续的。设 $\mathcal{N}$ 是 $\Omega$ 上的一类函数，且 $\psi\circ\mathcal{N}=\{\psi\circ u:x\mapsto\psi(x,u(x)) ,u\in\mathcal{N}\}$。那么
+第一步：证明泛函 $J(u)$ 的强制性。
+即证明当 $\|u\|_{H^1} \to \infty$ 时，$J(u) \to \infty$。
+首先，考察泛函的二次项。在 $H^1(\Omega)$ 空间中，由于 $\mu > 0$，根据广义 Poincaré 不等式，存在常数 $C_1 > 0$ 使得：
+$$\frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} u^2 \, dS \ge C_1 \|u\|_{H^1(\Omega)}^2$$
+记 $\lambda_1$ 为对应拉普拉斯算子的第一特征值，由 Rayleigh 商的定义可知：
 \begin{equation*}
-\mathfrak{R}(\psi\circ\mathcal{N})\leq\ell \ \mathfrak{R}(\mathcal{N})
+Q(u) \ge \frac{\lambda_1}{2} \int_{\Omega} u^2 \, dx.
 \end{equation*}
-\end{lemma}
-对于该陈述的推导，我们引用 \cite{ledoux2013probability} 中的推论 3.17。
+其次，对于非线性势能项，由假设 $V'(u) \ge -\gamma$ 且积分下限条件，可得 $W(u) \ge -\frac{\gamma}{2} u^2$。由于 $\gamma < \lambda_1$，可以取 $\varepsilon = 1 - \frac{\gamma}{\lambda_1} > 0$。通过配凑，可将二次项与非线性项合并放缩为：
+\begin{equation*}
+\begin{aligned}
+Q(u) + N(u) &\ge (1-\varepsilon)Q(u) + \varepsilon Q(u) - \frac{\gamma}{2}\|u\|_{L^2}^2\\
+&\ge \varepsilon Q(u) + \left( \frac{\gamma}{\lambda_1} \frac{\lambda_1}{2} \|u\|_{L^2}^2 - \frac{\gamma}{2} \|u\|_{L^2}^2 \right) \\
+&= \varepsilon Q(u)
+\end{aligned}
+\end{equation*}
+最后，利用 Cauchy-Schwarz 不等式及迹定理，线性项 $L(u)$ 可被控制为：
+$$\left| \int_{\Omega} gu \, dx + \mu \int_{\partial \Omega} hu \, dS \right| \le \|g\|_{L^2}\|u\|_{L^2} + \mu \|h\|_{L^2(\partial\Omega)}\|u\|_{L^2(\partial\Omega)} \le C_2 \|u\|_{H^1(\Omega)}$$
+综上可得 $J(u) \ge \varepsilon C_1 \|u\|_{H^1(\Omega)}^2 - C_2 \|u\|_{H^1(\Omega)}$。由于二次项的增长占优，当 $\|u\|_{H^1} \to \infty$ 时，$J(u) \to \infty$，强制性得证。
 
-显然，第 2、3、4 和 5 项的 Lipschitz 常数分别为 $2\|f\|_{\infty}$，$2K$，$2\varepsilon \mathcal{B}$ 和 $4\varepsilon \|h\|_{\infty}$。因此，可以以相同的方式直接得出它们的结论。
+第二步：提取极小化序列的弱收敛子列。
+由强制性可知 $J(u)$ 存在下界，记 $m = \inf_{u \in H^1(\Omega)} J(u)$。由下确界定义，存在极小化序列 $\{u_k\} \subset H^1(\Omega)$ 使得 $\lim_{k \to \infty} J(u_k) = m$。
+由于 $\{J(u_k)\}$ 收敛，故其必定有界。结合强制性可知，序列的范数 $\|u_k\|_{H^1(\Omega)}$ 一致有界。根据 Banach-Alaoglu 定理，自反的 Hilbert 空间中的有界序列必存在弱收敛子列。不妨仍记该子列为 $\{u_k\}$，则存在 $u^* \in H^1(\Omega)$ 使得：
+$$u_k \rightharpoonup u^* \quad \text{in } H^1(\Omega)$$
 
-第一项需要特殊处理，因为 $\nabla$ 算子不是 Lipschitz 连续的。这一考虑直接遵循以下断言：
-\par\noindent{\textbf{断言}：设 $u$ 是由深度为 $\mathcal{D}$ 且宽度为 $\mathcal{W}$ 的 $\mathrm{ReLU}^{2}$ 网络实现的函数。那么 $\|\nabla u\|_2^2$ 可以由深度为 $\mathcal{D}+3$ 且宽度为 $d\left(\mathcal{D}+2\right)\mathcal{W}$ 的 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现。}
+第三步，证明泛函的弱下半连续性（w.l.s.c.）。
+我们需要证明 $J(u^*) \le \liminf_{k \to \infty} J(u_k)$。我们将分别考察泛函的各项：
+\begin{itemize}
+\item {\heiti 梯度项：}在 Hilbert 空间中范数具有弱下半连续性，故：
+$$\int_{\Omega} |\nabla u^*|^2 dx \le \liminf_{k \to \infty} \int_{\Omega} |\nabla u_k|^2 dx$$
+\item {\heiti 边界项：}根据 Rellich-Kondrachov 紧嵌入定理的边界版本，$H^1(\Omega)$ 紧嵌入到 $L^2(\partial \Omega)$ 中。因此 $H^1$ 中的弱收敛蕴含 $L^2(\partial \Omega)$ 中的强收敛，即 
+$$\int_{\partial \Omega} (u^*)^2 \, dS = \lim_{k \to \infty} \int_{\partial \Omega} u_k^2 \, dS$$
+\item {\heiti 线性项：}对于连续线性泛函，弱收敛直接保证了极限的交换性：
+$$\int_{\Omega} gu_k dx \to \int_{\Omega} gu^* dx \quad \text{且} \quad \int_{\partial \Omega} hu_k dS \to \int_{\partial \Omega} hu^* dS$$
+\item {\heiti 非线性项：}同样由紧嵌入定理，$H^1(\Omega)$ 紧嵌入到 $L^2(\Omega)$，故 $u_k \to u^*$ 在 $L^2(\Omega)$ 中强收敛。进一步可提取子列使得 $u_k(x) \to u^*(x)$ 几乎处处成立。由 $W(s)$ 的连续性及非负性，应用 Fatou 引理可得：
+$$\int_{\Omega} W(u^*) dx = \int_{\Omega} \liminf_{k\to\infty} W(u_k) dx \le \liminf_{k \to \infty} \int_{\Omega} W(u_k) dx$$
+\end{itemize}
+综合上述四项，严格得出结论：$J(u^*) \le \liminf_{k \to \infty} J(u_k)$。
+$$J(u^*) \le \liminf_{k \to \infty} J(u_k)$$
 
-将 $\mathrm{ReLU}$ 和 $\mathrm{ReLU}^{2}$ 分别记为 $\sigma_1$ 和 $\sigma_2$。
-只要我们证明每个偏导数 $D_iu(i=1,2,\cdots,d)$ 可以分别由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现，我们就可以轻松获得所需的网络，因为 $\|\nabla u\|_2^2=\sum_{i=1}^{d}\left|D_i u\right|^2$ 且平方函数可以通过 $x^2=\sigma_2(x)+\sigma_2(-x)$ 实现。
+第四步，证明解的存在性。结合第二、三步的结论，我们有：
+$$J(u^*) \le \liminf_{k \to \infty} J(u_k) = \lim_{k \to \infty} J(u_k) = m$$
+又因 $m = \inf J(u)$，必有 $J(u^*) \ge m$。故 $J(u^*) = m$，这表明 $u^{*} \in H^1(\Omega)$ 为能量泛函的全局极小值点，即弱解存在。
+
+第五步，证明解的唯一性。唯一性等价于泛函的严格凸性。由于线性项 $L(u)$ 是仿射的，不影响凸性。对于二次项 $Q(u)$，由于 $\mu > 0$，其满足对任意 $u \neq v$ 及 $t \in (0, 1)$：
+\begin{equation}\label{eq:Qu}
+Q(tu + (1-t)v) = tQ(u) + (1-t)Q(v) - \frac{1}{2}t(1-t)\left( \int_{\Omega} |\nabla(u-v)|^2 \, dx + \mu \int_{\partial \Omega} (u-v)^2 \, dS \right)
+\end{equation}
+对于非线性项 $N(u)$，考虑辅助函数 $W_s(s) = W(s) + \frac{\gamma}{2}s^2$。因其二阶导数：$W_s''(s) = W''(s) + \gamma \ge -\gamma + \gamma = 0$，$W_s(s)$ 是凸函数。将其代入积分，得到：
+\begin{equation}\label{eq:Nu}
+N(tu + (1-t)v) \le tN(u) + (1-t)N(v) + \frac{\gamma}{2}t(1-t)\int_{\Omega} (u-v)^2 \, dx
+\end{equation}
+将 \eqref{eq:Qu} 与 \eqref{eq:Nu} 相加，并利用 Rayleigh 商定义（令 $w = u - v$）:
+$$\int_{\Omega} |\nabla w|^2 \, dx + \mu \int_{\partial \Omega} w^2 \, dS \ge \lambda_1 \int_{\Omega} w^2 \, dx$$
+由于 $\gamma < \lambda_1$，不等式 \eqref{eq:Qu} 尾项产生的负贡献严格大于 \eqref{eq:Nu} 尾项产生的正贡献。因此：
+$$J(tu + (1-t)v) < tJ(u) + (1-t)J(v)$$
+这证明了 $J(u)$ 的严格凸性，从而全局极小值点唯一。
+
+最后一步，证明解的正则性。将原方程视作以 $g(x) - V(u(x))$ 为源项的线性椭圆边值问题：
+$$-\Delta u =  g(x) - V(u(x))$$   
+根据经典的椭圆正则性理论，弱解 $u$ 在区域 $\Omega$ 足够正则的条件下自动提升至 $H^2(\Omega)$，且存在仅依赖于区域 $\Omega$ 和参数 $\mu$ 的常数 $C > 0$，使得：
+$$||u||_{H^2(\Omega)} \le C \left( ||g - V(u)||_{L^2(\Omega)} + ||h||_{H^{1/2}(\partial \Omega)} + ||u||_{H^1(\Omega)} \right)$$
+定理得证。
+\end{proof}
+
+\begin{proof}[Dirichlet边界条件]
+Dirichlet边界条件的证明与Robin边界条件类似。
+定义函数空间 $\mathcal{A}$ 为满足Dirichlet边界条件的函数集合：
+$$\mathcal{A} = \left\{ u \in H^1(\Omega) \mid u = h \text{ on } \partial \Omega \text{ (在迹的意义下)} \right\}$$
+定义泛函 $J: \mathcal{A} \to \mathbb{R}$ 为：
+$$J(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \int_{\Omega} W(u) \, dx - \int_{\Omega} gu \, dx$$
+其中 $W(s) = \int_0^s V(t) \, dt$。我们将泛函分为二次项 $Q(u)$、非线性项 $N(u)$ 以及线性项 $L(u)$。与Robin边界条件的情况相比，$Q(u)$ 和 $L(u)$少了关于$\mu$的边界项。
+
+令$u^{*} = \arg\min_{u \in \mathcal{A}} J(u)$，通过计算 $J(u)$ 的 Gâteaux 变分可知，$u^{*}$ 即为方程 \eqref{eq:maineq} 在Dirichlet边界条件下的弱解。类似地，可以分步证明解的存在性、唯一性与正则性。我们再次只指出与Robin边界条件证明不同的部分。
+第一步：证明泛函 $J(u)$ 的强制性。
+对于任意 $u \in \mathcal{A}$，令 $v = u - h$。显然 $v=0$ 在边界上成立，因此 $v \in H^1_0(\Omega)$
+根据 $H^1_0$ 空间上的庞加莱不等式：
+$$\int_{\Omega} |\nabla v|^2 \, dx \ge C_P \int_{\Omega} v^2 \, dx$$
+\end{proof}
+% \subsection{引理\ref{lemma:staerr:Rad234}的证明}
+% \textcolor{black}{在本附录中，我们给出了 4.3 节中引入的几个引理的完整证明。Deep Ritz 方法的统计误差分析遵循标准化流程，因此，正文中省略了这一部分。}
+
+% 引理 \ref{lemma:staerr:Rad234} 的证明。
+% \begin{proof}\label{pf:lemma:staerr:Rad234}
+% 我们将分两部分给出证明，每一部分都可以利用两个不同的事实单独获得。
+% 第一个事实是 Rademacher 复杂度可以通过 Lipschitz 连续函数传递。这一事实使我们能够建立最后四个不等式：
+% \begin{lemma}\label{lemma:staerr:liprad}
+% 假设 $\psi:\mathbb{R}^{d}\times\mathbb{R}\rightarrow\mathbb{R}$, $(x,y)\mapsto\psi(x,y)$ 对于所有 $x$ 在 $y$ 上是 $\ell$-Lipschitz 连续的。设 $\mathcal{N}$ 是 $\Omega$ 上的一类函数，且 $\psi\circ\mathcal{N}=\{\psi\circ u:x\mapsto\psi(x,u(x)) ,u\in\mathcal{N}\}$。那么
+% \begin{equation*}
+% \mathfrak{R}(\psi\circ\mathcal{N})\leq\ell \ \mathfrak{R}(\mathcal{N})
+% \end{equation*}
+% \end{lemma}
+% 对于该陈述的推导，我们引用 \cite{ledoux2013probability} 中的推论 3.17。
+
+% 显然，第 2、3、4 和 5 项的 Lipschitz 常数分别为 $2\|f\|_{\infty}$，$2K$，$2\varepsilon \mathcal{B}$ 和 $4\varepsilon \|h\|_{\infty}$。因此，可以以相同的方式直接得出它们的结论。
+
+% 第一项需要特殊处理，因为 $\nabla$ 算子不是 Lipschitz 连续的。这一考虑直接遵循以下断言：
+% \par{\heiti 断言}：设 $u$ 是由深度为 $\mathcal{D}$ 且宽度为 $\mathcal{W}$ 的 $\mathrm{ReLU}^{2}$ 网络实现的函数。那么 $\|\nabla u\|_2^2$ 可以由深度为 $\mathcal{D}+3$ 且宽度为 $d\left(\mathcal{D}+2\right)\mathcal{W}$ 的 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现。
+
+% 将 $\mathrm{ReLU}$ 和 $\mathrm{ReLU}^{2}$ 分别记为 $\sigma_1$ 和 $\sigma_2$。
+% 只要我们证明每个偏导数 $D_iu(i=1,2,\cdots,d)$ 可以分别由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现，我们就可以轻松获得所需的网络，因为 $\|\nabla u\|_2^2=\sum_{i=1}^{d}\left|D_i u\right|^2$ 且平方函数可以通过 $x^2=\sigma_2(x)+\sigma_2(-x)$ 实现。
 	
-现在我们证明对于任何 $i=1,2,\cdots,d$，$D_iu$ 都可以由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现。我们将重点详细解释前两层，因为 $k\geq3$ 的层过程是类似的，并且可以通过归纳法推导。对于第一层，由于 $\sigma_2^{'}(x)=2\sigma_1(x)$，对于任何 $q=1,2\cdots,n_1$，我们有
-\begin{equation*}
-D_iu_q^{(1)}=D_i\sigma_2\left(\sum_{j=1}^{d}a_{qj}^{(1)}x_j+b_q^{(1)}\right)
-=2\sigma_1\left(\sum_{j=1}^{d}a_{qj}^{(1)}x_j+b_q^{(1)}\right)\cdot a_{qi}^{(1)}
-\end{equation*}
-因此 $D_iu_q^{(1)}$ 可以由深度为 $2$ 宽度为 $1$ 的 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现。对于第二层，
-\begin{equation*}
-D_iu_q^{(2)}=D_i\sigma_2\left(\sum_{j=1}^{n_1}a_{qj}^{(2)}u_j^{(1)}+b_q^{(2)}\right)
-=2\sigma_1\left(\sum_{j=1}^{n_1}a_{qj}^{(2)}u_j^{(1)}+b_q^{(2)}\right)\cdot\sum_{j=1}^{n_1}a_{qj}^{(2)}D_iu_j^{(1)}.
-\end{equation*}
-由于 $\sigma_1\left(\sum_{j=1}^{n_1}a_{qj}^{(2)}u_j^{(1)}+b_q^{(2)}\right)$ 和 $\sum_{j=1}^{n_1}a_{qj}^{(2)}D_iu_j^{(1)}$ 可以分别由 $\mathrm{ReLU}-\mathrm{ReLU}^{2}$ 子网络实现，并且乘法也可以通过下式实现：
-\begin{equation*}
-\begin{split}
-x\cdot y&=\frac{1}{4}\left[(x+y)^2-(x-y)^2\right]\\
-&=\frac{1}{4}\left[\sigma_2(x+y)+\sigma_2(-x-y)-\sigma_2(x-y)-\sigma_2(-x+y)\right].
-\end{split}
-\end{equation*}
-我们得出结论，$D_iu_q^{(2)}$ 可以由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现。我们有 $$\mathcal{D}\left(\sigma_1\left(\sum_{j=1}^{n_1}a_{qj}^{(2)}u_j^{(1)}+b_q^{(2)}\right)\right)=3, \mathcal{W}\left(\sigma_1\left(\sum_{j=1}^{n_1}a_{qj}^{(2)}u_j^{(1)}+b_q^{(2)}\right)\right)\leq\mathcal{W}$$ 以及 $$\mathcal{D}\left(\sum_{j=1}^{n_1}a_{qj}^{(2)}D_iu_j^{(1)}\right)=2, \mathcal{W}\left(\sum_{j=1}^{n_1}a_{qj}^{(2)}D_iu_j^{(1)}\right)\leq\mathcal{W}。$$ 因此 $\mathcal{D}\left(D_iu_q^{(2)}\right)=4,$ $\mathcal{W}\left(D_iu_q^{(2)}\right)\leq\max\{2\mathcal{W},4\}$。
+% 现在我们证明对于任何 $i=1,2,\cdots,d$，$D_iu$ 都可以由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现。我们将重点详细解释前两层，因为 $k\geq3$ 的层过程是类似的，并且可以通过归纳法推导。对于第一层，由于 $\sigma_2^{'}(x)=2\sigma_1(x)$，对于任何 $q=1,2\cdots,n_1$，我们有
+% \begin{equation*}
+% D_iu_q^{(1)}=D_i\sigma_2\left(\sum_{j=1}^{d}a_{qj}^{(1)}x_j+b_q^{(1)}\right)
+% =2\sigma_1\left(\sum_{j=1}^{d}a_{qj}^{(1)}x_j+b_q^{(1)}\right)\cdot a_{qi}^{(1)}
+% \end{equation*}
+% 因此 $D_iu_q^{(1)}$ 可以由深度为 $2$ 宽度为 $1$ 的 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现。对于第二层，
+% \begin{equation*}
+% D_iu_q^{(2)}=D_i\sigma_2\left(\sum_{j=1}^{n_1}a_{qj}^{(2)}u_j^{(1)}+b_q^{(2)}\right)
+% =2\sigma_1\left(\sum_{j=1}^{n_1}a_{qj}^{(2)}u_j^{(1)}+b_q^{(2)}\right)\cdot\sum_{j=1}^{n_1}a_{qj}^{(2)}D_iu_j^{(1)}.
+% \end{equation*}
+% 由于 $\sigma_1\left(\sum_{j=1}^{n_1}a_{qj}^{(2)}u_j^{(1)}+b_q^{(2)}\right)$ 和 $\sum_{j=1}^{n_1}a_{qj}^{(2)}D_iu_j^{(1)}$ 可以分别由 $\mathrm{ReLU}-\mathrm{ReLU}^{2}$ 子网络实现，并且乘法也可以通过下式实现：
+% \begin{equation*}
+% \begin{split}
+% x\cdot y&=\frac{1}{4}\left[(x+y)^2-(x-y)^2\right]\\
+% &=\frac{1}{4}\left[\sigma_2(x+y)+\sigma_2(-x-y)-\sigma_2(x-y)-\sigma_2(-x+y)\right].
+% \end{split}
+% \end{equation*}
+% 我们得出结论，$D_iu_q^{(2)}$ 可以由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现。我们有 $$\mathcal{D}\left(\sigma_1\left(\sum_{j=1}^{n_1}a_{qj}^{(2)}u_j^{(1)}+b_q^{(2)}\right)\right)=3, \mathcal{W}\left(\sigma_1\left(\sum_{j=1}^{n_1}a_{qj}^{(2)}u_j^{(1)}+b_q^{(2)}\right)\right)\leq\mathcal{W}$$ 以及 $$\mathcal{D}\left(\sum_{j=1}^{n_1}a_{qj}^{(2)}D_iu_j^{(1)}\right)=2, \mathcal{W}\left(\sum_{j=1}^{n_1}a_{qj}^{(2)}D_iu_j^{(1)}\right)\leq\mathcal{W}。$$ 因此 $\mathcal{D}\left(D_iu_q^{(2)}\right)=4,$ $\mathcal{W}\left(D_iu_q^{(2)}\right)\leq\max\{2\mathcal{W},4\}$。
 
-现在我们对 $k\geq3$ 的层应用归纳法。对于第三层，
-\begin{equation*}
-D_iu_q^{(3)}=D_i\sigma_2\left(\sum_{j=1}^{n_2}a_{qj}^{(3)}u_j^{(2)}+b_q^{(3)}\right)
-=2\sigma_1\left(\sum_{j=1}^{n_2}a_{qj}^{(3)}u_j^{(2)}+b_q^{(3)}\right)\cdot\sum_{j=1}^{n_2}a_{qj}^{(3)}D_iu_j^{(2)}.
-\end{equation*}
-由于
-\begin{equation*}
-\mathcal{D}\left(\sigma_1\left(\sum_{j=1}^{n_2}a_{qj}^{(3)}u_j^{(2)}+b_q^{(3)}\right)\right)=4, \mathcal{W}\left(\sigma_1\left(\sum_{j=1}^{n_2}a_{qj}^{(3)}u_j^{(2)}+b_q^{(3)}\right)\right)\leq\mathcal{W}
-\end{equation*}
-以及
-\begin{equation*}
-\mathcal{D}\left(\sum_{j=1}^{n_2}a_{qj}^{(3)}D_iu_j^{(2)}\right)=4, \mathcal{W}\left(\sum_{j=1}^{n_1}a_{qj}^{(3)}D_iu_j^{(2)}\right)\leq\max\{2\mathcal{W},4\mathcal{W}\}=4\mathcal{W},
-\end{equation*}
-我们得出结论，$D_iu_q^{(3)}$ 可以由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现，并且 $$\mathcal{D}\left(D_iu_q^{(3)}\right)=5, \mathcal{W}\left(D_iu_q^{(3)}\right)\leq\max\{5\mathcal{W},4\}=5\mathcal{W}。$$
+% 现在我们对 $k\geq3$ 的层应用归纳法。对于第三层，
+% \begin{equation*}
+% D_iu_q^{(3)}=D_i\sigma_2\left(\sum_{j=1}^{n_2}a_{qj}^{(3)}u_j^{(2)}+b_q^{(3)}\right)
+% =2\sigma_1\left(\sum_{j=1}^{n_2}a_{qj}^{(3)}u_j^{(2)}+b_q^{(3)}\right)\cdot\sum_{j=1}^{n_2}a_{qj}^{(3)}D_iu_j^{(2)}.
+% \end{equation*}
+% 由于
+% \begin{equation*}
+% \mathcal{D}\left(\sigma_1\left(\sum_{j=1}^{n_2}a_{qj}^{(3)}u_j^{(2)}+b_q^{(3)}\right)\right)=4, \mathcal{W}\left(\sigma_1\left(\sum_{j=1}^{n_2}a_{qj}^{(3)}u_j^{(2)}+b_q^{(3)}\right)\right)\leq\mathcal{W}
+% \end{equation*}
+% 以及
+% \begin{equation*}
+% \mathcal{D}\left(\sum_{j=1}^{n_2}a_{qj}^{(3)}D_iu_j^{(2)}\right)=4, \mathcal{W}\left(\sum_{j=1}^{n_1}a_{qj}^{(3)}D_iu_j^{(2)}\right)\leq\max\{2\mathcal{W},4\mathcal{W}\}=4\mathcal{W},
+% \end{equation*}
+% 我们得出结论，$D_iu_q^{(3)}$ 可以由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现，并且 $$\mathcal{D}\left(D_iu_q^{(3)}\right)=5, \mathcal{W}\left(D_iu_q^{(3)}\right)\leq\max\{5\mathcal{W},4\}=5\mathcal{W}。$$
 
-我们假设 $D_iu_q^{(k)}(q=1,2,\cdots,n_k)$ 可以由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现，并且 $\mathcal{D}\left(D_iu_q^{(k)}\right)=k+2$, $\mathcal{W}\left(D_iu_q^{(3)}\right)\leq(k+2)\mathcal{W}$。对于第 $(k+1)$ 层，
-\begin{align}
-&D_iu_q^{(k+1)}=D_i\sigma_2\left(\sum_{j=1}^{n_k}a_{qj}^{(k+1)}u_j^{(k)}+b_q^{(k+1)}\right)\\
-&=2\sigma_1\left(\sum_{j=1}^{n_k}a_{qj}^{(k+1)}u_j^{(k)}+b_q^{(k+1)}\right)\cdot\sum_{j=1}^{n_k}a_{qj}^{(k+1)}D_iu_j^{(k)}.
-\end{align}
-由于
-\begin{equation*}
-\begin{aligned}
-\mathcal{D}\left(\sigma_1\left(\sum_{j=1}^{n_k}a_{qj}^{(k+1)}u_j^{(k)}+b_q^{(k+1)}\right)\right)&=k+2, \\
-\mathcal{W}\left(\sigma_1\left(\sum_{j=1}^{n_k}a_{qj}^{(k+1)}u_j^{(k)}+b_q^{(k+1)}\right)\right)&\leq\mathcal{W},
-\end{aligned}
-\end{equation*}
-以及
-\begin{equation*}
-\begin{aligned}
-\mathcal{D}\left(\sum_{j=1}^{n_k}a_{qj}^{(k+1)}D_iu_j^{(k)}\right)&=k+2, \\ \mathcal{W}\left(\sum_{j=1}^{n_k}a_{qj}^{(k+1)}D_iu_j^{(k)}\right)&\leq\max\{(k+2)\mathcal{W},4\mathcal{W}\}=(k+2)\mathcal{W},
-\end{aligned}
-\end{equation*}
-我们得出结论，$D_iu_q^{(k+1)}$ 可以由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现，并且 $\mathcal{D}\left(D_iu_q^{(k+1)}\right)=k+3$, $\mathcal{W}\left(D_iu_q^{(k+1)}\right)\leq\max\{(k+3)\mathcal{W},4\}=(k+3)\mathcal{W}$。
+% 我们假设 $D_iu_q^{(k)}(q=1,2,\cdots,n_k)$ 可以由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现，并且 $\mathcal{D}\left(D_iu_q^{(k)}\right)=k+2$, $\mathcal{W}\left(D_iu_q^{(3)}\right)\leq(k+2)\mathcal{W}$。对于第 $(k+1)$ 层，
+% \begin{align}
+% &D_iu_q^{(k+1)}=D_i\sigma_2\left(\sum_{j=1}^{n_k}a_{qj}^{(k+1)}u_j^{(k)}+b_q^{(k+1)}\right)\\
+% &=2\sigma_1\left(\sum_{j=1}^{n_k}a_{qj}^{(k+1)}u_j^{(k)}+b_q^{(k+1)}\right)\cdot\sum_{j=1}^{n_k}a_{qj}^{(k+1)}D_iu_j^{(k)}.
+% \end{align}
+% 由于
+% \begin{equation*}
+% \begin{aligned}
+% \mathcal{D}\left(\sigma_1\left(\sum_{j=1}^{n_k}a_{qj}^{(k+1)}u_j^{(k)}+b_q^{(k+1)}\right)\right)&=k+2, \\
+% \mathcal{W}\left(\sigma_1\left(\sum_{j=1}^{n_k}a_{qj}^{(k+1)}u_j^{(k)}+b_q^{(k+1)}\right)\right)&\leq\mathcal{W},
+% \end{aligned}
+% \end{equation*}
+% 以及
+% \begin{equation*}
+% \begin{aligned}
+% \mathcal{D}\left(\sum_{j=1}^{n_k}a_{qj}^{(k+1)}D_iu_j^{(k)}\right)&=k+2, \\ \mathcal{W}\left(\sum_{j=1}^{n_k}a_{qj}^{(k+1)}D_iu_j^{(k)}\right)&\leq\max\{(k+2)\mathcal{W},4\mathcal{W}\}=(k+2)\mathcal{W},
+% \end{aligned}
+% \end{equation*}
+% 我们得出结论，$D_iu_q^{(k+1)}$ 可以由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现，并且 $\mathcal{D}\left(D_iu_q^{(k+1)}\right)=k+3$, $\mathcal{W}\left(D_iu_q^{(k+1)}\right)\leq\max\{(k+3)\mathcal{W},4\}=(k+3)\mathcal{W}$。
 	
-由此我们推导出 $D_iu=D_iu_1^{\mathcal{D}}$ 可以由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现，并且 $\mathcal{D}\left(D_iu\right)=\mathcal{D}+2$, $\mathcal{W}\left(D_iu\right)\leq\left(\mathcal{D}+2\right)\mathcal{W}$。最终，我们获得：
-\begin{equation}\label{eq:N12}
-    \mathcal{D}\left(\|\nabla u\|^2\right)=\mathcal{D}+3, \mathcal{W}\left(\|\nabla u\|^2\right)\leq d\left(\mathcal{D}+2\right)\mathcal{W}.
-\end{equation}
-\end{proof}
+% 由此我们推导出 $D_iu=D_iu_1^{\mathcal{D}}$ 可以由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现，并且 $\mathcal{D}\left(D_iu\right)=\mathcal{D}+2$, $\mathcal{W}\left(D_iu\right)\leq\left(\mathcal{D}+2\right)\mathcal{W}$。最终，我们获得：
+% \begin{equation}\label{eq:N12}
+%     \mathcal{D}\left(\|\nabla u\|^2\right)=\mathcal{D}+3, \mathcal{W}\left(\|\nabla u\|^2\right)\leq d\left(\mathcal{D}+2\right)\mathcal{W}.
+% \end{equation}
+% \end{proof}
 
-Proof of lemma \ref{lemma:staerr:Rad_cover}.
-引理 \ref{lemma:staerr:Rad_cover} 的证明。
-\begin{proof}
-\label{pf:lemma:staerr:Rad_cover}
-首先，我们介绍 Massart 有限类引理，其证明可以在 \cite{boucheron2013concentration} 中找到。
-\begin{lemma}[Massart 有限类引理 \cite{boucheron2013concentration}]\label{Mfinite}
-对于任意具有直径 $D=\sum_{v\in V}\|v\|_{2}$ 的有限集 $V\in\mathbb{R}^{n}$，有
-\begin{equation*}
-\mathbb{E}_{\sigma_{i}}\left[ \sup_{v\in V}\frac{1}{n}\left| \sum_{i}\sigma_{i}v_{i} \right| \right] \leq \frac{D}{n}\sqrt{2\log(2|V|)},
-\end{equation*}
-其中 $\{\sigma_{i}\}_{i=1}^{n}$ 是 Rademacher 变量，其定义与定义 \ref{def:staerr:radcom} 中相同。
-\end{lemma}
+% Proof of lemma \ref{lemma:staerr:Rad_cover}.
+% 引理 \ref{lemma:staerr:Rad_cover} 的证明。
+% \begin{proof}
+% \label{pf:lemma:staerr:Rad_cover}
+% 首先，我们介绍 Massart 有限类引理，其证明可以在 \cite{boucheron2013concentration} 中找到。
+% \begin{lemma}[Massart 有限类引理 \cite{boucheron2013concentration}]\label{Mfinite}
+% 对于任意具有直径 $D=\sum_{v\in V}\|v\|_{2}$ 的有限集 $V\in\mathbb{R}^{n}$，有
+% \begin{equation*}
+% \mathbb{E}_{\sigma_{i}}\left[ \sup_{v\in V}\frac{1}{n}\left| \sum_{i}\sigma_{i}v_{i} \right| \right] \leq \frac{D}{n}\sqrt{2\log(2|V|)},
+% \end{equation*}
+% 其中 $\{\sigma_{i}\}_{i=1}^{n}$ 是 Rademacher 变量，其定义与定义 \ref{def:staerr:radcom} 中相同。
+% \end{lemma}
 
-令 $\varepsilon_{j}=2^{-k+1} B$。我们将 $\mathcal{F}_{k}$ 记为 $\mathcal{F}$ 的一个 $\varepsilon_{k}$-覆盖，且 $\left|\mathcal{F}_{k}\right|=\mathcal{C}\left(\varepsilon_{k}, \mathcal{F},\|\cdot\|_{\infty}\right) $。因此对于任意 $u \in \mathcal{F}$，存在 $u_{k} \in \mathcal{F}_{k}$ 使得 $\left\|u-u_{k}\right\|_{\infty} \leq \varepsilon_{k} $。设 $K$ 为一个稍后确定的正整数。我们有
-\begin{equation*}
-\begin{array}{rcl}
-{}&{}&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits_{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i} u\left(Z_{i}\right)\right|\right]\\
-{}&{}&{}\\
-{}&=&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right)\right.\right.\\
-{}&{}&\left.\left.+\sum\limits_{j=1}^{K-1} \sum\limits_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)+\sum\limits_{i=1}^{n} \sigma_{i} u_{1}\left(Z_{i}\right)\right|\right]\\
-{}&{}&{}\\
-{}&\leq&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right)\right|\right]\\
-{}&{}&+\sum\limits_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{i}, Z_{t}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right]\\
-{}&{}&+\mathbb{E}_{\left\{\sigma_{i}, Z_{t}\right\}_{k=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i} u_{1}\left(Z_{i}\right)\right|\right]
-\end{array}
-\end{equation*}
-由于 $0 \in \mathcal{F}$，我们可以选择 $\mathcal{F}_{1}=\{0\}$ 来消去第三项。对于第一项，
-\begin{equation*}
-\begin{array}{rcl}
-{}&{}&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{t=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right)\right|\right]\\
-{}&\leq&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n} \sum\limits_{i=1}^{n}\left|\sigma_{i}\right|\left\|u-u_{K}\right\|_{\infty}\right] \leq \varepsilon_{K}
-\end{array}
-\end{equation*}
-对于第二项，定义 $v_{i}^{j}=u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)$，并应用引理 \ref{Mfinite}，我们有
-\begin{equation*}
-\begin{aligned}
-&\sum_{j=1}^{K-1} \mathbb{E}_{\{\sigma\}_{i=1}^{n}}\left[\sup _{u \in \mathcal{F}} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right]                                              \\
-=&\sum_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{t}\right\}_{t=1}^{n}}\left[\sup _{v \in V_{j}} \frac{1}{n} \left| \sum_{i=1}^{n} \sigma_{i} v_{i}^{j}\right|\right] \leq \sum_{j=1}^{K-1} \frac{D_{j}}{n} \sqrt{2 \log \left(2\left|V_{j}\right|\right)}.
-\end{aligned}
-\end{equation*}
-根据 $V_{j}$ 的定义，我们可知 $\left|V_{j}\right| \leq\left|\mathcal{F}_{j}\right|\left|\mathcal{F}_{j+1}\right| \leq\left|\mathcal{F}_{j+1}\right|^{2}$ 并且
-\begin{equation*}
-\begin{aligned}
-\|V\|_{2} & =\left(\sum_{i=1}^{n}\left|u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right|^{2}\right)^{1 / 2} \leq \sqrt{n}\left\|u_{j+1}-u_{j}\right\|_{\infty}\\
-&\leq \sqrt{n}\left\|u_{j+1}-u\right\|_{\infty}+\sqrt{n}\left\|u_{j}-u\right\|_{\infty}=\sqrt{n} \varepsilon_{j+1}+\sqrt{n} \varepsilon_{j}=3 \sqrt{n} \varepsilon_{j+1}.
-\end{aligned}
-\end{equation*}
-因此
-\begin{equation*}
-\begin{aligned}
-&\sum_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{i}, Z_{t}\right\}_{t=1}^{n}}\left[\sup _{u \in \mathcal{F}} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right] \\
-&\leq \sum_{j=1}^{K-1} \frac{D_{j}}{n} \sqrt{2 \log \left(2\left|V_{j}\right|\right)} \leq \sum_{j=1}^{K-1} \frac{3 \varepsilon_{j+1}}{\sqrt{n}} \sqrt{2 \log \left(2\left|\mathcal{F}_{j+1}\right|^{2}\right)}
-\end{aligned}
-\end{equation*}
-现在我们得到
-\begin{equation*}
-\begin{aligned}
-&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup _{u \in \mathcal{F}} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i} u\left(Z_{i}\right)\right|\right] \leq \varepsilon_{K}+\sum_{j=1}^{K-1} \frac{6 \varepsilon_{j+2}}{\sqrt{n}} \sqrt{2 \log \left(2\left|\mathcal{F}_{j+1}\right|^{2}\right)} \\
-&=\varepsilon_{K}+\frac{6}{\sqrt{n}} \sum_{j=1}^{K-1}\left(\varepsilon_{j+1}-\varepsilon_{j+2}\right) \sqrt{2 \log \left(2 \mathcal{C}\left(\varepsilon_{j+1}, \mathcal{F},\|\cdot\|_{\infty}\right)^{2}\right)}                                                                                                     \\
-&\leq \varepsilon_{K}+\frac{6}{\sqrt{n}} \int_{\varepsilon_{K+1}}^{B / 2} \sqrt{2 \log \left(2 \mathcal{C}\left(\varepsilon, \mathcal{F},\|\cdot\|_{\infty}\right)^{2}\right)} d \varepsilon.
-\end{aligned}
-\end{equation*}
-通过对于任意 $0<\delta<\frac{B}{2}$ 选择合适的 $K$ 使得 $\varepsilon_{K+2}<\delta \leq \varepsilon_{K+1}$，引理得证。
-\end{proof}
+% 令 $\varepsilon_{j}=2^{-k+1} B$。我们将 $\mathcal{F}_{k}$ 记为 $\mathcal{F}$ 的一个 $\varepsilon_{k}$-覆盖，且 $\left|\mathcal{F}_{k}\right|=\mathcal{C}\left(\varepsilon_{k}, \mathcal{F},\|\cdot\|_{\infty}\right) $。因此对于任意 $u \in \mathcal{F}$，存在 $u_{k} \in \mathcal{F}_{k}$ 使得 $\left\|u-u_{k}\right\|_{\infty} \leq \varepsilon_{k} $。设 $K$ 为一个稍后确定的正整数。我们有
+% \begin{equation*}
+% \begin{array}{rcl}
+% {}&{}&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits_{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i} u\left(Z_{i}\right)\right|\right]\\
+% {}&{}&{}\\
+% {}&=&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right)\right.\right.\\
+% {}&{}&\left.\left.+\sum\limits_{j=1}^{K-1} \sum\limits_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)+\sum\limits_{i=1}^{n} \sigma_{i} u_{1}\left(Z_{i}\right)\right|\right]\\
+% {}&{}&{}\\
+% {}&\leq&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right)\right|\right]\\
+% {}&{}&+\sum\limits_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{i}, Z_{t}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right]\\
+% {}&{}&+\mathbb{E}_{\left\{\sigma_{i}, Z_{t}\right\}_{k=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i} u_{1}\left(Z_{i}\right)\right|\right]
+% \end{array}
+% \end{equation*}
+% 由于 $0 \in \mathcal{F}$，我们可以选择 $\mathcal{F}_{1}=\{0\}$ 来消去第三项。对于第一项，
+% \begin{equation*}
+% \begin{array}{rcl}
+% {}&{}&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{t=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right)\right|\right]\\
+% {}&\leq&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n} \sum\limits_{i=1}^{n}\left|\sigma_{i}\right|\left\|u-u_{K}\right\|_{\infty}\right] \leq \varepsilon_{K}
+% \end{array}
+% \end{equation*}
+% 对于第二项，定义 $v_{i}^{j}=u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)$，并应用引理 \ref{Mfinite}，我们有
+% \begin{equation*}
+% \begin{aligned}
+% &\sum_{j=1}^{K-1} \mathbb{E}_{\{\sigma\}_{i=1}^{n}}\left[\sup _{u \in \mathcal{F}} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right]                                              \\
+% =&\sum_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{t}\right\}_{t=1}^{n}}\left[\sup _{v \in V_{j}} \frac{1}{n} \left| \sum_{i=1}^{n} \sigma_{i} v_{i}^{j}\right|\right] \leq \sum_{j=1}^{K-1} \frac{D_{j}}{n} \sqrt{2 \log \left(2\left|V_{j}\right|\right)}.
+% \end{aligned}
+% \end{equation*}
+% 根据 $V_{j}$ 的定义，我们可知 $\left|V_{j}\right| \leq\left|\mathcal{F}_{j}\right|\left|\mathcal{F}_{j+1}\right| \leq\left|\mathcal{F}_{j+1}\right|^{2}$ 并且
+% \begin{equation*}
+% \begin{aligned}
+% \|V\|_{2} & =\left(\sum_{i=1}^{n}\left|u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right|^{2}\right)^{1 / 2} \leq \sqrt{n}\left\|u_{j+1}-u_{j}\right\|_{\infty}\\
+% &\leq \sqrt{n}\left\|u_{j+1}-u\right\|_{\infty}+\sqrt{n}\left\|u_{j}-u\right\|_{\infty}=\sqrt{n} \varepsilon_{j+1}+\sqrt{n} \varepsilon_{j}=3 \sqrt{n} \varepsilon_{j+1}.
+% \end{aligned}
+% \end{equation*}
+% 因此
+% \begin{equation*}
+% \begin{aligned}
+% &\sum_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{i}, Z_{t}\right\}_{t=1}^{n}}\left[\sup _{u \in \mathcal{F}} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right] \\
+% &\leq \sum_{j=1}^{K-1} \frac{D_{j}}{n} \sqrt{2 \log \left(2\left|V_{j}\right|\right)} \leq \sum_{j=1}^{K-1} \frac{3 \varepsilon_{j+1}}{\sqrt{n}} \sqrt{2 \log \left(2\left|\mathcal{F}_{j+1}\right|^{2}\right)}
+% \end{aligned}
+% \end{equation*}
+% 现在我们得到
+% \begin{equation*}
+% \begin{aligned}
+% &\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup _{u \in \mathcal{F}} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i} u\left(Z_{i}\right)\right|\right] \leq \varepsilon_{K}+\sum_{j=1}^{K-1} \frac{6 \varepsilon_{j+2}}{\sqrt{n}} \sqrt{2 \log \left(2\left|\mathcal{F}_{j+1}\right|^{2}\right)} \\
+% &=\varepsilon_{K}+\frac{6}{\sqrt{n}} \sum_{j=1}^{K-1}\left(\varepsilon_{j+1}-\varepsilon_{j+2}\right) \sqrt{2 \log \left(2 \mathcal{C}\left(\varepsilon_{j+1}, \mathcal{F},\|\cdot\|_{\infty}\right)^{2}\right)}                                                                                                     \\
+% &\leq \varepsilon_{K}+\frac{6}{\sqrt{n}} \int_{\varepsilon_{K+1}}^{B / 2} \sqrt{2 \log \left(2 \mathcal{C}\left(\varepsilon, \mathcal{F},\|\cdot\|_{\infty}\right)^{2}\right)} d \varepsilon.
+% \end{aligned}
+% \end{equation*}
+% 通过对于任意 $0<\delta<\frac{B}{2}$ 选择合适的 $K$ 使得 $\varepsilon_{K+2}<\delta \leq \varepsilon_{K+1}$，引理得证。
+% \end{proof}
 
-引理 \ref{lemma:staerr:pdim} 的证明。
-\begin{proof}
-\label{pf:lemma:staerr:pdim}
-证明概要如下：首先，引入 $VCdim$ 和伪打散 (pseudo-shattering) 作为 $Pdim$ 的下界；然后，通过 \cite{anthony2009neural} 中的一个引理估计多项式的 $VCdim$；基于上述结论，通过类似于 \cite{bartlett2019nearly} 中定理 6 的推导来完成证明。
+% 引理 \ref{lemma:staerr:pdim} 的证明。
+% \begin{proof}
+% \label{pf:lemma:staerr:pdim}
+% 证明概要如下：首先，引入 $VCdim$ 和伪打散 (pseudo-shattering) 作为 $Pdim$ 的下界；然后，通过 \cite{anthony2009neural} 中的一个引理估计多项式的 $VCdim$；基于上述结论，通过类似于 \cite{bartlett2019nearly} 中定理 6 的推导来完成证明。
 
-以下是伪打散和 $VCdim$ 的定义。
-\begin{definition}
-令 $\mathcal{N}$ 为从 $X=\Omega(\partial \Omega)$ 到 $\{0,1\}$ 的函数集。假设 $S=\left\{x_{1}, x_{2}, \cdots, x_{n}\right\} \subset X$。如果对于任意 $b \in\{0,1\}^{n}$，存在一个 $u \in \mathcal{N}$ 满足
-\begin{equation*}
-u\left(x_{i}\right)=b_{i}, \quad i=1,2, \ldots, n,
-\end{equation*}
-则称 $S$ 被 $\mathcal{N}$ 打散 (shattered)。
-\end{definition}
+% 以下是伪打散和 $VCdim$ 的定义。
+% \begin{definition}
+% 令 $\mathcal{N}$ 为从 $X=\Omega(\partial \Omega)$ 到 $\{0,1\}$ 的函数集。假设 $S=\left\{x_{1}, x_{2}, \cdots, x_{n}\right\} \subset X$。如果对于任意 $b \in\{0,1\}^{n}$，存在一个 $u \in \mathcal{N}$ 满足
+% \begin{equation*}
+% u\left(x_{i}\right)=b_{i}, \quad i=1,2, \ldots, n,
+% \end{equation*}
+% 则称 $S$ 被 $\mathcal{N}$ 打散 (shattered)。
+% \end{definition}
 
-\begin{definition}
-$\mathcal{N}$ 的 VC 维，记为 $\operatorname{VCdim}(\mathcal{N})$，定义为被 $\mathcal{N}$ 打散的所有集合中的最大基数。
-\end{definition}
+% \begin{definition}
+% $\mathcal{N}$ 的 VC 维，记为 $\operatorname{VCdim}(\mathcal{N})$，定义为被 $\mathcal{N}$ 打散的所有集合中的最大基数。
+% \end{definition}
 
-引入引理 \ref{lemma:covering_number} 来估计多项式的 $Pdim$。证明可以在 \cite{anthony2009neural} 的定理 8.3 中找到。
-\begin{lemma}\label{lemma:covering_number}
-令 $p_1,\cdots,p_m$ 为具有 $n$ 个变量且次数不超过 $d$ 的多项式。如果 $n\leq m$，则
-\begin{equation*}
-|\{(\operatorname{sign}(p_1(x)),\cdots,\operatorname{sign}(p_m(x))):x\in\mathbb{R}^n\}| \leq 2\left(\frac{2emd}{n}\right)^n.
-\end{equation*}
-\end{lemma}
+% 引入引理 \ref{lemma:covering_number} 来估计多项式的 $Pdim$。证明可以在 \cite{anthony2009neural} 的定理 8.3 中找到。
+% \begin{lemma}\label{lemma:covering_number}
+% 令 $p_1,\cdots,p_m$ 为具有 $n$ 个变量且次数不超过 $d$ 的多项式。如果 $n\leq m$，则
+% \begin{equation*}
+% |\{(\operatorname{sign}(p_1(x)),\cdots,\operatorname{sign}(p_m(x))):x\in\mathbb{R}^n\}| \leq 2\left(\frac{2emd}{n}\right)^n.
+% \end{equation*}
+% \end{lemma}
 
-该论证遵循 \cite{bartlett2019nearly} 中定理 6 的证明。此处陈述的结果比 \cite{bartlett2019nearly} 中的定理 6 略强，因为 $\mathrm{VCdim}(\operatorname{sign}(\mathcal{N}))\leq \mathrm{Pdim}(\mathcal{N})$。
+% 该论证遵循 \cite{bartlett2019nearly} 中定理 6 的证明。此处陈述的结果比 \cite{bartlett2019nearly} 中的定理 6 略强，因为 $\mathrm{VCdim}(\operatorname{sign}(\mathcal{N}))\leq \mathrm{Pdim}(\mathcal{N})$。
 
-我们考虑一个新的函数集：
-\begin{equation*}
-\mathcal{\widetilde{N}}=\{\widetilde{u}(x,y)=\operatorname{sign}(u(x)-y): u\in\mathcal{N}\},
-\end{equation*}
-显然 $\mathrm{Pdim}(\mathcal{N})\leq\mathrm{VCdim}(\mathcal{\widetilde{N}})$。我们现在界定 $\mathcal{\widetilde{N}}$ 的 VC 维。记 $\mathcal{M}$ 为实现 $\mathcal{N}$ 中函数的神经网络中的参数（权重和偏置）总数，我们的目标是针对所有 $\{x_i\}_{i=1}^{m}\subset X$ 和 $\{y_i\}_{i=1}^{m}\subset\mathbb{R}$，推导出
-\begin{equation*}
-K_{\{x_i\},\{y_i\}}(m):=|\{(\operatorname{sign}(u(x_{1}, a)-y_1), \ldots, \operatorname{sign}(u(x_{m}, a)-y_m)): a \in \mathbb{R}^{\mathcal{M}}\}|
-\end{equation*}
-的一致上界。实际上，$K_{\{x_i\},\{y_i\}}(m)$ 在所有 $\{x_i\}_{i=1}^{m}\subset X$ 和 $\{y_i\}_{i=1}^{m}\subset\mathbb{R}$ 上的最大值即为增长函数 $\mathcal{G}_{\mathcal{\widetilde{N}}}(m)$。
+% 我们考虑一个新的函数集：
+% \begin{equation*}
+% \mathcal{\widetilde{N}}=\{\widetilde{u}(x,y)=\operatorname{sign}(u(x)-y): u\in\mathcal{N}\},
+% \end{equation*}
+% 显然 $\mathrm{Pdim}(\mathcal{N})\leq\mathrm{VCdim}(\mathcal{\widetilde{N}})$。我们现在界定 $\mathcal{\widetilde{N}}$ 的 VC 维。记 $\mathcal{M}$ 为实现 $\mathcal{N}$ 中函数的神经网络中的参数（权重和偏置）总数，我们的目标是针对所有 $\{x_i\}_{i=1}^{m}\subset X$ 和 $\{y_i\}_{i=1}^{m}\subset\mathbb{R}$，推导出
+% \begin{equation*}
+% K_{\{x_i\},\{y_i\}}(m):=|\{(\operatorname{sign}(u(x_{1}, a)-y_1), \ldots, \operatorname{sign}(u(x_{m}, a)-y_m)): a \in \mathbb{R}^{\mathcal{M}}\}|
+% \end{equation*}
+% 的一致上界。实际上，$K_{\{x_i\},\{y_i\}}(m)$ 在所有 $\{x_i\}_{i=1}^{m}\subset X$ 和 $\{y_i\}_{i=1}^{m}\subset\mathbb{R}$ 上的最大值即为增长函数 $\mathcal{G}_{\mathcal{\widetilde{N}}}(m)$。
 
-为了应用引理 \ref{lemma:covering_number}，我们将参数空间 $\mathbb{R}^{\mathcal{M}}$ 划分为若干子集，以确保在每个子集中 $u(x_i,a)-y_i$ 是关于 $a$ 的无断点多项式。事实上，我们的划分与 \cite{bartlett2019nearly} 中的划分相同。将该划分记为 $\{P_1,P_2,\cdots,P_N\}$，其中整数 $N$ 满足
-\begin{equation} \label{pdimb1}
-N\leq\prod_{i=1}^{\mathcal{D}-1}2\left(\frac{2emk_i(1+(i-1)2^{i-1})}{\mathcal{M}_i}\right)^{\mathcal{M}_i}
-\end{equation}
-其中 $k_i$ 和 $\mathcal{M}_i$ 分别表示实现 $\mathcal{N}$ 中函数的神经网络第 $i$ 层的单元数，以及截至第 $i$ 层（含）的所有层单元输入的参数总数。关于划分的构造，请参见 \cite{bartlett2019nearly}。显然我们有
-\begin{equation} \label{pdimb2}
-K_{\{x_i\},\{y_i\}}(m)\leq\sum_{i=1}^{N}|\{(\operatorname{sign}(u(x_{1}, a)-y_1), \cdots, \operatorname{sign}(u(x_{m}, a)-y_m)): a\in P_i\}|
-\end{equation}
-注意到 $u(x_i,a)-y_i$ 是关于 $a$ 的多项式，其次数与 $u(x_i,a)$ 的次数相同，即 $1 + (\mathcal{D}-1)2^{\mathcal{D}-1}$，如 \cite{bartlett2019nearly} 所示。因此，根据引理 \ref{lemma:covering_number}，我们有
-\begin{align}
-& |\{(\operatorname{sign}(u(x_{1}, a)-y_1), \cdots, \operatorname{sign}(u(x_{m}, a)-y_m)): a\in P_i\}|\nonumber                          \\
-& \leq2\left(\frac{2em(1+(\mathcal{D}-1)2^{\mathcal{D}-1})}{\mathcal{M}_{\mathcal{D}}}\right)^{\mathcal{M}_{\mathcal{D}}}\label{pdimb3}.
-\end{align}
-结合 (Eq.~\eqref{pdimb1})，(Eq.~\eqref{pdimb2})，(Eq.~\eqref{pdimb3}) 可得
-\begin{equation*}
-K_{\{x_i\},\{y_i\}}(m)\leq\prod_{i=1}^{\mathcal{D}}2\left(\frac{2emk_i(1+(i-1)2^{i-1})}{\mathcal{M}_i}\right)^{\mathcal{M}_i}.
-\end{equation*}
-随之我们有
-\begin{equation*}
-\mathcal{G}_{\mathcal{\widetilde{N}}}(m)\leq\prod_{i=1}^{\mathcal{D}}2\left(\frac{2emk_i(1+(i-1)2^{i-1})}{\mathcal{M}_i}\right)^{\mathcal{M}_i},
-\end{equation*}
-因为 $K_{\{x_i\},\{y_i\}}(m)$ 在所有 $\{x_i\}_{i=1}^{m}\subset X$ 和 $\{y_i\}_{i=1}^{m}\subset\mathbb{R}$ 上的最大值是增长函数 $\mathcal{G}_{\mathcal{\widetilde{N}}}(m)$。使用与 \cite{bartlett2019nearly} 中定理 6 证明相同的代数推导，我们获得
-\begin{equation*}
-\mathrm{Pdim}(\mathcal{N})\leq C\left(\mathcal{D}^2\mathcal{W}^2 \log \mathcal{U}+\mathcal{D}^3\mathcal{W}^2\right)
-\leq C\left(\mathcal{D}^2\mathcal{W}^2\left( \mathcal{D}+\log \mathcal{W}\right)\right)
-\end{equation*}
-其中 $\mathcal{U}$ 指的是实现 $\mathcal{N}$ 中函数的神经网络的单元数。
-\end{proof}
-%%%%==========================================================%%%
+% 为了应用引理 \ref{lemma:covering_number}，我们将参数空间 $\mathbb{R}^{\mathcal{M}}$ 划分为若干子集，以确保在每个子集中 $u(x_i,a)-y_i$ 是关于 $a$ 的无断点多项式。事实上，我们的划分与 \cite{bartlett2019nearly} 中的划分相同。将该划分记为 $\{P_1,P_2,\cdots,P_N\}$，其中整数 $N$ 满足
+% \begin{equation} \label{pdimb1}
+% N\leq\prod_{i=1}^{\mathcal{D}-1}2\left(\frac{2emk_i(1+(i-1)2^{i-1})}{\mathcal{M}_i}\right)^{\mathcal{M}_i}
+% \end{equation}
+% 其中 $k_i$ 和 $\mathcal{M}_i$ 分别表示实现 $\mathcal{N}$ 中函数的神经网络第 $i$ 层的单元数，以及截至第 $i$ 层（含）的所有层单元输入的参数总数。关于划分的构造，请参见 \cite{bartlett2019nearly}。显然我们有
+% \begin{equation} \label{pdimb2}
+% K_{\{x_i\},\{y_i\}}(m)\leq\sum_{i=1}^{N}|\{(\operatorname{sign}(u(x_{1}, a)-y_1), \cdots, \operatorname{sign}(u(x_{m}, a)-y_m)): a\in P_i\}|
+% \end{equation}
+% 注意到 $u(x_i,a)-y_i$ 是关于 $a$ 的多项式，其次数与 $u(x_i,a)$ 的次数相同，即 $1 + (\mathcal{D}-1)2^{\mathcal{D}-1}$，如 \cite{bartlett2019nearly} 所示。因此，根据引理 \ref{lemma:covering_number}，我们有
+% \begin{align}
+% & |\{(\operatorname{sign}(u(x_{1}, a)-y_1), \cdots, \operatorname{sign}(u(x_{m}, a)-y_m)): a\in P_i\}|\nonumber                          \\
+% & \leq2\left(\frac{2em(1+(\mathcal{D}-1)2^{\mathcal{D}-1})}{\mathcal{M}_{\mathcal{D}}}\right)^{\mathcal{M}_{\mathcal{D}}}\label{pdimb3}.
+% \end{align}
+% 结合 (Eq.~\eqref{pdimb1})，(Eq.~\eqref{pdimb2})，(Eq.~\eqref{pdimb3}) 可得
+% \begin{equation*}
+% K_{\{x_i\},\{y_i\}}(m)\leq\prod_{i=1}^{\mathcal{D}}2\left(\frac{2emk_i(1+(i-1)2^{i-1})}{\mathcal{M}_i}\right)^{\mathcal{M}_i}.
+% \end{equation*}
+% 随之我们有
+% \begin{equation*}
+% \mathcal{G}_{\mathcal{\widetilde{N}}}(m)\leq\prod_{i=1}^{\mathcal{D}}2\left(\frac{2emk_i(1+(i-1)2^{i-1})}{\mathcal{M}_i}\right)^{\mathcal{M}_i},
+% \end{equation*}
+% 因为 $K_{\{x_i\},\{y_i\}}(m)$ 在所有 $\{x_i\}_{i=1}^{m}\subset X$ 和 $\{y_i\}_{i=1}^{m}\subset\mathbb{R}$ 上的最大值是增长函数 $\mathcal{G}_{\mathcal{\widetilde{N}}}(m)$。使用与 \cite{bartlett2019nearly} 中定理 6 证明相同的代数推导，我们获得
+% \begin{equation*}
+% \mathrm{Pdim}(\mathcal{N})\leq C\left(\mathcal{D}^2\mathcal{W}^2 \log \mathcal{U}+\mathcal{D}^3\mathcal{W}^2\right)
+% \leq C\left(\mathcal{D}^2\mathcal{W}^2\left( \mathcal{D}+\log \mathcal{W}\right)\right)
+% \end{equation*}
+% 其中 $\mathcal{U}$ 指的是实现 $\mathcal{N}$ 中函数的神经网络的单元数。
+% \end{proof}
+% %%%%==========================================================%%%

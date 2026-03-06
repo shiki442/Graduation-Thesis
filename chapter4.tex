@@ -45,27 +45,7 @@ Tz^{\delta}(x)&=&T\calF(q^{\dagger})(x)+\varepsilon_{\calB}(x),\quad &\varepsilo
 
 \section{预备知识与符号说明}\label{prelim}
 
-\par 首先，我们定义神经网络如下。全连接神经网络 $\phi:\mathbb{R}^{N_{0}}\rightarrow\mathbb{R}^{N_{L+1}}$ 是由下式定义的函数：
-\begin{equation*}
-\phi(x)=T_{L}(\varrho(T_{L-1}(\cdots\varrho(T_{0}(x))\cdots))),
-\end{equation*}
-其中 $\varrho$ 是所使用的按分量激活函数，$T_{\ell}(x):=A_{\ell}x+b_{\ell}$ 是仿射变换，其中 $A_{\ell}\in\bbR^{N_{\ell+1}\times N_{\ell}}$ 和 $b_{\ell}\in\bbR^{N_{\ell}}$，对于 $\ell=0,\ldots L$。在本文中，我们考虑 $N_{0}=d$ 和 $N_{L+1}=1$ 的情况。神经网络 $\phi$ 的参数定义为其所有权重的集合 $\theta=\{(A_{\ell},b_{\ell})\}_{\ell=0}^{L}$。
-正整数 $L$ 为神经网络的深度，$S$ 为非零权重的总数。此外，我们用 $B$ 表示非零权重绝对值的上界，即
-\begin{align*}
-S&=\sum_{\ell=1}^{L}(\|A_{\ell}\|_{0}+\|b_{\ell}\|_{0}),\\
-B&=\max_{0\leq\ell\leq L}\max\{\max_{i,j}|A_{\ell,ij}|,\max_{i}|b_{\ell,i}|\}. 
-\end{align*}
-我们将函数类 $N_{\varrho}(L,S,B)$ 定义为层数不超过 $L$、非零权重数不超过 $S$ 且每个权重的模以 $B$ 为界的 $\varrho$-神经网络的集合。
 
-\par 接下来，我们介绍一些常用范数的符号。给定一组从 $\Omega\subseteq\bbR^{d}$ 上的均匀分布中采样的点集 $\euX=\{x_{i}\}_{i=1}^{n}$，函数 $\varphi\in L^{2}(\Omega)$ 的 $L^{2}$-范数及其经验范数分别定义为
-\begin{equation*}
-\|\varphi\|_{L^{2}(\Omega)}^{2}=\int_{\Omega}\varphi(x)^{2}dx\quad\text{和}\quad\|\varphi\|_{L^{2}(\euX)}^{2}=\frac{|\Omega|}{n}\sum_{k=1}^{n}\varphi(x_{k})^{2},
-\end{equation*}
-类似地，函数 $\psi\in H^{2}(\Omega)$ 的 $H^2$-范数和经验 $H^2$-范数由下式给出
-\begin{align*}
-&\|\psi\|_{H^{2}(\Omega)}^{2}=\|\psi\|_{L^{2}(\Omega)}^{2}+\sum_{k=1}^{d}\|\partial_{k}\psi\|_{L^{2}(\Omega)}^{2}+\sum_{k=1}^{d}\sum_{\ell=1}^{d}\|\partial_{k}\partial_{\ell}\psi\|_{L^{2}(\Omega)}^{2}, \\
-&\|\psi\|_{H^{2}(\euX)}^{2}=\|\psi\|_{L^{2}(\euX)}^{2}+\sum_{k=1}^{d}\|\partial_{k}\psi\|_{L^{2}(\euX)}^{2}+\sum_{k=1}^{d}\sum_{\ell=1}^{d}\|\partial_{k}\partial_{\ell}\psi\|_{L^{2}(\euX)}^{2}.
-\end{align*}
 
 
 % \section{重构方法：Tikhonov-PINNs}\label{sec:tikpinns}

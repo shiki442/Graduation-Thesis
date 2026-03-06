@@ -47,12 +47,12 @@ T u(x) &=0 & & \text { on } \partial \Omega,
 \begin{lemma}\label{lemma:eigen_properties}
 对于椭圆型特征值问题\eqref{eq:eigendiriproblem}，结论如下成立：
 \begin{enumerate}
-    \item \textbf{实谱性}：所有特征值 $\lambda$ 均为实数。
-    \item \textbf{离散性与排序}：特征值构成一个可列的离散集合，且仅以 $+\infty$ 为聚点。若考虑代数重数，特征值可按非递减顺序排列为：
+    \item {\heiti 实谱性}：所有特征值 $\lambda$ 均为实数。
+    \item {\heiti 离散性与排序}：特征值构成一个可列的离散集合，且仅以 $+\infty$ 为聚点。若考虑代数重数，特征值可按非递减顺序排列为：
     \begin{equation}\label{eq:eigenvalue_sequence}
     0 < \lambda_{1} < \lambda_{2} \leq \lambda_{3} \leq \cdots, \quad \text{且 } \lim_{k \to \infty} \lambda_{k} = +\infty.
     \end{equation}
-    \item \textbf{完备正交性}：对应的特征函数系 $\{\xi_{k}\}_{k=1}^{\infty}$ 构成 $L^{2}(\Omega)$ 空间的一组完备正交基。
+    \item {\heiti 完备正交性}：对应的特征函数系 $\{\xi_{k}\}_{k=1}^{\infty}$ 构成 $L^{2}(\Omega)$ 空间的一组完备正交基。
 \end{enumerate}
 \end{lemma}
 
@@ -66,22 +66,22 @@ T u(x) &=0 & & \text { on } \partial \Omega,
 \begin{definition}[基础符号与算子]\label{def:notation}
 \quad
 \begin{enumerate}
-    \item \textbf{内积与范数}：记 $\langle\cdot,\cdot\rangle$ 为 $L^{2}(\Omega)$ 空间的标准内积，$\|\cdot\|$ 为对应的 $L^{2}$ 范数。
+    \item {\heiti 内积与范数}：记 $\langle\cdot,\cdot\rangle$ 为 $L^{2}(\Omega)$ 空间的标准内积，$\|\cdot\|$ 为对应的 $L^{2}$ 范数。
     
-    \item \textbf{谱投影算子}：基于算子 $\mathcal{L}$ 的特征值分解，定义谱投影算子 $\mathcal{P}_{<k}$ 为：
+    \item {\heiti 谱投影算子}：基于算子 $\mathcal{L}$ 的特征值分解，定义谱投影算子 $\mathcal{P}_{<k}$ 为：
     \begin{equation*}
         \mathcal{P}_{<k}u = \sum_{\lambda_{l}<\lambda_{k}} \langle u,\xi_{l} \rangle \xi_{l}.
     \end{equation*}
     即 $\mathcal{P}_{<k}$ 表示将函数 $u$ 投影至由特征值（严格）小于 $\lambda_k$ 的特征向量所生成的子空间。类似地，我们可以定义 $\mathcal{P}_{>k}$, $\mathcal{P}_{=k}$, $\mathcal{P}_{\leq k}$, $\mathcal{P}_{\geq k}$ 以及 $\mathcal{P}_{\neq k}$。
     
-    \item \textbf{特征值分离度}：定义特征值 $\lambda_i$ 的分离度为：
+    \item {\heiti 特征值分离度}：定义特征值 $\lambda_i$ 的分离度为：
     \begin{equation*}
         \delta \lambda_{i} = \min_{j: \lambda_{j}\neq \lambda_{i}} |\lambda_{i}-\lambda_{j}|.
     \end{equation*}
     
-    \item \textbf{渐近符号}：在不等式估计中，使用符号 $A \lesssim B$ 表示存在一个与关键参数无关的有界常数 $C$，使得 $A \leq CB$。若常数依赖于特定参数，将特别注明。
+    \item {\heiti 渐近符号}：在不等式估计中，使用符号 $A \lesssim B$ 表示存在一个与关键参数无关的有界常数 $C$，使得 $A \leq CB$。若常数依赖于特定参数，将特别注明。
     
-    \item \textbf{辅助函数}：定义 $\varphi(x) = x\log(x)$ ($x>1$)，并记 $\psi(x)$ 为 $\varphi(x)$ 的反函数。
+    \item {\heiti 辅助函数}：定义 $\varphi(x) = x\log(x)$ ($x>1$)，并记 $\psi(x)$ 为 $\varphi(x)$ 的反函数。
 \end{enumerate}
 \end{definition}
 
@@ -106,76 +106,6 @@ $$ \forall \alpha>0, \quad \varphi(x) \lesssim x^{1+\alpha}, \quad \psi(x) \gtrs
 
 上述关于区域边界的正则性假设主要是为了满足 Whitney 延拓定理的条件，该定理在第 \ref{subsec_app} 节的误差分析中起到了关键作用。
 值得指出的是，虽然本文的理论推导基于上述光滑性假设，但结论通常可以推广到更广泛的几何情形。例如，$\mathbb{R}^{d}$ 中的单位立方体虽然在角点处不满足 $C^m$ 边界条件，但若势函数为常数或齐次势，我们的定理结论显然依然成立。针对此类非光滑区域的有效性，我们将在第 \ref{sec_num} 节通过数值算例进一步验证。
-
-\subsection{神经网络架构与数学定义}
-本节将建立全连接深度神经网络的数学框架并引入相关记号。
-
-\begin{definition}{深度神经网络}
-我们将全连接深度神经网络表示为参数化函数 $v_{\phi}: \mathbb{R}^{d} \to \mathbb{R}$。该网络通过层级递归的方式定义如下：
-\begin{equation}\label{eq:nn:fcnetwork}
-\begin{aligned}
-v_{0}(x) &= x, \\
-v_{\ell}(x) &= \sigma_{\ell}\left(A_{\ell} v_{\ell-1} + b_{\ell}\right), \quad \ell=1, 2, \cdots, L-1, \\
-v_{\phi}(x) &= v_{L}(x) = A_{L} v_{L-1} + b_{L},
-\end{aligned}
-\end{equation}
-其中，$L$ 表示网络的层数（即深度）。对于第 $\ell$ 层，$\boldsymbol{A}_{\ell} \in \mathbb{R}^{N_{\ell} \times N_{\ell-1}}$ 为权重矩阵，$b_{\ell} \in \mathbb{R}^{N_{\ell}}$ 为偏置向量，$N_{\ell}$ 表示该层的神经元个数（其中 $N_0 = d$ 为输入维数， $N_L=1$ 为输出维数）。
-
-函数 $\sigma_{\ell}$ 被称为激活函数。在本文中，我们主要采用$k$次幂整流线性单元（Rectified Power Unit, RePU）作为激活函数，即 $\sigma(x) = \mathrm{ReLU}^{k}(x) = \max\{0, x\}^k$，其中 $k \in \mathbb{N}^{+}$。
-
-网络的深度（Depth）$\mathcal{D}$ 和宽度（Width）$\mathcal{W}$ 定义为：
-\begin{equation*}
-\mathcal{D} = L, \quad \mathcal{W} = \max_{\ell=1, \dots, L} N_{\ell}.
-\end{equation*}
-网络中所有可训练自由参数的集合记为 $\phi = \{A_{\ell}, b_{\ell}\}_{\ell=1}^{L}$。
-\end{definition}
-
-为了刻画逼近理论所需的函数空间，我们进一步定义一类满足特定复杂度约束的神经网络函数集合 $\mathcal{N}(\mathcal{D}, \mathcal{W}, \{k_{i}\}, m)$：
-
-\begin{definition}{神经网络函数类 $\mathcal{N}$}
-令 $\mathcal{N}(\mathcal{D}, \mathcal{W}, \{k_{i}\}, m)$ 表示满足以下条件的神经网络函数集合：
-\begin{enumerate}
-    \item \textbf{规模约束}：网络实际深度 $D$ 和宽度 $W$ 满足 $D < \mathcal{D}$ 且 $W < \mathcal{W}$（其中 $D, W \in \mathbb{N}^+$）；
-    \item \textbf{激活函数}：所有激活函数均属于族类 $\{\mathrm{ReLU}^{k} \mid k \in \{k_{i}\}\}$；
-    \item \textbf{复杂度下界}：网络的结构参数满足如下不等式约束：
-    \begin{equation}
-        (D - 2 - \log_{2} W) W \geq m - 1.
-    \end{equation}
-\end{enumerate}
-在上下文明确且不引起混淆的情况下，我们将该函数类简记为 $\mathcal{N}$。
-\end{definition}
-
-尽管全连接神经网络具有普适逼近性质，但在处理深层结构时，往往面临梯度消失或梯度爆炸的问题，导致训练困难。为了克服这一挑战，本文在实际计算中采用了残差神经网络（Residual Neural Network, ResNet）。
-
-与方程\eqref{eq:nn:fcnetwork}定义的标准前馈结构不同，残差网络引入了“跳跃连接”（Skip Connection），使得网络学习的是恒等映射的残差。
-
-\begin{definition}{残差神经网络}
-一个包含 $L$ 个残差块（Residual Blocks）的深度残差网络 $v_{\phi}: \mathbb{R}^{d} \to \mathbb{R}$ 定义如下：
-
-首先，通过一个线性变换（或浅层网络）将输入 $x$ 映射到隐藏层空间：
-\begin{equation}
-v_{0}(x) = A_{in} x + b_{in},
-\end{equation}
-其中 $A_{in} \in \mathbb{R}^{m \times d}, b_{in} \in \mathbb{R}^{m}$，此处 $m$ 为残差块的宽度（Width）。
-
-随后，数据流经 $L$ 个残差块。第 $\ell$ 个残差块（$\ell=1, \dots, L$）的更新规则为：
-\begin{equation}\label{eq:resnet:block}
-v_{\ell}(x) = v_{\ell-1}(x) + \mathcal{F}_{\ell}(v_{\ell-1}(x)),
-\end{equation}
-其中 $\mathcal{F}_{\ell}$ 为残差函数。在最简单的形式中，$\mathcal{F}_{\ell}$ 由单层线性变换与激活函数构成：
-\begin{equation}
-\mathcal{F}_{\ell}(z) = \sigma\left(A_{\ell} z + b_{\ell}\right),
-\end{equation}
-这里要求 $A_{\ell} \in \mathbb{R}^{m \times m}, b_{\ell} \in \mathbb{R}^{m}$ 以保证维度匹配，从而实现逐元素相加。
-
-最后，通过输出层将高维特征映射回目标空间：
-\begin{equation}
-v_{\phi}(x) = A_{out} v_{L}(x) + b_{out},
-\end{equation}
-其中 $A_{out} \in \mathbb{R}^{1 \times m}, b_{out} \in \mathbb{R}$。
-\end{definition}
-
-方程\eqref{eq:resnet:block}中的项 $v_{\ell-1}$ 被称为跳跃连接。这种结构允许梯度在反向传播过程中无损地流过恒等路径，从而显著增强了深层网络的训练稳定性与表达能力。
 
 \section{模型构建}
 \subsection{特征值与瑞利商}
@@ -454,7 +384,7 @@ $$\delta^{2} \mathcal{L}_{k}(\xi_k;\delta u)=\frac{1}{2}(\lambda_{k}-\lambda_{l_
     \item 采用随机梯度下降类算法求解离散后的非凸优化问题。
 \end{enumerate}
 
-下面将 Deep Ritz Method (DRM) 应用于求解上述变分极小化问题\eqref{eq:conloss}。令假设空间为 $\mathcal{N}^{2}=\mathcal{N}(\mathcal{D},\mathcal{W},\{2\},m)$。针对第 $k$ 个特征函数，定义其连续损失函数为：
+下面将 Deep Ritz Method (DRM) 应用于求解上述变分极小化问题\eqref{eq:conloss}。令假设空间为 $\mathcal{N}^{1,2}=\mathcal{N}(\mathcal{D},\mathcal{W},\{2\},m)$。针对第 $k$ 个特征函数，定义其连续损失函数为：
 \begin{equation}\label{eq:conlossphi}
 \mathcal{L}_{\phi k}(v)=\frac{1}{2} a^{\mu_{1}}(v, v)+\frac{\mu_{2}}{4}\left[Q(v)^{2}+2 \sum_{i<k}\left\langle v, \frac{\xi_{\phi i}}{\left|\xi_{\phi i}\right|}\right\rangle^{2}\right],
 \end{equation}
@@ -472,7 +402,7 @@ $$\delta^{2} \mathcal{L}_{k}(\xi_k;\delta u)=\frac{1}{2}(\lambda_{k}-\lambda_{l_
 \end{aligned}
 \end{equation}
 
-以及
+以及以$\widehat{\xi}_{\phi j}$为正交化约束的离散损失函数：
 \begin{equation}\label{eq:dislossphi}
 \begin{aligned}
 \widehat{\mathcal{L}}_{\phi k}(v) = & \frac{|\Omega|}{N}\sum_{i=1}^{N} \left[ \frac{|\nabla v(X_{i})|^{2}}{2}+\frac{w(X_{i})v^{2}(X_{i})}{2}\right]+\frac{\mu_{1}}{2}\frac{|\partial\Omega|}{M}\sum\limits_{j=1}^{M}\left[ Tv^{2}(Y_{j}) \right] \\
@@ -504,11 +434,11 @@ $$\delta^{2} \mathcal{L}_{k}(\xi_k;\delta u)=\frac{1}{2}(\lambda_{k}-\lambda_{l_
 % \For{$j = 1$ to $k$} \Comment{逐个求解第 $j$ 个特征函数}
 %     \State 初始化神经网络参数 $\phi$；
 %     \For{$t = 1$ to $T_{max}$}
-%         \State \textbf{数据采样：}
+%         \State {\heiti 数据采样：}
 %         \State \quad 在区域内部独立采样 $\{X_i\}_{i=1}^n \sim U(\Omega)$；
 %         \State \quad 在边界上独立采样 $\{Y_i\}_{i=1}^n \sim U(\partial\Omega)$；
         
-%         \State \textbf{构建经验损失函数 $\widehat{\mathcal{L}}_{\phi j}$：}
+%         \State {\heiti 构建经验损失函数 $\widehat{\mathcal{L}}_{\phi j}$：}
 %         \State \quad 计算瑞利商项与边界惩罚项：
 %         \State \quad \quad $\displaystyle J_{base} = \frac{|\Omega|}{n}\sum_{i=1}^{n} \left[ \frac{|\nabla v(X_{i})|^2}{2}+\frac{w(X_{i})v^{2}(X_{i})}{2}\right] + \frac{\mu_{1}}{2}\frac{|\partial\Omega|}{n}\sum_{i=1}^{n} T v^{2}(Y_{i})$
 %         \State \quad 计算归一化约束项：
@@ -517,7 +447,7 @@ $$\delta^{2} \mathcal{L}_{k}(\xi_k;\delta u)=\frac{1}{2}(\lambda_{k}-\lambda_{l_
 %         \State \quad \quad $\displaystyle J_{orth} = \frac{\mu_{2}}{2}\sum_{l=1}^{j-1}\left[\frac{|\Omega|}{n}\sum_{i=1}^{n}v(X_{i})\widehat{\xi}_{\phi l}(X_{i})\right]^{2}$
 %         \State \quad 总损失 $\widehat{\mathcal{L}}_{\phi j} \leftarrow J_{base} + J_{norm} + J_{orth}$；
         
-%         \State \textbf{参数更新：}
+%         \State {\heiti 参数更新：}
 %         \State \quad $\phi \leftarrow \phi - \eta \nabla_{\phi} \widehat{\mathcal{L}}_{\phi j}$； \Comment{使用 Adam 或 SGD 优化器}
 %     \EndFor
 %     \State 更新集合 $\mathcal{V} \leftarrow \mathcal{V} \cup \{\widehat{\xi}_{\phi j}\}$；
@@ -705,11 +635,11 @@ $$\begin{aligned}
 为保证正文逻辑的流畅性与可读性，本节先陈述核心的引理与定理，所有相关结论的详细证明均收录于附录 \ref{app:proofingen} 中。
 
 \begin{definition}[拉德马赫复杂度，Rademacher Complexity]\label{def:staerr:radcom}
-设集合 $A \subseteq \mathbb{R}^{n}$，该\textbf{集合}经验拉德马赫复杂度定义为：
+设集合 $A \subseteq \mathbb{R}^{n}$，该{\heiti 集合}经验拉德马赫复杂度定义为：
 $$\mathfrak{R}(A)=\mathbb{E}_{\mathbf{\sigma}}\left[\sup _{a \in A} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i} a_{i}\right|\right]$$
 其中 $\{\sigma_{i}\}_{i=1}^{n}$ 是 $n$ 个独立同分布的拉德马赫随机变量，满足 $\mathbb{P}(\sigma_{i}=1)=\mathbb{P}(\sigma_{i}=-1)=1/2$。
 
-进一步地，给定包含 $n$ 个独立同分布样本的随机向量 $\mathbf{Z}_{n}=(Z_1, \dots, Z_n)$，\textbf{函数类} $\mathcal{N}$ 关于该样本的经验拉德马赫复杂度定义为：
+进一步地，给定包含 $n$ 个独立同分布样本的随机向量 $\mathbf{Z}_{n}=(Z_1, \dots, Z_n)$，{\heiti 函数类} $\mathcal{N}$ 关于该样本的经验拉德马赫复杂度定义为：
 $$\mathfrak{R}(\mathcal{N})=\mathbb{E}_{\mathbf{Z}_{n}, \mathbf{\sigma}}\left[\sup _{u \in \mathcal{N}} \frac{1}{n} \left| \sum_{i=1}^{n} \sigma_{i} u(Z_{i}) \right|\right].$$
 \end{definition}
 
@@ -739,7 +669,7 @@ $\mathcal{N}$ 的伪维数（pseudo-dimension）记为 $\operatorname{Pdim}(\mat
 
 
 \begin{lemma}\label{lemma:staerr:Rad234}
-记 $\mathcal{N}^{1,2}=\mathcal{N}(\mathcal{D}+3,(\mathcal{D}+2)\mathcal{W},\{1,2\},\infty)$，我们有
+记 $\mathcal{N}^{2}=\mathcal{N}(\mathcal{D}+3,(\mathcal{D}+2)\mathcal{W},\{2\},\infty)$，我们有
 \begin{equation*}
 \begin{aligned}
 &\mathbb{E}_{\left\{X_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{1}(u)-\widehat{\mathcal{L}}_{1}(u)\right| \lesssim \frac{|\Omega|}{2}\mathfrak{N}\left(\mathcal{N}^{1,2}\right),\\
@@ -1035,7 +965,7 @@ T u &=0 & & \text { on } \partial \Omega,
 \centering
 \begin{tabular}{l|ccc}
 \toprule
-\textbf{参数} & \textbf{平方势} & \multicolumn{1}{p{2.2cm}}{\textbf{指数势}} & \multicolumn{1}{p{3.2cm}}{\textbf{简谐振子}}\\
+{\heiti 参数} & {\heiti 平方势} & \multicolumn{1}{p{2.2cm}}{{\heiti 指数势}} & \multicolumn{1}{p{3.2cm}}{{\heiti 简谐振子}}\\
 \midrule
 区域 & $[0,1]^{10}$ &  $[0,1]^{10}$ & $\mathbb{R}^{10}$ 中的单位球 \\
 学习率 & 0.001& 0.001& 0.001\\
@@ -1240,7 +1170,7 @@ V(x)=\left\{
 \centering
 \begin{tabular}{l|c}
 \toprule
-\textbf{参数} & \textbf{简谐振子}\\
+{\heiti 参数} & {\heiti 简谐振子}\\
 \midrule
 区域 & $\mathbb{R}^{20}$ 中的单位球\\
 学习率 & 0.001\\
@@ -1336,7 +1266,7 @@ $$ \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{k, 2}(u)-\widehat{\mathcal{L}
 
 然后我们再来单独处理第一个不等式，由于梯度算子 $\nabla$ 不具备 Lipschitz 连续性，我们无法直接应用引理 \ref{lemma:staerr:liprad}。我们需要证明 $\|\nabla u\|_2^2$ 可以由一个 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现。具体而言，我们有如下断言：
 
-\par\noindent{\textbf{断言}：令 $u$ 为由深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 的 $\mathrm{ReLU}^{2}$ 网络实现的函数。那么其梯度平方项 $\|\nabla u\|_2^2$ 可由一个深度为 $\mathcal{D}+3$ 且宽度为 $d\left(\mathcal{D}+2\right)\mathcal{W}$ 的混合网络 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 来实现。}
+\par\noindent{{\heiti 断言}：令 $u$ 为由深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 的 $\mathrm{ReLU}^{2}$ 网络实现的函数。那么其梯度平方项 $\|\nabla u\|_2^2$ 可由一个深度为 $\mathcal{D}+3$ 且宽度为 $d\left(\mathcal{D}+2\right)\mathcal{W}$ 的混合网络 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 来实现。}
 
 为简便起见，下文将 $\mathrm{ReLU}$ 和 $\mathrm{ReLU}^{2}$ 激活函数分别记为 $\sigma_1$ 和 $\sigma_2$。
 由于 $\|\nabla u\|_2^2=\sum_{i=1}^{d}\left|D_i u\right|^2$，且平方函数可通过 $x^2=\sigma_2(x)+\sigma_2(-x)$ 精确表示，因此只要我们能证明每个偏导数 $D_iu \ (i=1,2,\cdots,d)$ 均可分别由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络实现，便能轻易构造出目标网络。

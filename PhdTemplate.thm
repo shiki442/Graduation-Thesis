@@ -1,0 +1,21 @@
+\contentsline {definition}{{\hspace {2em}定义}{1.5.{1}}{全连接神经网络}}{3}{definition.1.5.1}%
+\contentsline {definition}{{\hspace {2em}定义}{1.5.{2}}{神经网络的参数}}{4}{definition.1.5.2}%
+\contentsline {definition}{{\hspace {2em}定义}{1.5.{3}}{神经网络函数类 $\mathcal {N}$}}{4}{definition.1.5.3}%
+\contentsline {definition}{{\hspace {2em}定义}{1.5.{4}}{残差神经网络}}{4}{definition.1.5.4}%
+\contentsline {definition}{{\hspace {2em}定义}{1.5.{5}}{范数与内积}}{5}{definition.1.5.5}%
+\contentsline {assumption}{{\hspace {2em}假设}{2.1.{1}}{正则性条件}}{8}{assumption.2.1.1}%
+\contentsline {theorem}{{\hspace {2em}定理}{2.1.{1}}{先验估计}}{9}{theorem.2.1.1}%
+\contentsline {proof}{{\hspace {2em}证明}{1}{}}{9}{proof.1}%
+\contentsline {theorem}{{\hspace {2em}定理}{2.2.{1}}{}}{9}{theorem.2.2.1}%
+\contentsline {proof}{{\hspace {2em}证明}{2}{}}{10}{proof.2}%
+\contentsline {theorem}{{\hspace {2em}定理}{2.2.{2}}{稳定性估计}}{11}{theorem.2.2.2}%
+\contentsline {proof}{{\hspace {2em}证明}{3}{}}{11}{proof.3}%
+\contentsline {lemma}{{\hspace {2em}引理}{2.2.{1}}{}}{13}{lemma.2.2.1}%
+\contentsline {proof}{{\hspace {2em}证明}{4}{}}{13}{proof.4}%
+\contentsline {theorem}{{\hspace {2em}定理}{2.2.{3}}{误差分解}}{14}{theorem.2.2.3}%
+\contentsline {proof}{{\hspace {2em}证明}{5}{}}{14}{proof.5}%
+\contentsline {theorem}{{\hspace {2em}定理}{2.3.{1}}{}}{14}{theorem.2.3.1}%
+\contentsline {proof}{{\hspace {2em}证明}{6}{}}{15}{proof.6}%
+\contentsline {theorem}{{\hspace {2em}定理}{2.5.{1}}{先验估计}}{15}{theorem.2.5.1}%
+\contentsline {proof}{{\hspace {2em}证明}{7}{Robin边界条件}}{15}{proof.7}%
+\contentsline {proof}{{\hspace {2em}证明}{8}{Dirichlet边界条件}}{18}{proof.8}%

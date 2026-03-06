@@ -50,3 +50,123 @@
 此类问题通常定义为：在已知源项 $g(x)$ 以及解 $u(x)$ 在区域边界或内部某些观测点数据的条件下，反演重构未知势函数 $V(x)$ 的过程。这一过程被称为反势能问题（Inverse Potential Problem）。
 
 \section{符号与定义}
+
+\subsection{神经网络架构与数学定义}
+本节将建立全连接深度神经网络的数学框架并引入相关记号。
+
+\begin{definition}[全连接神经网络]
+我们将全连接深度神经网络表示为参数化函数 $v_{\phi}: \mathbb{R}^{d} \to \mathbb{R}$。该网络通过层级递归的方式定义如下：
+\begin{equation}\label{eq:nn:fcnetwork}
+\begin{aligned}
+v_{0}(x) &= x, \\
+v_{\ell}(x) &= \sigma_{\ell}\left(A_{\ell} v_{\ell-1} + b_{\ell}\right), \quad \ell=1, 2, \cdots, L-1, \\
+v_{\phi}(x) &= v_{L}(x) = A_{L} v_{L-1} + b_{L},
+\end{aligned}
+\end{equation}
+其中，$L$ 表示网络的层数（即深度）。对于第 $\ell$ 层，$\boldsymbol{A}_{\ell} \in \mathbb{R}^{N_{\ell} \times N_{\ell-1}}$ 为权重矩阵，$b_{\ell} \in \mathbb{R}^{N_{\ell}}$ 为偏置向量，$N_{\ell}$ 表示该层的神经元个数（其中 $N_0 = d$ 为输入维数， $N_L=1$ 为输出维数）。
+
+函数 $\sigma_{\ell}$ 为按分量的激活函数。在本文中主要用到的激活函数包括：
+\begin{itemize}
+  \item 线性整流单元（Rectified Linear Unit, ReLU），定义为 $\sigma(x) = \mathrm{ReLU}(x) = \max\{0, x\}$；
+  \item $k$次幂次整流单元（Rectified Power Unit, RePU）定义为 $\sigma(x) = \mathrm{ReLU}^{k}(x) = \max\{0, x\}^k$，其中 $k \in \mathbb{N}^{+}$。
+  \item Tanh函数：定义为 $\sigma(x) = \tanh(x) = \frac{e^{x} - e^{-x}}{e^{x} + e^{-x}}$。
+\end{itemize}
+\end{definition}
+
+\begin{definition}[神经网络的参数]
+网络的深度（Depth）$\mathcal{D}$ 和宽度（Width）$\mathcal{W}$ 定义为：
+\begin{equation*}
+\mathcal{D} = L, \quad \mathcal{W} = \max_{\ell=1, \dots, L} N_{\ell}.
+\end{equation*}
+
+此外，我们用 $\mathcal{S}$ 表示非零权重的总数。 $\mathcal{B}$ 表示非零权重绝对值的上界，即
+\begin{align*}
+S&=\sum_{\ell=1}^{L}(\|A_{\ell}\|_{0}+\|b_{\ell}\|_{0}),\\
+B&=\max_{0\leq\ell\leq L}\max\{\max_{i,j}|A_{\ell,ij}|,\max_{i}|b_{\ell,i}|\}. 
+\end{align*}
+
+网络中所有可训练自由参数的集合记为 $\phi = \{A_{\ell}, b_{\ell}\}_{\ell=1}^{L}$。
+\end{definition}
+
+为了刻画逼近理论所需的函数空间，我们进一步定义一类满足特定复杂度约束的神经网络函数集合 $\mathcal{N}(\mathcal{D}, \mathcal{W}, \{k_{i}\}, m)$：
+
+\begin{definition}[神经网络函数类 $\mathcal{N}$]
+令 $\mathcal{N}(\mathcal{D}, \mathcal{W}, \{k_{i}\}, m)$ 表示满足以下条件的神经网络函数集合：
+\begin{enumerate}
+    \item {\heiti 规模约束}：网络实际深度 $D$ 和宽度 $W$ 满足 $D < \mathcal{D}$ 且 $W < \mathcal{W}$（其中 $D, W \in \mathbb{N}^+$）；
+    \item {\heiti 激活函数}：所有激活函数均属于族类 $\{\mathrm{ReLU}^{k} \mid k \in \{k_{i}\}\}$；
+    \item {\heiti 复杂度下界}：网络的结构参数满足如下不等式约束：
+    \begin{equation}
+        (D - 2 - \log_{2} W) W \geq m - 1.
+    \end{equation}
+\end{enumerate}
+在上下文明确且不引起混淆的情况下，我们将该函数类简记为 $\mathcal{N}$。
+\end{definition}
+
+尽管全连接神经网络具有普适逼近性质，但在处理深层结构时，往往面临梯度消失或梯度爆炸的问题，导致训练困难。为了克服这一挑战，本文在实际计算中采用了残差神经网络（Residual Neural Network, ResNet）。
+
+与方程\eqref{eq:nn:fcnetwork}定义的标准前馈结构不同，残差网络引入了“跳跃连接”（Skip Connection），使得网络学习的是恒等映射的残差。
+
+\begin{definition}[残差神经网络]
+一个包含 $L$ 个残差块（Residual Blocks）的深度残差网络 $v_{\phi}: \mathbb{R}^{d} \to \mathbb{R}$ 定义如下：
+
+首先，通过一个线性变换（或浅层网络）将输入 $x$ 映射到隐藏层空间：
+\begin{equation}
+v_{0}(x) = A_{in} x + b_{in},
+\end{equation}
+其中 $A_{in} \in \mathbb{R}^{m \times d}, b_{in} \in \mathbb{R}^{m}$，此处 $m$ 为残差块的宽度（Width）。
+
+随后，数据流经 $L$ 个残差块。第 $\ell$ 个残差块（$\ell=1, \dots, L$）的更新规则为：
+\begin{equation}\label{eq:resnet:block}
+v_{\ell}(x) = v_{\ell-1}(x) + \mathcal{F}_{\ell}(v_{\ell-1}(x)),
+\end{equation}
+其中 $\mathcal{F}_{\ell}$ 为残差函数。在最简单的形式中，$\mathcal{F}_{\ell}$ 由单层线性变换与激活函数构成：
+\begin{equation}
+\mathcal{F}_{\ell}(z) = \sigma\left(A_{\ell} z + b_{\ell}\right),
+\end{equation}
+这里要求 $A_{\ell} \in \mathbb{R}^{m \times m}, b_{\ell} \in \mathbb{R}^{m}$ 以保证维度匹配，从而实现逐元素相加。
+
+最后，通过输出层将高维特征映射回目标空间：
+\begin{equation}
+v_{\phi}(x) = A_{out} v_{L}(x) + b_{out},
+\end{equation}
+其中 $A_{out} \in \mathbb{R}^{1 \times m}, b_{out} \in \mathbb{R}$。
+\end{definition}
+
+方程\eqref{eq:resnet:block}中的项 $v_{\ell-1}$ 被称为跳跃连接。这种结构允许梯度在反向传播过程中无损地流过恒等路径，从而显著增强了深层网络的训练稳定性与表达能力。
+
+\par 接下来，我们介绍一些常用范数的符号。
+\begin{definition}[范数与内积]
+设 $\Omega \subset \mathbb{R}^d$ 为有界区域。对于定义在 $\Omega$ 上的函数 $u_\in L^2(\Omega)$，其 $L^2$-范数定义为：
+\begin{equation*}
+\|u\|_{L^2(\Omega)} = \left( \int_{\Omega} |u(x)|^2 \text{dx} \right)^{1/2}.
+\end{equation*}
+为简便起见，若无特殊说明，下文常将 $L^2$-范数简记为 $\|\cdot\|_{L^2}$ 或 $\|\cdot\|$。
+
+对于任意正整数 $m \in \mathbb{N}^+$，Sobolev 空间 $H^m(\Omega)$ 中的 $H^m$-范数借由多重指标 $\alpha$ 定义为所有阶数不超过 $m$ 的弱导数之 $L^2$-范数的平方和的平方根：
+\begin{equation*}
+\|u\|_{H^m(\Omega)} = \left( \sum_{|\alpha| \le m} |D^\alpha u|_{L^2(\Omega)}^2 \right)^{1/2}.
+\end{equation*}
+特别地，常用的 $H^2$-范数具体展开为：
+\begin{equation*}
+\|u\|_{H^2(\Omega)}^2 = \|u\|_{L^2(\Omega)}^2 + \sum_{k=1}^d \|\partial_k u\|_{L^2(\Omega)}^2 + \sum_{k=1}^d \sum_{\ell=1}^d \|\partial_k \partial_\ell u\|_{L^2(\Omega)}^2.
+\end{equation*}
+
+针对分数阶 Sobolev 空间，函数 $u \in H^{1/2}(\Omega)$ 的范数由其 $L^2$-范数与 Gagliardo 半范数共同构成：
+\begin{equation*}
+\|u\|_{H^{1/2}(\Omega)}^2 = \|u\|_{L^2(\Omega)}^2 + |u|_{H^{1/2}(\Omega)}^2,
+\end{equation*}
+其中，衡量半阶平滑度的 Gagliardo 半范数定义为：
+\begin{equation*}
+|u|_{H^{1/2}(\Omega)}^2 = \iint_{\Omega \times \Omega} \frac{|u(x) - u(y)|^2}{|x - y|^{d+1}} \text{dxdy}.
+\end{equation*}
+
+上述空间皆为 Hilbert 空间，其范数均由相应的内积诱导。对应的内积分别记作 $\langle \cdot, \cdot \rangle_{L^2(\Omega)}$、$\langle \cdot, \cdot \rangle_{H^m(\Omega)}$ 与 $\langle \cdot, \cdot \rangle_{H^{1/2}(\Omega)}$，具体定义如下：
+\begin{align*}
+\langle u, v \rangle_{L^2(\Omega)} &= \int_{\Omega} u(x)v(x) \text{dx}, \\
+\langle u, v \rangle_{H^m(\Omega)} &= \sum_{|\alpha| \le m} \langle D^\alpha u, D^\alpha v \rangle_{L^2(\Omega)}, \\
+\langle u, v \rangle_{H^{1/2}(\Omega)} &= \langle u, v \rangle_{L^2(\Omega)} + \iint_{\Omega \times \Omega} \frac{(u(x) - u(y))(v(x) - v(y))}{|x - y|^{d+1}}  \text{dxdy}.
+\end{align*}
+
+若无混淆，在特定的上下文语境中，内积的下标通常会被省略，统一记作 $\langle \cdot, \cdot \rangle$。
+\end{definition}
