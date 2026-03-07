@@ -534,9 +534,9 @@ $$\delta^{2} \mathcal{L}_{k}(\xi_k;\delta u)=\frac{1}{2}(\lambda_{k}-\lambda_{l_
 \end{aligned}
 \end{equation*}
 
-其中 $C(k, \xi_k, u)$ 为有界项。因此，控制逼近误差的关键在于控制 $H^1$ 范数下的误差 $|u-\xi_{k}|_{H^{1}}$。
+其中 $C(k, \xi_k, u)$ 为有界项。因此，控制逼近误差的关键在于控制 $H^1$ 范数下的误差 $\|u-\xi_{k}\|_{H^{1}}$。
 
-我们的分析主要依赖于椭圆方程的正则性理论、Stein 延拓定理 \cite{fefferman_2005} 以及 Hon 等人 \cite{hon2021simultaneous} 提出的神经网络逼近理论。
+我们的分析主要依赖于椭圆方程的正则性理论、Stein 延拓定理 \cite{fefferman_2005} 以及 Hon 等人 \cite{hon2021simultaneous,yarotsky2017error} 提出的神经网络逼近理论。
 \begin{lemma}[De Giorgi-Nash 估计]
 对于如下形式的散度型方程：
 $$-\sum_{i,j=1}^n \frac{\partial}{\partial x_i} \left( a_{ij}(x) \frac{\partial u}{\partial x_j} \right) = f$$
@@ -1246,7 +1246,7 @@ $\varepsilon_1/\varepsilon_2$ & 5000/3000\\
 本文研究了利用神经网络求解椭圆多重特征值问题。我们基于椭圆特征值问题的惩罚变分形式，提出了一种计算椭圆多重特征值的通用形式。我们利用 Deep Ritz 方法求解了该惩罚变分形式。我们建立了估计特征值与真实特征值之间误差的上界，该上界与网络的深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 以及训练样本量 $n$ 有关。通过探讨特征值问题的正则性并适当选择深度 $\mathcal{D}$ 和宽度 $\mathcal{W}$，我们表明该误差界克服了维数灾难。若干模拟结果证明了所提方法的有效性，并支持了我们的理论结果。
 
 \section*{附录}\label{app:proofingen} 
-\begin{proof}{引理 \ref{lemma:staerr:Rad234} 的证明}\label{pf:lemma:staerr:Rad234}
+\begin{proof}[引理 \ref{lemma:staerr:Rad234} 的证明]\label{pf:lemma:staerr:Rad234}
 
 引理的证明可分为两部分。我们首先证明后四个不等式，这主要依赖于 Rademacher 复杂度的 Lipschitz 收缩不等式：
 \begin{lemma}\label{lemma:staerr:liprad}
