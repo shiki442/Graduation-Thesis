@@ -1,4 +1,4 @@
-\chapter{深度里兹法求解拟线性偏微分方程}
+\chapter{深度里兹法求解半线性偏微分方程}
 \section{预备知识与记号}\label{sec:pre}
 非线性椭圆方程是偏微分方程（PDE）研究中非常核心且活跃的一个领域。其中，半线性方程（Semilinear Equations）指的是非线性仅出现在低阶项（如未知函数及其一阶导数）中的非线性椭圆方程。与高维特征值问题类似，传统的网格数值方法（如有限元法、有限差分法等）在高维问题上往往会遭遇严重的“维度灾难”（Curse of Dimensionality）。在这些基于网格的方法中，离散参数或自由度的数量随空间维度的增加呈指数级增长，导致其在实际的高维计算中面临难以克服的内存和算力瓶颈。
 
@@ -31,16 +31,16 @@ $$-\Delta u = e^u \quad \text{in } \mathbb{R}^n, \quad n \ge 3$$
 对于方程\ref{eq:maineq}，我们作如下假设
 \begin{enumerate}
 \item[(a)] 区域 $\Omega \subset \mathbb{R}^N$ 为有界开集，且其边界 $\partial \Omega$ 具有 $C^{1,1}$ 正则性，或 $\Omega$ 为凸多面体。
-\item[(b)] 内部源项满足 $g \in L^2(\Omega)$，边界函数满足 $h \in H^{1/2}(\partial \Omega)$。
-\item[(c)] 非线性项 $V(u)$ 的增长速度满足 Sobolev 次临界或临界增长条件。即存在常数 $C > 0$，使得对于任意 $s \in \mathbb{R}$，有：
+\item[(b)] 内部源项满足 $g \in L^2(\Omega)$，边界函数满足 $h \in H^{1/2}(\partial \Omega)\cap L^{\infty}(\partial \Omega)$。
+\item[(c)] 非线性项 $V(s)$ 的增长速度满足 Sobolev 次临界或临界增长条件。即存在常数 $C > 0$，使得对于任意 $s \in \mathbb{R}$，有：
 $$|V(s)| \le C(1 + |s|^p)$$
-其中，当空间维度 $N \ge 3$ 时，指数 $p \le \frac{N+2}{N-2}$；当 $N=1, 2$ 时，$p \in [1, +\infty)$ 可以为任意有限值。
+其中，当空间维度 $N \ge 3$ 时，指数 $p \le \frac{N+2}{N-2}$；当 $N=1, 2$ 时，$p \in [2, +\infty)$ 可以为任意有限值。
 \item[(d)] $V(s)$ 是关于 $s$ 的单调函数。若 $V(s)$ 非单调递增，则要求其导数具有严格的下界，且该下界严格大于算子 $-\Delta$ 在对应边界条件下的第一主特征值的相反数（即 $V'(s) \ge -\gamma > -\lambda_1$）。
 % \item 在 $\Omega^{'}\supset \bar{\Omega}$ 上存在一个调和函数 $w$，使得
 % $w+\frac{1}{\mu}\frac{\partial w}{\partial n}=h$ 在 $\partial \Omega$ 上成立。
 \end{enumerate}
 \end{assumption}
-值得强调的是，假设 \ref{ass:f}(d) 中对 $V(u)$ 的限制主要是为了确保能量泛函的严格凸性。若仅考察弱解的存在性，该条件可被适当弱化。
+值得强调的是，假设\ref{ass:f}(d)的增长性条件实际上保证了$V(s)\in L^{\infty}(\Omega)$。而假设 \ref{ass:f}(d) 中对 $V(u)$ 的限制主要是为了确保能量泛函的严格凸性。若仅考察弱解的存在性，该条件可被适当弱化。
 
 基于变分法（Variational Methods），我们可以将方程 \eqref{eq:maineq} 的强形式转化为能量泛函的极小化问题。定义能量泛函 $J: H^1(\Omega) \to \mathbb{R}$ 如下：
 \begin{equation}\label{eq:ch3loss}
@@ -67,13 +67,13 @@ $$\|u\|_{H^2(\Omega)} \le C \left( \|g - V(u)\|_{L^2(\Omega)} + \|h\|_{H^{1/2}(\
 J^{\mu}(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} u^2 \, dS + \int_{\Omega} W(u) \, dx - \int_{\Omega} gu \, dx - \mu \int_{\partial \Omega} hu \, dS
 \end{equation}
 则有以下结论：
-\begin{itemize}
-\item 对于有限的惩罚参数 $\mu<+\infty$，$J^{\mu}$ 存在唯一的极小值点，记为 $u^{\mu}$。且该极小值点是方程 \eqref{eq:maineq} 的弱解。
-\item 当 $\mu \rightarrow +\infty$ 时，设 $u^{D}$ 为具有精确 Dirichlet 边界条件（即在 $\partial \Omega$ 上 $u=h$）的方程 \eqref{eq:maineq} 的解。则存在仅依赖于区域和已知函数的常数 $C(\Omega,V,g,h)$，使得：
+\begin{enumerate}
+\item[(a)] 对于有限的惩罚参数 $\mu<+\infty$，$J^{\mu}$ 存在唯一的极小值点，记为 $u^{\mu}$。且该极小值点是方程 \eqref{eq:maineq} 的弱解。
+\item[(b)] 当 $\mu \rightarrow +\infty$ 时，设 $u^{D}$ 为具有精确 Dirichlet 边界条件（即在 $\partial \Omega$ 上 $u=h$）的方程 \eqref{eq:maineq} 的解。则存在仅依赖于区域和已知函数的常数 $C(\Omega,V,g,h)$，使得：
 \begin{equation*}
 \|u^{\mu}-u^{D}\|_{H^{1}}\leq C(\Omega,V,g,h)\frac{1}{\mu}.
 \end{equation*}
-\end{itemize}
+\end{enumerate}
 \end{theorem}
 \begin{proof}
 首先证明第一部分。当 $\mu<+\infty$ 时，对泛函\eqref{eq:ch3conloss} 沿任意测试函数 $v \in H^1(\Omega)$ 求变分，可得其 Euler-Lagrange 方程的弱形式：
@@ -133,9 +133,9 @@ $$J^{\mu}(u^{\mu})=E(u^{\mu}) + \frac{\mu}{2}\int_{\partial \Omega} (u^{\mu} - h
 下面这个定理给出了能量泛函 $J^{\mu}$ 在其极小值点附近的稳定性估计。
 \begin{theorem}[稳定性估计]\label{thm:staerr}
 设 $u^{\mu}$ 是方程 \eqref{eq:maineq} 的弱解（即泛函 $J^{\mu}$ 的极小值点），且函数$V$满足假设 \ref{ass:f} 中的单调性条件。则对于任意 $v \in H^1(\Omega)$，存在常数 $C(\Omega,\mu)>0$ 使得以下稳定性估计成立：
-\begin{equation*}
+\begin{equation}\label{eq:stability}
 J^{\mu}(u^{\mu}+v)-J^{\mu}(u^{\mu}) \geq C(\Omega,\mu)\|v\|_{H^{1}}^{2}.
-\end{equation*}
+\end{equation}
 \end{theorem}
 \begin{proof}
 根据泛函 $J^{\mu}$ 的定义\eqref{eq:ch3conloss}，我们可以将 $J^{\mu}(u^{\mu}+v)$ 展开并与 $J^{\mu}(u^{\mu})$ 作差，得到：
@@ -165,7 +165,7 @@ J^{\mu}(u^{\mu}+v) - J^{\mu}(u^{\mu}) = \frac{1}{2}\int_{\Omega} |\nabla v|^2 \,
 \begin{equation*}
 J^{\mu}(u^{\mu}+v) - J^{\mu}(u^{\mu}) \geq \frac{1}{2}\int_{\Omega} |\nabla v|^2 \, dx + \frac{\mu}{2} \int_{\partial \Omega} v^2 \, dS.
 \end{equation*}
-最后，由于惩罚参数 $\mu > 0$，根据广义 Poincaré 不等式，存在仅依赖于区域 $\Omega$ 和 $\mu$ 的常数 $C(\Omega,\mu)>0$，使得上式右侧以 $C(\Omega,\mu)\|v\|_{H^{1}}^{2}$ 为下界。证毕。
+最后，由于惩罚参数 $\mu > 0$，根据广义 Poincaré 不等式，存在仅依赖于区域 $\Omega$ 和 $\mu$ 的常数 $C(\Omega,\mu)=\min\{1,\mu\}\cdot C'(\Omega)>0$，使得上式右侧以 $C(\Omega,\mu)\|v\|_{H^{1}}^{2}$ 为下界。证毕。
 \end{proof}
 
 
@@ -199,7 +199,7 @@ u_{\text{nn}}= \underset{u \in \mathcal{N}^{2}}{\operatorname{argmin}}\,J^{\mu}(
 \subsection{误差分解}
 首先，我们介绍一个关于截断误差的简单引理：
 \begin{lemma}\label{lemma:truerr}
-设 $1\leq q<p<\infty$。若 $u\in L^{p}(\Omega)$ 且定义截断函数 $u_{K}=u \mathbb{1}_{\{|u|<K\}}$，则存在常数 $C(u)>0$，使得：
+设 $1\leq q<p<\infty$。若 $u\in L^{p}(\Omega)$ 且定义截断函数 $u_{K}=u  \mathbb{1}_{\{|u|<K\}}$，则存在常数 $C(u)>0$，使得：
 \begin{equation*}
 \|u-u_{K}\|_{L^{q}} \leq C(u)\frac{1}{K^{p/q-1}}.
 \end{equation*}
@@ -226,7 +226,7 @@ u_{\text{nn}}= \underset{u \in \mathcal{N}^{2}}{\operatorname{argmin}}\,J^{\mu}(
 \begin{equation*}
 \begin{aligned}
 &J^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)-J^{\mu}(u^{*})&\\
-\leq&\displaystyle\underbrace{ \inf _{u_{\text{nn}} \in \mathcal{N}^{2}}\left[ J^{\mu}(u_{\text{nn}})- J^{\mu}(u^{*})\right]}_{\mathcal{E}_{\text{app}}}+\underbrace{2 \sup _{u_{\text{nn}} \in \mathcal{N}^{2}}\left|J^{\mu}_{K}(u_{\text{nn}})-\widehat{J}^{\mu}_{K}(u_{\text{nn}})\right|}_{\mathcal{E}_{\text{sta}}}+\underbrace{C(g)\mathcal{B}K^{1-p}}_{\mathcal{E}_{\text{tru}}},&\\
+\leq&\displaystyle\underbrace{ \inf _{u_{\text{nn}} \in \mathcal{N}^{2}}\left[ J^{\mu}(u_{\text{nn}})- J^{\mu}(u^{*})\right]}_{\mathcal{E}_{\text{app}}}+\underbrace{2 \sup _{u_{\text{nn}} \in \mathcal{N}^{2}}\left|J^{\mu}_{K}(u_{\text{nn}})-\widehat{J}^{\mu}_{K}(u_{\text{nn}})\right|}_{\mathcal{E}_{\text{sta}}}+\underbrace{C(g)\mathcal{B}K^{-1}}_{\mathcal{E}_{\text{tru}}},&\\
 \end{aligned}
 \end{equation*}
 上述不等式右侧的三项分别对应于逼近误差（$\mathcal{E}_{\text{app}}$）、统计误差（$\mathcal{E}_{\text{sta}}$）以及截断误差（$\mathcal{E}_{\text{tru}}$）。
@@ -238,7 +238,7 @@ J_{K}^{\mu}(v)=\frac{1}{2}\int_{\Omega} |\nabla v|_{2}^{2} \,dx + \int_{\Omega} 
 \end{equation*}
 由引理 \ref{lemma:truerr} 可知，对于任意给定的 $u_{\text{nn}}\in \mathcal{N}^{2}(\mathcal{D},\mathcal{W},\mathcal{B})$，均有如下截断误差界：
 \begin{equation*}
-|J_{K}^{\mu}(u_{\text{nn}})-J^{\mu}(u_{\text{nn}})|\leq\int_{\Omega}|u_{\text{nn}}(g-g^K)|\,dx\leq C(g)\mathcal{B}K^{1-p}.
+|J_{K}^{\mu}(u_{\text{nn}})-J^{\mu}(u_{\text{nn}})|\leq\int_{\Omega}|u_{\text{nn}}(g-g^K)|\,dx\leq C(g)\mathcal{B}K^{-1}.
 \end{equation*}
 因此，对于任意给定的 $u_{\text{nn}}\in \mathcal{N}^{2}$，目标误差可作如下分解：
 \begin{equation*}
@@ -267,7 +267,7 @@ J^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)-J^{\mu}(u^{*}) = &\left[J^{\mu}\
 \begin{theorem}[逼近误差]\label{thm:apperr}
 如果 $\mathcal{D}$，$\mathcal{W}$ 和 $\mathcal{B}$ 充分大，我们可以建立如下结果：
 \begin{equation*}
-\mathcal{E}_{a p p}=\inf _{u_{\text{nn}} \in \mathcal{N}^{2}(\mathcal{D},\mathcal{W},\mathcal{B})}\left[J^{\mu}\left(u_{\text{nn}}\right)-J^{\mu}\left(u^{*}\right)\right]\leq C(\Omega,u^{*},f)\mu\left(\mathcal{B}^{-2/(d-2)}+\mathcal{W}^{-1/d}\right).
+\mathcal{E}_{a p p}=\inf _{u_{\text{nn}} \in \mathcal{N}^{2}(\mathcal{D},\mathcal{W},\mathcal{B})}\left[J^{\mu}\left(u_{\text{nn}}\right)-J^{\mu}\left(u^{*}\right)\right]\leq C(\Omega,u^{*},V)\mu\left(\mathcal{B}^{-2/(d-2)}+\mathcal{W}^{-1/d}\right).
 \end{equation*}
 \end{theorem}
 \begin{proof}
@@ -286,214 +286,183 @@ J^{\mu}\left(u^{*}+v\right) &= \int_{\Omega}|\nabla u^{*}|^{2}+|\nabla v|^{2}-2\
 \begin{equation*}
 \begin{aligned}
 \mathcal{E}_{a p p}&=\inf\limits _{u_{\text{nn}} \in \mathcal{N}^{2}}\left[J^{\mu}\left(u_{\text{nn}}\right)-J^{\mu}\left(u^{*}\right)\right]\\
-&\leq C(\Omega,f)\mu\inf\limits _{u_{\text{nn}} \in \mathcal{N}^{2}}\|u_{\text{nn}}-u^{*}\|_{H^{1}}^{2}\\
-&\leq C(\Omega,f)\mu\left(\inf\limits _{u_{\text{nn}} \in \mathcal{N}^{2}}\|u_{\text{nn}}-u^{*}_{\mathcal{B}}\|_{H^{1}}^{2}+\|u^{*}_{\mathcal{B}}-u^{*}\|_{H^{1}}^{2}\right)\\
-&\leq C(\Omega,f,u^{*})\mu\left(\mathcal{W}^{-1/d}+\mathcal{B}^{-q/d}\right).
+&\leq C(\Omega,V)\mu\inf\limits _{u_{\text{nn}} \in \mathcal{N}^{2}}\|u_{\text{nn}}-u^{*}\|_{H^{1}}^{2}\\
+&\leq C(\Omega,V)\mu\left(\inf\limits _{u_{\text{nn}} \in \mathcal{N}^{2}}\|u_{\text{nn}}-u^{*}_{\mathcal{B}}\|_{H^{1}}^{2}+\|u^{*}_{\mathcal{B}}-u^{*}\|_{H^{1}}^{2}\right)\\
+&\leq C(\Omega,V)\mu\left(\mathcal{W}^{-1/d}+\mathcal{B}^{-q/d}\right).
 \end{aligned}
 \end{equation*}
+其中$q$是Sobolev指数，空间维度$d=1,2$时，$q$取任意大的有限值，$d\geq 3$时，$q = \frac{2d}{d-2}$。
 \end{proof}
 
 \subsection{统计误差}\label{sec:staerr}
 本节的核心目标是推导并界定统计误差：
 \begin{equation*}
-\mathcal{E}_{sta}=2\sup_{u_{\phi}\in\mathcal{N}^{2}}\left| \mathcal{L}^{\varepsilon}_{K}(u_{\phi})-\widehat{\mathcal{L}}^{\varepsilon}_{K}(u_{\phi}) \right|.
+\mathcal{E}_{sta}=2\sup_{u_{\text{nn}}\in\mathcal{N}^{2}}\left| J^{\mu}_{K}(u_{\text{nn}})-\widehat{J}^{\mu}_{K}(u_{\text{nn}}) \right|.
 \end{equation*}
 
 为便于逐项估计，我们首先将统计误差分解为如下五个组成部分。具体而言，我们有如下放缩：
 \begin{equation}\label{lemma:staerr:ch3dec}
-\sup _{u_{\phi} \in \mathcal{N}^2}\left|\mathcal{L}^{\varepsilon}_{K}(u_{\phi})-\widehat{\mathcal{L}}^{\varepsilon}_{K}(u_{\phi})\right|\leq\sum_{j=1}^{5}\sup _{u_{\phi} \in \mathcal{N}^2}\left|\mathcal{L}_{j}^{\varepsilon}(u_{\phi})-\widehat{\mathcal{L}}_{j}^{\varepsilon}(u_{\phi})\right|,
+\sup _{u_{\text{nn}} \in \mathcal{N}^2}\left|J^{\mu}_{K}(u_{\text{nn}})-\widehat{J}^{\mu}_{K}(u_{\text{nn}})\right|\leq\sum_{j=1}^{5}\sup _{u_{\text{nn}} \in \mathcal{N}^2}\left|J_{j}^{\mu}(u_{\text{nn}})-\widehat{J}_{j}^{\mu}(u_{\text{nn}})\right|,
 \end{equation}
 具体而言，各项定义如下：
-$$ \begin{aligned} 
-\mathcal{L}_{1}^{\varepsilon}(v)&=|\Omega|\mathop{\mathbb{E}}_{X\sim U(\Omega)}\left[\|\nabla v(X)\|_{2}^{2}\right], &\widehat{\mathcal{L}}_{1}^{\varepsilon}(v)&=\frac{|\Omega|}{N}\sum\limits_{i=1}^{N}\left[ \|\nabla v(X_{i})\|_{2}^{2}\right], \\ 
-\mathcal{L}_{2}^{\varepsilon}(v)&=2|\Omega|\mathop{\mathbb{E}}_{X\sim U(\Omega)}\left[F(v(X))\right], &\widehat{\mathcal{L}}_{2}^{\varepsilon}(v)&=2\frac{|\Omega|}{N}\sum\limits_{i=1}^{N}\left[F(v(X_{i}))\right], \\
-\mathcal{L}_{3}^{\varepsilon}(v)&=-2|\Omega|\mathop{\mathbb{E}}_{X\sim U(\Omega)}\left[v(X)g_{K}(X)\right], &\widehat{\mathcal{L}}_{3}^{\varepsilon}(v)&=-2\frac{|\Omega|}{N}\sum\limits_{i=1}^{N}\left[v(X_{i})g_{K}(X_{i})\right], \\
-\mathcal{L}_{4}^{\varepsilon}(v)&=\varepsilon |\partial \Omega|\mathop{\mathbb{E}}_{Y\sim U(\partial\Omega)}\left[ v^{2}(Y) \right], &\widehat{\mathcal{L}}_{4}^{\varepsilon}(v)&=\varepsilon \frac{|\partial\Omega|}{M}\sum\limits_{j=1}^{M}\left[v^{2}(Y_{j}) \right],\\
-\mathcal{L}_{5}^{\varepsilon}(v)&=-2\varepsilon |\partial \Omega|\mathop{\mathbb{E}}_{Y\sim U(\partial\Omega)}\left[ v(Y)h(Y) \right], &\widehat{\mathcal{L}}_{5}^{\varepsilon}(v)&=-2\varepsilon \frac{|\partial\Omega|}{M}\sum\limits_{j=1}^{M}\left[v(Y_{j})h(Y_{j}) \right]. 
-\end{aligned} $$
+\begin{equation}\label{eq:ch3dispartloss}
+\begin{aligned} 
+J_{1}^{\mu}(u)&=|\Omega|\mathop{\mathbb{E}}_{X\sim U(\Omega)}\left[\frac{|\nabla u(X)|^{2}}{2}\right], &\widehat{J}_{1}^{\mu}(u)&=\frac{|\Omega|}{N}\sum\limits_{i=1}^{N}\left[ \frac{|\nabla u(X_{i})|^{2}}{2}\right], \\ 
+J_{2}^{\mu}(u)&=|\Omega|\mathop{\mathbb{E}}_{X\sim U(\Omega)}\left[W(u(X))\right], &\widehat{J}_{2}^{\mu}(u)&=\frac{|\Omega|}{N}\sum\limits_{i=1}^{N}\left[W(u(X_{i}))\right], \\
+J_{3}^{\mu}(u)&=\frac{\mu}{2} |\partial \Omega|\mathop{\mathbb{E}}_{Y\sim U(\partial\Omega)}\left[ u^{2}(Y) \right], &\widehat{J}_{3}^{\mu}(u)&=\frac{\mu}{2} \frac{|\partial\Omega|}{M}\sum\limits_{j=1}^{M}\left[u^{2}(Y_{j}) \right],\\
+J_{4}^{\mu}(u)&=-|\Omega|\mathop{\mathbb{E}}_{X\sim U(\Omega)}\left[u(X)g_{K}(X)\right], &\widehat{J}_{4}^{\mu}(u)&=-\frac{|\Omega|}{N}\sum\limits_{i=1}^{N}\left[u(X_{i})g_{K}(X_{i})\right], \\
+J_{5}^{\mu}(u)&=-\mu |\partial \Omega|\mathop{\mathbb{E}}_{Y\sim U(\partial\Omega)}\left[ u(Y)h(Y) \right], &\widehat{J}_{5}^{\mu}(u)&=-\mu \frac{|\partial\Omega|}{M}\sum\limits_{j=1}^{M}\left[u(Y_{j})h(Y_{j}) \right]. 
+\end{aligned} 
+\end{equation}
+
+这里，$U(\Omega)$ 和 $U(\partial\Omega)$ 分别表示在 $\Omega$ 和 $\partial\Omega$ 上的均匀分布。上式的离散经验形式与特征值问题中的式\eqref{eq:dispartloss}非常相似，但是由于方程 \eqref{eq:maineq} 的非线性特征和非齐次边界条件，导致式子\eqref{eq:ch3dispartloss}多出了两项 $J_{2}^{\mu}$ 和 $J_{5}^{\mu}$。但由于不存在归一化和正交误差，因此不需要式\eqref{eq:dispartloss}中的$\mathcal{L}_4$和$\mathcal{L}_5$项。
 
 
-这里，$U(\Omega)$ 和 $U(\partial\Omega)$ 分别表示在 $\Omega$ 和 $\partial\Omega$ 上的均匀分布。给定来自均匀分布的 $n$ 个独立同分布 (i.i.d) 样本 $\mathbf{Z}_{n}=\left\{Z_{i}\right\}_{i=1}^{n}$，我们可以利用\\ Rademacher 复杂度来评估给定函数类 $\mathcal{N}$ 在 $n$ 个随机样本 $\mathbf{Z}_{n}$ 上的限制容量。
+采用与引理 \ref{lemma:staerr:Rad234} 相似的推导过程，我们可以证明引理 \ref{lemma:staerr:ch3Rad234}。
 
-以下是界定统计误差的概要：首先，我们从定义 \ref{def:staerr:radcom} 到 \ref{def:staerr:pdim} 定义 Rademacher 复杂度 $\mathfrak{R}$、覆盖数 $\mathcal{C}_{\infty}$ 和伪维数 $Pdim$。然后，引理 \ref{lemma:staerr:Rad234} 利用 Rademacher 复杂度对统计误差的每一部分进行了界定。引理 \ref{lemma:staerr:Rad_cover} 通过覆盖数的积分来控制 Rademacher 复杂度，而覆盖数又通过引理 \ref{lemma:staerr:cover_Pdim} 由伪维数控制。最后，引理 \ref{lemma:staerr:pdim} 通过神经网络的宽度和深度表达了伪维数的阶。这导出了定理 \ref{thm:staerr:finalthm}，将它们全部结合在一起。
-
-为了便于阅读，我们首先陈述上述引理和定理，并将其证明留给附录 \ref{sec:appd}。
-
-下面的引理阐明了统计误差与函数类的\\Rademacher 复杂度之间的关系。
-
-\begin{lemma}\label{lemma:staerr:Rad234}
-
+\begin{lemma}\label{lemma:staerr:ch3Rad234}
 我们有
-\begin{equation*}
+\begin{equation}
 \begin{aligned}
-&\mathbb{E}_{\left\{X_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}^{\varepsilon}_{1}(u)-\widehat{\mathcal{L}}^{\varepsilon}_{1}(u)\right| \leq |\Omega|\mathfrak{N}\left(\mathcal{N}^{1,2}\right),\\
-&\mathbb{E}_{\left\{X_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{2}(u)-\widehat{\mathcal{L}}_{2}(u)\right| \leq 2|\Omega|\|f\|_{\infty}\mathfrak{N}\left(\mathcal{N}^{2}\right),\\
-&\mathbb{E}_{\left\{X_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}^{\varepsilon}_{3}(u)-\widehat{\mathcal{L}}^{\varepsilon}_{3}(u)\right| \leq 2|\Omega|K \mathfrak{N}\left(\mathcal{N}^{2}\right),\\
-&\mathbb{E}_{\left\{Y_{i}\right\}_{i=1}^{M}} \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}^{\varepsilon}_{4}(u)-\widehat{\mathcal{L}}^{\varepsilon}_{4}(u)\right| \leq 2\varepsilon|\partial\Omega| \mathcal{B} \mathfrak{N}\left(\mathcal{N}^{2}\right),\\
-&\mathbb{E}_{\left\{Y_{i}\right\}_{i=1}^{M}} \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}^{\varepsilon}_{5}(u)-\widehat{\mathcal{L}}^{\varepsilon}_{5}(u)\right| \leq 4\varepsilon|\partial\Omega|\|h\|_{\infty} \mathfrak{N}\left(\mathcal{N}^{2}\right).\\
+&\mathbb{E}_{\left\{X_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|J^{\mu}_{1}(u)-\widehat{J}^{\mu}_{1}(u)\right| \leq \frac{1}{2} |\Omega|\mathfrak{N}\left(\mathcal{N}^{1,2}\right),\\
+&\mathbb{E}_{\left\{X_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|J^{\mu}_{2}(u)-\widehat{J}^{\mu}_{2}(u)\right| \leq |\Omega|\|V\|_{\infty}\mathfrak{N}\left(\mathcal{N}^{2}\right),\\
+&\mathbb{E}_{\left\{Y_{i}\right\}_{i=1}^{M}} \sup _{u \in \mathcal{N}^{2}}\left|J^{\mu}_{3}(u)-\widehat{J}^{\mu}_{3}(u)\right| \leq \frac{\mu}{2}|\partial\Omega| \mathcal{B} \mathfrak{N}\left(\mathcal{N}^{2}\right),\\
+&\mathbb{E}_{\left\{X_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|J^{\mu}_{4}(u)-\widehat{J}^{\mu}_{4}(u)\right| \leq |\Omega|K \mathfrak{N}\left(\mathcal{N}^{2}\right),\\
+&\mathbb{E}_{\left\{Y_{i}\right\}_{i=1}^{M}} \sup _{u \in \mathcal{N}^{2}}\left|J^{\mu}_{5}(u)-\widehat{J}^{\mu}_{5}(u)\right| \leq \mu|\partial\Omega|\|h\|_{\infty} \mathfrak{N}\left(\mathcal{N}^{2}\right).\\
 \end{aligned}
-\end{equation*}
+\end{equation}
 \end{lemma}
 
-证明在附录中给出。
+引理 \ref{lemma:staerr:ch3Rad234} 的证明思路与引理 \ref{lemma:staerr:Rad234} 基本一致。在此，我们仅重点说明与特征值问题有所区别的两项—— $J_{2}^{\mu}$ 和 $J_{5}^{\mu}$。由于这两项对应的 Lipschitz 常数分别为 $\|V\|_{\infty}$ 和 $\|h\|_{\infty}$，运用相同的技巧即可得出上述不等式。
 
-\textcolor{black}{为了利用定义 \ref{def:staerr:pdim} 中定义的覆盖数 (covering numbers) 来界定 Rademacher 复杂度，我们参考 Dudley 的经典结果。}
+基于相似的逻辑，我们可以进一步界定目标函数类的伪维度（Pseudo-dimension）：
+\begin{equation}\label{eq:ch3pdim}
+\begin{aligned}
+\operatorname{Pdim}(\mathcal{N}^{2})\leq C_{1} \mathcal{D}^2\mathcal{W}^2(\mathcal{D}+\log\mathcal{W}),\\
+\operatorname{Pdim}(\mathcal{N}^{1,2})\leq C_{2} \mathcal{D}^4\mathcal{W}^2(\mathcal{D}+\log\mathcal{W}).\\
+\end{aligned}
+\end{equation}
+其中 $C_1$, $C_2$ 是独立于 $d$ 的常数。
 
-\begin{lemma}[Dudley 熵公式 \cite{dudley}]\label{lemma:staerr:Rad_cover}
-假设 $0\in \mathcal{N}$ 且 $\mathcal{N}$ 的直径小于 $\mathcal{B}$，即 $\|u\|_{L^\infty(\Omega)} \leq \mathcal{B}, \forall u \in \mathcal{N}$。那么
-$$\mathfrak{R}(\mathcal{N}) \leq  \inf_{0<\delta<\mathcal{B}}\left(4 \delta+\frac{12}{\sqrt{n}} \int_{\delta}^{\mathcal{B}} \sqrt{\log (2\mathcal{C}\left( \varepsilon, \mathcal{N}, n\right))}\mathrm{d}\varepsilon\right)。$$
-\end{lemma}
-
-证明在附录中给出。
-
-随后的引理揭示了覆盖数与伪维数 (pseudo-dimension) 之间的相互关系。为了寻求分段多项式函数的 Pdim 的上界，我们参考了 \cite{bartlett2019nearly} 中提出的结论，这些结论适用于我们公式中定义的函数类。
-
-\begin{lemma}\label{lemma:staerr:cover_Pdim}
-设 $\mathcal{N}$ 为一组从定义域 $X$ 映射到有界区间 $[0, \mathcal{B}]$ 的实函数集合。令 $\varepsilon>0$。则有
+结合引理 \ref{lemma:staerr:ch3Rad234} 的结论与式 \eqref{eq:ch3pdim} 中的伪维度估计，我们能够推导出整体统计误差的上界。
+\begin{theorem}[统计误差]\label{thm:staerr:ch3finalthm}
 \begin{equation*}
-\mathcal{C}(\varepsilon, \mathcal{N}, n) \leq \sum_{i=1}^{\mathrm{Pdim}(\mathcal{N})}
-\begin{pmatrix}
-n \\
-i
-\end{pmatrix}
-\left(\frac{\mathcal{B}}{\varepsilon}\right)^{i},
-\end{equation*}
-当 $n\geq\mathrm{Pdim}(\mathcal{N})$ 时，该值小于 $\left(\frac{en\mathcal{B}}{\varepsilon\cdot\mathrm{Pdim}(\mathcal{N})}\right)^{\mathrm{Pdim}(\mathcal{N})}$。
-\end{lemma}
-
-该引理的证明可见 \cite{anthony2009neural} 中的定理 12.2。
-
-\begin{lemma}\label{lemma:staerr:pdim}
-设 $\mathcal{N}$ 为一组满足以下条件的函数集合：
-\begin{itemize}
-\item[(i)] 可由深度不超过 $\mathcal{D}$ 且宽度不超过 $\mathcal{W}$ 的神经网络实现，
-\item[(ii)] 每个单元中的激活函数为 $\mathrm{ReLU}$ 或 $\mathrm{ReLU}^{2}$。
-\end{itemize}
-则
-\begin{equation*}
-\operatorname{Pdim}(\mathcal{N})\leq C_{1}\mathcal{D}^2\mathcal{W}^2(\mathcal{D}+\log\mathcal{W}).
-\end{equation*}
-\end{lemma}
-证明在附录中给出。
-特别地，基于等式~\eqref{eq:N12}，我们有：
-\textcolor{black}{
-\begin{equation*}
-    \operatorname{Pdim}(\mathcal{N}^{1,2})\leq C_{2} d^2\mathcal{D}^4\mathcal{W}^2(\mathcal{D}+\log\mathcal{W}).
-\end{equation*}
-其中 $C_1$, $C_2$ 是独立于 $d$ 的常数，如果 $\mathcal{W}>d$。
-}
-
-借助上述准备工作，统计误差可以通过简单的计算得到控制。
-\begin{theorem}\label{thm:staerr:ch3finalthm}
-\begin{equation*}
-\mathcal{E}_{\text {sta }}\leq C(\Omega,f,h)\left(K+\varepsilon\mathcal{B}\right)\mathcal{B}\mathcal{D}^{2} \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}}\sqrt{\frac{\log n}{n}}.
-\end{equation*}
-\end{theorem}
-
-\begin{proof}{定理 \ref{thm:staerr:finalthm} 的证明}
-
-综合引理 \ref{lemma:staerr:Rad234} 到引理 \ref{lemma:staerr:pdim}，可以得出：
-\begin{equation*}
-\sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}^{\varepsilon}(u)-\widehat{\mathcal{L}}^{\varepsilon}(u)\right|\leq C(\Omega)\mathcal{B}\mathfrak{N}\left(\mathcal{N}^{1,2}\right)+C(\Omega,f,h)\left(\varepsilon\mathcal{B}+K\right)\mathfrak{N}\left(\mathcal{N}^{2}\right)
-\end{equation*}
-其中
-\begin{equation*}
-\begin{array}{rcl}
-\mathfrak{N}\left(\mathcal{N}\right)&\leq&\displaystyle 4 \delta+\frac{12}{\sqrt{n}} \int_{\delta}^{\mathcal{B}} \sqrt{\log (2 \mathcal{C}(\varepsilon, \mathcal{N}, n))} \mathrm{d} \varepsilon\\
-{}&{}&{}\\
-{}&\leq&\displaystyle 4 \delta+\frac{12}{\sqrt{n}} \mathcal{B} \sqrt{\log (2 \mathcal{C}(\delta, \mathcal{N}, n))}\\
-{}&{}&{}\\
-{}&\leq&\displaystyle 4 \delta+\frac{12}{\sqrt{n}} \mathcal{B} \sqrt{\log 2 + \operatorname{Pdim}(\mathcal{N})\log\left(\frac{e n \mathcal{B}}{\delta \operatorname{Pdim}(\mathcal{N})}\right)},
-\end{array}
-\end{equation*}
-这是因为 $\mathcal{C}(\varepsilon, \mathcal{N}, n)$ 显然是关于 $\varepsilon$ 的递减函数。选取 $\delta=\mathcal{B}\sqrt{\frac{\operatorname{Pdim}(\mathcal{N})}{n}}$，可得
-\begin{equation*}
-\begin{array}{rcl}
-\mathfrak{N}\left(\mathcal{N}\right)&\leq&\displaystyle4\delta\left\{ 4+ 3\sqrt{\frac{\log 2}{\operatorname{Pdim}(\mathcal{N})}} +\frac{3\sqrt{6}}{2}\sqrt{\log\left(\frac{n}{ \operatorname{Pdim}(\mathcal{N})}\right)}\right\},\\
-{}&\leq&\displaystyle C\mathcal{B}\sqrt{\operatorname{Pdim}(\mathcal{N})} \sqrt{\frac{\log{n}}{n}},\\
-\end{array}
-\end{equation*}
-从而根据引理 \ref{lemma:staerr:pdim}，证明完成。
-\end{proof}
-
-
-\subsection{主要定理}\label{sec:mainres}
-针对 Robin 边界条件，我们有：
-\begin{theorem}\label{mainthm:robin}
-设假设 \ref{ass:f} 成立，且 $\widehat{u}_{\phi}^{\varepsilon}$ 为式 \eqref{eq:u_hat} 中定义的函数。我们有：
-\begin{equation*}
-\|\widehat{u}_{\phi}^{\varepsilon}-u^{\varepsilon}\|_{H^{1}}\leq C(\Omega,u^{\varepsilon},f,g,h)\sqrt{\delta},
-\end{equation*}
-其中
-\begin{equation*}
-\begin{array}{rcl}
-\delta&\leq&\displaystyle C\left(\Omega, u^{\varepsilon}, f, g, h\right) \varepsilon\left(\mathcal{B}^{-2 / (d-2)}+\mathcal{W}^{-1 / d}\right)+C(g) \mathcal{B}K^{1-p}\\
-{}&{}&{}\\
-{}&{}&\displaystyle+C(\Omega, f, h)(K+\varepsilon \mathcal{B}) \mathcal{B} \mathcal{D}^{2} \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}} \sqrt{\frac{\log n}{n}}.
-\end{array}
+\mathcal{E}_{\text {sta }}\leq C(\Omega,V,h)\left(K+\mathcal{D} +\mu\mathcal{B}\right)\mathcal{B}\mathcal{D} \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}}\sqrt{\frac{\log n}{n}}.
 \end{equation*}
 \end{theorem}
 
 \begin{proof}
-由引理 \ref{th:energyerr} 以及第 \ref{sec:apperr} 节中逼近误差和第 \ref{sec:staerr} 节中统计误差的估计，我们有：
+综合引理 \ref{lemma:staerr:ch3Rad234} 至引理 \ref{lemma:staerr:pdim} 的结论，可得：
 \begin{equation*}
-\mathcal{L}^{\varepsilon}\left(\widehat{u}_{\phi}^{\varepsilon}\right)-\mathcal{L}^{\varepsilon}\left(u^{\varepsilon}\right)\leq C\left(\Omega, u^{\varepsilon}, f, g, h\right)\delta.
+\begin{aligned}
+\sup _{u \in \mathcal{N}^{2}}\left|J^{\mu}(u)-\widehat{J}^{\mu}(u)\right|\leq &\frac{|\Omega|}{2}\mathfrak{N}\left(\mathcal{N}^{1,2}\right)+|\Omega|\left(\|V\|_{\infty}+K\right)\mathfrak{N}\left(\mathcal{N}^{2}\right)\\
+&+\frac{\mu}{2}|\partial\Omega|\left(\|h\|_{\infty}+2B\right)\mathfrak{N}\left(\mathcal{N}^{2}\right)
+\end{aligned}
 \end{equation*}
+根据 Rademacher 复杂度与伪维度的基本关系，有：
+\begin{equation*}
+\mathfrak{N}\left(\mathcal{N}\right)\leq C\mathcal{B}\sqrt{\operatorname{Pdim}(\mathcal{N})} \sqrt{\frac{\log{n}}{n}}
+\end{equation*}
+将式 \eqref{eq:ch3pdim} 中关于 $\mathcal{N}^{1,2}$ 与 $\mathcal{N}^{2}$ 的伪维度上界分别代入上式，即可得出定理 \ref{thm:staerr:ch3finalthm} 的结论。证明完毕。
+\end{proof}
 
+
+\subsection{总误差估计}\label{sec:mainres}
+针对带有 Robin 边界条件的问题，我们建立如下的总误差估计：
+\begin{theorem}[总误差估计，Robin边界条件]\label{mainthm:robin}
+假设条件 \ref{ass:f} 成立。设 $u^*$ 为原 Robin 边值问题的真解，$\widehat{u}_{\text{nn}}^{K}$ 为由式 \eqref{eq:u_hat} 给出的神经网络近似解。令 $q$ 为 Sobolev 嵌入指数，其取值依赖于空间维度 $d$：当 $d=1,2$ 时，$q \in [2, +\infty)$；当 $d\geq 3$ 时，$q = \frac{2d}{d-2}$。则有如下 $H^1$ 范数下的总误差估计：
+\begin{equation*}
+\|\widehat{u}_{\text{nn}}^K-u^*\|_{H^{1}}\leq C(\Omega,\mu)\sqrt{\delta},
+\end{equation*}
+其中
+\begin{equation*}
+\begin{aligned}
+\delta&\leq\displaystyle C_1\left(\Omega, \mu, V, g, h\right) \left(\mathcal{B}^{-q / d}+\mathcal{W}^{-1 / d}\right)+C_2(g) \mathcal{B}K^{-1}\\
+{}&\displaystyle+C_3(\Omega,\mu, f, h)(K+\mathcal{D}+\mathcal{B}) \mathcal{B} \mathcal{D} \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}} \sqrt{\frac{\log n}{n}}.
+\end{aligned}
+\end{equation*}
+\end{theorem}
+
+\begin{proof}
+首先，由泛函 $J^{\mu}$ 稳定性估计\eqref{thm:staerr}：存在常数 $C_4(\Omega,\mu)>0$，使得
+\begin{equation}\label{eq:stability1}
+\|\widehat{u}_{\text{nn}}^K-u^*\|_{H^{1}}^2 \leq C_4(\Omega,\mu) \left( J^{\mu}(\widehat{u}_{\text{nn}}^K)-J^{\mu}(u^*) \right).
+\end{equation}
+另一方面，综合引理 \ref{th:energyerr}、第 \ref{sec:apperr} 节的逼近误差估计以及第 \ref{sec:staerr} 节的统计误差分析，可得能量误差的上界为：
+\begin{equation}\label{eq:energy_bound}
+J^{\mu}(\widehat{u}_{\text{nn}}^K)-J^{\mu}(u^*)\leq \delta.
+\end{equation}
+将式 \eqref{eq:energy_bound} 代入式 \eqref{eq:stability1} 中，并对两边同时开平方，令 $C(\Omega,\mu) = \sqrt{C_4(\Omega,\mu)}$，即可完成定理的证明。
 \end{proof}
 
 \begin{corollary}\label{cor:corrobin}
-在与定理 \ref{mainthm:robin} 相同的条件下，若我们取：
+在定理 \ref{mainthm:robin} 的假设下，为了平衡各项误差以获得最优收敛率，我们对网络参数与样本量 $n$ 作如下渐近设定（使用大 $O$ 符号 $\widetilde{\mathcal{O}}$ 隐藏对数项）：
+$$ \mathcal{D} = \mathcal{O}(1), \quad \mathcal{W} = \mathcal{O}(n^w), \quad \mathcal{B} = \mathcal{O}(n^b), \quad K = \mathcal{O}(n^k). $$
+通过令 $\delta$ 上界中的各项关于 $n$ 具有相同的代数衰减速率 $n^{-r} \ (r>0)$，可推导出如下参数关系：
+$$ w = dr, \quad b = \frac{d}{q}r, \quad k = b+r. $$
+求解可得统一的衰减指数：
 \begin{equation*}
-\mathcal{D}=O(1),\quad\mathcal{W}=O(n^{t_{1}}),\quad \mathcal{B}=O(n^{t_{2}}),\quad K=O(n^{t_{3}}),
+r = \frac{q}{2(dq + 2d + 2q)}.
 \end{equation*}
-我们可以得到：
-\begin{equation*}
-\|\widehat{u}_{\phi}^{\varepsilon}-u^{\varepsilon}\|_{H^{1}}\leq C\left(\Omega, u^{\varepsilon}, f, g, h\right)n^{-t_{4}/2},
-\end{equation*}
-其中
-\begin{equation*}
-\left\{
-\begin{array}{rcl}
-t_{1}&=&\displaystyle\frac{d(p-1)}{3dp-2d-p+1} \\
-t_{2}&=&\displaystyle\frac{(d-2)(p-1)}{2(3dp-2d-p+1)}\\
-t_{3}&=&\displaystyle\frac{d}{2(3dp-2d-p+1)}\\
-t_{4}&=&\displaystyle\frac{p-1}{3dp-2d-p+1}
-\end{array}
-\right.
-\end{equation*}
-均为正数。
+
+由此，我们可以得到不同空间维数 $d$ 下，能量误差界 $\delta$ 与最终逼近误差的最优收敛阶：
+
+\begin{itemize}
+    \item \textbf{当 $d = 1$ 时}：分母变为 $6q+4$，统一的能量误差界收敛阶为 $\delta = \widetilde{\mathcal{O}}\left( n^{-\frac{q}{6q+4}} \right)$。开平方后，原问题在 $H^1$ 范数下的最终逼近误差收敛阶为 $\widetilde{\mathcal{O}}\left( n^{-\frac{q}{12q+8}} \right)$。随着 $q \to +\infty$，该误差的收敛速度渐近趋于 $\widetilde{\mathcal{O}}\left( n^{-1/12} \right)$。
+    
+    \item \textbf{当 $d = 2$ 时}：分母变为 $8(q+1)$，统一的能量误差界收敛阶为 $\delta = \widetilde{\mathcal{O}}\left( n^{-\frac{q}{8(q+1)}} \right)$。开平方后，原问题在 $H^1$ 范数下的最终逼近误差收敛阶为 $\widetilde{\mathcal{O}}\left( n^{-\frac{q}{16(q+1)}} \right)$。随着 $q \to +\infty$，该误差的收敛速度渐近趋于 $\widetilde{\mathcal{O}}\left( n^{-1/16} \right)$。
+    
+    \item \textbf{当 $d \geq 3$ 时}：此时 $q = \frac{2d}{d-2}$，代入可得 $r = \frac{1}{4d}$。网络参数的具体设定为：
+    $$ \mathcal{W} = \mathcal{O}\left(n^{1/4}\right), \quad \mathcal{B} = \mathcal{O}\left(n^{\frac{d-2}{8d}}\right), \quad K = \mathcal{O}\left(n^{1/8}\right). $$
+    此时统一的能量误差界收敛阶为 $\delta = \widetilde{\mathcal{O}}\left( n^{-\frac{1}{4d}} \right)$。开平方后，原问题在 $H^1$ 范数下的最终逼近误差收敛阶变为：
+    $$ \|\widehat{u}_{\text{nn}}^K-u^*\|_{H^{1}} = \widetilde{\mathcal{O}}\left( n^{-\frac{1}{8d}} \right). $$
+\end{itemize}
 \end{corollary}
 
-对于 Dirichlet 边界条件，我们有：
-\begin{theorem}\label{mainthm:diri}
-设假设 \ref{ass:f} 成立，且 $\widehat{u}_{\phi}^{\varepsilon}$ 为等式~\eqref{eq:u_hat} 中定义的函数。我们有：
+针对 Dirichlet 边界条件，我们建立如下主要定理：
+\begin{theorem}[总误差估计，Dirichle边界条件]\label{mainthm:diri}
+假设 \ref{ass:f} 成立，且惩罚系数 $\mu\geq 1$。设 $u^*$ 为原 Dirichlet 边值问题的真解，$\widehat{u}_{\text{nn}}^{K}$ 为由式 \eqref{eq:u_hat} 给出的神经网络近似解。令 $q$ 为 Sobolev 嵌入指数，其取值依赖于空间维度 $d$：当 $d=1,2$ 时，$q \in [2, +\infty)$；当 $d\geq 3$ 时，$q = \frac{2d}{d-2}$。则在 $H^1$ 范数下，我们有如下总误差估计：
 \begin{equation*}
-\|\widehat{u}_{\phi}^{\varepsilon}-u^{\infty}\|_{H^{1}}\leq C(\Omega,u^{\varepsilon},f,g,h)\sqrt{\delta},
+\|\widehat{u}_{\text{nn}}^{K}-u^{*}\|_{H^{1}}\leq C(\Omega)\sqrt{\delta},
 \end{equation*}
-其中
+其中，$\delta$ 满足：
 \begin{equation*}
-\begin{array}{rcl}
-\delta&\leq&C\left(\Omega, u^{\varepsilon}, f, g, h\right) \varepsilon\left(\mathcal{B}^{-2 / (d-2)}+\mathcal{W}^{-1 / d}\right)+C(g) \mathcal{B}K^{1-p}\\
-{}&{}&{}\\
-{}&{}&\displaystyle+C(\Omega, f, h)(K+\varepsilon \mathcal{B}) \mathcal{B} \mathcal{D}^{2} \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}} \sqrt{\frac{\log n}{n}}+C(\Omega,f,g,h)\frac{1}{\varepsilon}.
-\end{array}
+\begin{aligned}
+\delta&\leq C_1\left(\Omega, V, g, h\right) \mu\left(\mathcal{B}^{-q / d}+\mathcal{W}^{-1 / d}\right)+C_2(g) \mathcal{B}K^{-1}\\
+{}&\displaystyle+C_3(\Omega, V, h)(K+\mathcal{D}+\mu \mathcal{B}) \mathcal{B} \mathcal{D} \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}} \sqrt{\frac{\log n}{n}}+C_4(\Omega,V,g,h)\frac{1}{\mu}.
+\end{aligned}
 \end{equation*}
 \end{theorem}
 \begin{proof}
-这是由定理 \ref{mainthm:robin} 和定理 \ref{thm:model} 中的结论直接推导得出的。
+设 $u^{\mu}$ 为带有惩罚系数 $\mu$ 的 Robin 边界条件问题的解，根据三角不等式，我们有：
+\begin{equation*}
+\|\widehat{u}_{\text{nn}}^{K}-u^{*}\|_{H^{1}}\leq \|\widehat{u}_{\text{nn}}^{K}-u^{\mu}\|_{H^{1}}+\|u^{\mu}-u^{*}\|_{H^{1}},
+\end{equation*}
+对于上述不等式右侧，第一项可通过精细分析定理 \ref{mainthm:robin} 中的误差界 $\delta$，并将其对系数 $\mu$ 的依赖关系显式提取出来加以界定；第二项则可由定理 \ref{thm:model} 的结论直接得出。综合上述两项估计，即可完成定理的证明。
 \end{proof}
 
-\begin{corollary}
-在定理 \ref{mainthm:diri} 的相同条件下，如果我们取：
+\begin{corollary}\label{cor:cordiri}
+在定理 \ref{mainthm:diri} 的假设下，为了平衡各项误差以获得最优收敛率，我们对网络参数、惩罚参数 $\mu$ 与样本量 $n$ 作如下渐近设定（使用符号 $\widetilde{\mathcal{O}}$ 隐藏对数项）：
+$$ \mathcal{D} = \mathcal{O}(1), \quad \mathcal{W} = \mathcal{O}(n^w), \quad \mathcal{B} = \mathcal{O}(n^b), \quad K = \mathcal{O}(n^k), \quad \mu = \mathcal{O}(n^m). $$
+通过令 $\delta$ 上界中的各项（惩罚误差、逼近误差、算子截断误差以及统计误差）关于 $n$ 具有相同的代数衰减速率 $n^{-r} \ (r>0)$，可推导出如下参数关系：
+$$ m = r, \quad w = 2dr, \quad b = \frac{2d}{q}r, \quad k = b+r. $$
+代入统计误差项求解，可得统一的衰减指数：
 \begin{equation*}
-\varepsilon = O(n^{t_{4}/2}),\quad\mathcal{D}=O(1),\quad\mathcal{W}=O(n^{t_{1}}),\quad \mathcal{B}=O(n^{t_{2}}),\quad K=O(n^{t_{3}}),
+r = \frac{q}{4(dq + 2d + q)}.
 \end{equation*}
-我们可以得到：
-\begin{equation*}
-\|\widehat{u}_{\phi}^{\varepsilon}-u^{\infty}\|_{H^{1}} \leq C(p)n^{-t_{4}/4},
-\end{equation*}
-其中 $\{t_{i}\}_{1}^{4}$ 是推论 \ref{cor:corrobin} 中的数值。
+
+由此，我们可以得到不同空间维数 $d$ 下，能量误差界 $\delta$ 与最终逼近误差的最优收敛阶：
+
+\begin{itemize}
+    \item \textbf{当 $d = 1$ 时}：分母变为 $8(q+1)$，统一的能量误差界收敛阶为 $\delta = \widetilde{\mathcal{O}}\left( n^{-\frac{q}{8(q+1)}} \right)$。开平方后，原问题在 $H^1$ 范数下的最终逼近误差收敛阶为 $\widetilde{\mathcal{O}}\left( n^{-\frac{q}{16(q+1)}} \right)$。随着 $q \to +\infty$，该误差的收敛速度渐近趋于 $\widetilde{\mathcal{O}}\left( n^{-1/16} \right)$。
+    
+    \item \textbf{当 $d = 2$ 时}：分母变为 $4(3q+4)$，统一的能量误差界收敛阶为 $\delta = \widetilde{\mathcal{O}}\left( n^{-\frac{q}{4(3q+4)}} \right)$。开平方后，原问题在 $H^1$ 范数下的最终逼近误差收敛阶为 $\widetilde{\mathcal{O}}\left( n^{-\frac{q}{8(3q+4)}} \right)$。随着 $q \to +\infty$，该误差的收敛速度渐近趋于 $\widetilde{\mathcal{O}}\left( n^{-1/24} \right)$。
+    
+    \item \textbf{当 $d \geq 3$ 时}：此时 $q = \frac{2d}{d-2}$，代入可得 $r = \frac{1}{4(2d-1)} = \frac{1}{8d-4}$。网络参数与惩罚系数的具体设定为：
+    $$ \mu = \mathcal{O}\left(n^{\frac{1}{8d-4}}\right), \quad \mathcal{W} = \mathcal{O}\left(n^{\frac{2d}{8d-4}}\right), \quad \mathcal{B} = \mathcal{O}\left(n^{\frac{d-2}{8d-4}}\right), \quad K = \mathcal{O}\left(n^{\frac{d-2+q}{q(8d-4)}}\right). $$
+    此时统一的能量误差界收敛阶为 $\delta = \widetilde{\mathcal{O}}\left( n^{-\frac{1}{8d-4}} \right)$。开平方后，原问题在 $H^1$ 范数下的最终逼近误差收敛阶变为：
+    $$ \|\widehat{u}_{\text{nn}}^K-u^*\|_{H^{1}} = \widetilde{\mathcal{O}}\left( n^{-\frac{1}{16d-8}} \right). $$
+\end{itemize}
 \end{corollary}
 
 
@@ -858,7 +827,7 @@ $$J''(u)[v, v] \ge (\lambda_1 - \gamma) \int_{\Omega} v^2 \, dx>0$$
 
 \subsection{引理\ref{lemma:totalapp}的证明}\label{pf:lemma:totalapp}
 为了建立主定理的逼近误差界，我们首先需要引入几个关于函数磨光与神经网络逼近的辅助引理。
-首先，引入标准的磨光核（mollifier）$\rho\in C_{0}^{\infty}(\mathbb{R}^d)$，满足如下性质：$\int \rho\,dx=1$ 且 $\rho \geq 0$；当 $\|x\|> 1$ 时 $\rho(x) = 0$；$\|\rho(x)\|_{\infty}=2V_{d}$，其中 $V_{d}$ 为 $d$ 维单位球的体积。取 $q = \frac{2d}{d-2}$，定义卷积平滑后的函数为：
+首先，引入标准的磨光核（mollifier）$\rho\in C_{0}^{\infty}(\mathbb{R}^d)$，满足如下性质：$\int \rho\,dx=1$ 且 $\rho \geq 0$；当 $\|x\|> 1$ 时 $\rho(x) = 0$；$\|\rho(x)\|_{\infty}=2V_{d}$，其中 $V_{d}$ 为 $d$ 维单位球的体积。取 $q$ 为索伯列夫指数，当$d\geq3$时，$q = \frac{2d}{d-2}$，当$d-1,2$时，$q$取为任意大的有限数。定义卷积平滑后的函数为：
 \begin{equation*}
 u^{\varepsilon}_{\mathcal{B}}(x)=\int \mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)u^{\varepsilon}(x+y)\,dy.
 \end{equation*}
@@ -941,11 +910,11 @@ u^{\varepsilon}_{\mathcal{B}}(x)=\int \mathcal{B}^{q}\rho\left(\frac{y}{\mathcal
 令 $\mathcal{W} \sim N^d$，代入上式即得证。证毕。
 \end{proof}
 
-% \subsection{引理\ref{lemma:staerr:Rad234}的证明}
+% \subsection{引理\ref{lemma:staerr:ch3Rad234}的证明}
 % \textcolor{black}{在本附录中，我们给出了 4.3 节中引入的几个引理的完整证明。Deep Ritz 方法的统计误差分析遵循标准化流程，因此，正文中省略了这一部分。}
 
-% 引理 \ref{lemma:staerr:Rad234} 的证明。
-% \begin{proof}\label{pf:lemma:staerr:Rad234}
+% 引理 \ref{lemma:staerr:ch3Rad234} 的证明。
+% \begin{proof}\label{pf:lemma:staerr:ch3Rad234}
 % 我们将分两部分给出证明，每一部分都可以利用两个不同的事实单独获得。
 % 第一个事实是 Rademacher 复杂度可以通过 Lipschitz 连续函数传递。这一事实使我们能够建立最后四个不等式：
 % \begin{lemma}\label{lemma:staerr:liprad}

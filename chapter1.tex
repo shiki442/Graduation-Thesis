@@ -30,7 +30,7 @@
 
 
 \section{预备知识}
-
+\subsection{PDE问题介绍}
 本文主要考察如下形式的椭圆型方程（Elliptic Equations）：
 \begin{equation}\label{eq:general_elliptic}
   -\Delta u(x) + f(u, x) = g(x), \quad x \in \Omega,
@@ -49,12 +49,37 @@
 \end{equation}
 此类问题通常定义为：在已知源项 $g(x)$ 以及解 $u(x)$ 在区域边界或内部某些观测点数据的条件下，反演重构未知势函数 $V(x)$ 的过程。这一过程被称为反势能问题（Inverse Potential Problem）。
 
+\subsection{二阶椭圆PDE的先验估计}
+在本文中，为了对解的性质进行分析，我们将使用一些经典的先验估计结果。以下定理总结了线性和非线性椭圆方程解的正则性和稳定性。
+
+\begin{lemma}[De Giorgi-Nash 估计]
+对于如下形式的散度型方程：
+$$-\sum_{i,j=1}^n \frac{\partial}{\partial x_i} \left( a_{ij}(x) \frac{\partial u}{\partial x_j} \right) = f$$
+其中边界满足外锥条件，系数矩阵 $A(x) = [a_{ij}(x)]$ 满足一致椭圆性条件：即存在常数 $\lambda, \Lambda > 0$ 使得对于所有 $\xi \in \mathbb{R}^n$ 和几乎所有 $x \in \Omega$，有
+$$\lambda |\xi|^2 \leq \sum_{i,j=1}^n a_{ij}(x) \xi_i \xi_j \leq \Lambda |\xi|^2$$
+则只要 $a_{ij}$ 是有界可测的，方程的弱解 $u$ 就是局部 Hölder 连续的。即存在 $\alpha > 0$，使得 $u \in C^{\alpha}$。
+\end{lemma}
+
+\begin{lemma}[全局$L^p$估计，Calderón-Zygmund估计]\label{lem:lp}
+对于如下形式的散度型方程：
+$$-\sum_{i,j=1}^n \frac{\partial}{\partial x_i} \left( a_{ij}(x) \frac{\partial u}{\partial x_j} \right) = f$$
+设 $k$ 为非负整数，$1 < p < \infty$。若右端项 $f \in W^{k,p}(\Omega)$。系数 $a_{ij}, b_i, c$ 属于 $C^{k,1}(\bar{\Omega})$。区域边界 $\partial \Omega$ 是 $C^{k+2}$ 级的。那么，方程的解 $u \in W^{k+2,p}(\Omega)$，且满足以下先验估计：
+$$\|u\|_{W^{k+2,p}(\Omega)} \leq C \left( \|f\|_{W^{k,p}(\Omega)} + \|u\|_{L^p(\Omega)} \right)$$
+\end{lemma}
+
+\begin{lemma}[Calderón-Stein 延拓定理]\label{lem:extension}
+设 $\Omega \subset \mathbb{R}^n$ 是一个有界 Lipschitz 区域，对于每一个非负整数 $k$ 和每一个 $1 \leq p \leq \infty$，存在一个线性延拓算子 $E$：
+$$E: W^{k,p}(\Omega) \to W^{k,p}(\mathbb{R}^n)$$
+使得对于所有的 $f \in W^{k,p}(\Omega)$，$(Ef)|_\Omega = f \quad \text{a.e. in } \Omega$，存在一个仅依赖于 $k, p, n$ 和区域 $\Omega$ 的常数 $C$，使得：
+$$\|Ef\|_{W^{k,p}(\mathbb{R}^n)} \leq C \|f\|_{W^{k,p}(\Omega)}$$
+\end{lemma}
+
 \section{符号与定义}
 
-\subsection{神经网络架构与数学定义}
+\subsection{神经网络架构与参数}
 本节将建立全连接深度神经网络的数学框架并引入相关记号。
 
-\begin{definition}[全连接神经网络]
+\begin{definition}[全连接神经网络]\label{def:fnn}
 我们将全连接深度神经网络表示为参数化函数 $v_{\phi}: \mathbb{R}^{d} \to \mathbb{R}$。该网络通过层级递归的方式定义如下：
 \begin{equation}\label{eq:nn:fcnetwork}
 \begin{aligned}
@@ -170,4 +195,51 @@ v_{\phi}(x) = A_{out} v_{L}(x) + b_{out},
 \end{align*}
 
 若无混淆，在特定的上下文语境中，内积的下标通常会被省略，统一记作 $\langle \cdot, \cdot \rangle$。
+\end{definition}
+
+\subsection{统计机器学习相关定义}
+给定来自均匀分布的 $n$ 个独立同分布 (i.i.d) 样本 $\mathbf{Z}_{n}=\left\{Z_{i}\right\}_{i=1}^{n}$，我们可以利用 Rademacher 复杂度来评估给定函数类 $\mathcal{N}$ 在 $n$ 个随机样本 $\mathbf{Z}_{n}$ 上的限制容量。
+\begin{definition}[拉德马赫复杂度，Rademacher Complexity]\label{def:staerr:radcom}
+设集合 $A \subseteq \mathbb{R}^{n}$，该{\heiti 集合}经验拉德马赫复杂度定义为：
+$$\mathfrak{R}(A)=\mathbb{E}_{\mathbf{\sigma}}\left[\sup _{a \in A} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i} a_{i}\right|\right]$$
+其中 $\{\sigma_{i}\}_{i=1}^{n}$ 是 $n$ 个独立同分布的拉德马赫随机变量，满足 $\mathbb{P}(\sigma_{i}=1)=\mathbb{P}(\sigma_{i}=-1)=1/2$。
+
+进一步地，给定包含 $n$ 个独立同分布样本的随机向量 $\mathbf{Z}_{n}=(Z_1, \dots, Z_n)$，{\heiti 函数类} $\mathcal{N}$ 关于该样本的经验拉德马赫复杂度定义为：
+$$\mathfrak{R}(\mathcal{N})=\mathbb{E}_{\mathbf{Z}_{n}, \mathbf{\sigma}}\left[\sup _{u \in \mathcal{N}} \frac{1}{n} \left| \sum_{i=1}^{n} \sigma_{i} u(Z_{i}) \right|\right].$$
+\end{definition}
+
+\begin{definition}[覆盖与覆盖数，Covering Number]\label{def:staerr:cover}
+假设 $U \subset \mathbb{R}^{n}$。对于任意 $\varepsilon>0$，称集合 $V \subset \mathbb{R}^{n}$ 为 $U$ 关于无穷范数距离 $d_{\infty}$ 的一个 $\varepsilon$-覆盖（$\varepsilon$-cover），若对于任意 $u \in U$，均存在 $v \in V$ 使得 $d_{\infty}(u, v)<\varepsilon$，其中距离 $d_{\infty}$ 定义为：
+$$d_{\infty}(u, v):=\|u-v\|_{\infty}.$$
+集合 $U$ 关于距离 $d_{\infty}$ 的覆盖数（Covering Number）记为 $\mathcal{C}(\varepsilon, U, d_{\infty})$，定义为所有可能的 $\varepsilon$-覆盖中基数最小的覆盖所包含的元素个数。
+\end{definition}
+
+\begin{definition}[一致覆盖数，Uniform Covering Number]\label{def:staerr:unicovnum}
+设 $\mathcal{N}$ 为从输入空间 $\Omega$ 映射到 $\mathbb{R}$ 的函数类。给定 $n$ 个样本 $\mathbf{Z}_{n}=\left(Z_{1}, Z_{2}, \cdots, Z_{n}\right) \in \Omega^{n}$，定义函数类 $\mathcal{N}$ 在样本集 $\mathbf{Z}_{n}$ 上的投影（或经验迹） $\left.\mathcal{N}\right|_{\mathbf{Z}_{n}} \subset \mathbb{R}^{n}$ 为：
+$$\left.\mathcal{N}\right|_{\mathbf{Z}_{n}}=\left\{\left(u(Z_{1}), u(Z_{2}), \cdots, u(Z_{n})\right): u \in \mathcal{N}\right\}.$$
+函数类 $\mathcal{N}$ 的一致覆盖数 $\mathcal{C}_{\infty}(\varepsilon, \mathcal{N}, n)$ 定义为投影集合在最坏样本分布下的最大覆盖数：
+$$\mathcal{C}_{\infty}(\varepsilon, \mathcal{N}, n)=\max_{\mathbf{Z}_{n} \in \Omega^{n}} \mathcal{C}\left(\varepsilon, \left.\mathcal{N}\right|_{\mathbf{Z}_{n}}, d_{\infty}\right).$$
+\end{definition}
+
+\begin{definition}[打散，Shattering]\label{def:staerr:shatter}
+设 $\mathcal{N}$ 为定义在 $X=\Omega \times \partial\Omega$ 上且取值于 $\{0,1\}$ 的函数族。给定样本集 $S=\left\{x_{1}, x_{2}, \cdots, x_{n}\right\} \subset X$，若对于任意的标签分配 $b \in\{0,1\}^{n}$，均存在函数 $u \in \mathcal{N}$ 满足：
+\begin{equation*}
+u\left(x_{i}\right)=b_{i}, \quad i=1,2, \ldots, n.
+\end{equation*}
+则称集合 $S$ 被函数族 $\mathcal{N}$ 打散（shattered）。
+\end{definition}
+
+\begin{definition}[VC 维，VC Dimension]\label{def:staerr:vc_dim}
+函数族 $\mathcal{N}$ 的 VC 维（记为 $\operatorname{VCdim}(\mathcal{N})$）定义为能够被 $\mathcal{N}$ 打散的最大样本集合的基数。
+\end{definition}
+
+\begin{definition}[伪打散，Pseudo-shattering]\label{def:staerr:pseshatter}
+令 $\mathcal{N}$ 为从空间 $\mathcal{X}$ 到 $\mathbb{R}$ 的函数族。设存在样本子集 $S=\left\{x_{1}, x_{2}, \cdots, x_{n}\right\} \subset \mathcal{X}$。若存在一组实数界限 $y_{1},\cdots,y_{n} \in \mathbb{R}$，使得对于任意的符号分配向量 $b \in\{-1, 1\}^{n}$，都至少存在一个函数 $u \in \mathcal{N}$ 满足：
+$$\operatorname{sign}\left(u(x_{i})-y_{i}\right)=b_{i}, \quad \forall i=1,2, \ldots, n,$$
+则称集合 $S$ 被函数类 $\mathcal{N}$ 伪打散（pseudo-shattered），且称向量 $\mathbf{y} = (y_{1}, \cdots, y_{n})$ 是该打散的见证
+%TODO: 见证这个词不太好，后续可以考虑替换为witness
+\end{definition}
+
+\begin{definition}[伪维数，Pseudo-dimension]\label{def:staerr:pdim}
+$\mathcal{N}$ 的伪维数（pseudo-dimension）记为 $\operatorname{Pdim}(\mathcal{N})$，定义为被 $\mathcal{N}$ 伪打散的所有集合中的最大基数。
 \end{definition}
