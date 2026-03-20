@@ -13,69 +13,10 @@
 \contentsline {definition}{{\hspace {2em}定义}{1.5.{10}}{VC 维，VC Dimension}}{8}{definition.1.5.10}%
 \contentsline {definition}{{\hspace {2em}定义}{1.5.{11}}{伪打散，Pseudo-shattering}}{8}{definition.1.5.11}%
 \contentsline {definition}{{\hspace {2em}定义}{1.5.{12}}{伪维数，Pseudo-dimension}}{8}{definition.1.5.12}%
-\contentsline {theorem}{{\hspace {2em}定理}{2.1.{1}}{谱分解定理}}{10}{theorem.2.1.1}%
-\contentsline {lemma}{{\hspace {2em}引理}{2.1.{1}}{}}{10}{lemma.2.1.1}%
-\contentsline {definition}{{\hspace {2em}定义}{2.1.{1}}{基础符号与算子}}{11}{definition.2.1.1}%
-\contentsline {remark}{{\hspace {2em}注}{2.1.{1}}{}}{11}{remark.2.1.1}%
-\contentsline {assumption}{{\hspace {2em}假设}{2.1.{1}}{正则性假设}}{12}{assumption.2.1.1}%
-\contentsline {theorem}{{\hspace {2em}定理}{2.2.{1}}{}}{14}{theorem.2.2.1}%
-\contentsline {proof}{{\hspace {2em}证明}{1}{}}{14}{proof.1}%
-\contentsline {lemma}{{\hspace {2em}引理}{2.3.{1}}{}}{20}{lemma.2.3.1}%
-\contentsline {proof}{{\hspace {2em}证明}{2}{}}{20}{proof.2}%
-\contentsline {lemma}{{\hspace {2em}引理}{2.3.{2}}{连续函数的神经网络逼近}}{21}{lemma.2.3.2}%
-\contentsline {theorem}{{\hspace {2em}定理}{2.3.{1}}{}}{21}{theorem.2.3.1}%
-\contentsline {proof}{{\hspace {2em}证明}{3}{}}{21}{proof.3}%
-\contentsline {remark}{{\hspace {2em}注}{2.3.{1}}{关于多面体区域的正则性}}{22}{remark.2.3.1}%
-\contentsline {lemma}{{\hspace {2em}引理}{2.3.{3}}{}}{23}{lemma.2.3.3}%
-\contentsline {lemma}{{\hspace {2em}引理}{2.3.{4}}{Dudley 熵公式 \cite {dudley}}}{24}{lemma.2.3.4}%
-\contentsline {lemma}{{\hspace {2em}引理}{2.3.{5}}{}}{24}{lemma.2.3.5}%
-\contentsline {lemma}{{\hspace {2em}引理}{2.3.{6}}{}}{24}{lemma.2.3.6}%
-\contentsline {theorem}{{\hspace {2em}定理}{2.3.{2}}{}}{25}{theorem.2.3.2}%
-\contentsline {proof}{{\hspace {2em}证明}{4}{}}{25}{proof.4}%
-\contentsline {theorem}{{\hspace {2em}定理}{2.3.{3}}{}}{26}{theorem.2.3.3}%
-\contentsline {lemma}{{\hspace {2em}引理}{2.3.{7}}{累计误差}}{26}{lemma.2.3.7}%
-\contentsline {proof}{{\hspace {2em}证明}{5}{}}{27}{proof.5}%
-\contentsline {proof}{{\hspace {2em}证明}{6}{}}{27}{proof.6}%
-\contentsline {corollary}{{\hspace {2em}推论}{2.3.{1}}{}}{29}{corollary.2.3.1}%
-\contentsline {remark}{{\hspace {2em}注}{2.3.{2}}{}}{29}{remark.2.3.2}%
-\contentsline {proof}{{\hspace {2em}证明}{7}{引理 \ref {lemma:staerr:Rad234}}}{29}{proof.7}%
-\contentsline {lemma}{{\hspace {2em}引理}{2.5.{1}}{}}{30}{lemma.2.5.1}%
-\contentsline {lemma}{{\hspace {2em}引理}{2.5.{2}}{}}{30}{lemma.2.5.2}%
-\contentsline {proof}{{\hspace {2em}证明}{8}{}}{30}{proof.8}%
-\contentsline {proof}{{\hspace {2em}证明}{9}{引理 \ref {lemma:staerr:Rad_cover}}}{32}{proof.9}%
-\contentsline {lemma}{{\hspace {2em}引理}{2.5.{3}}{Massart 有限类引理 \cite {boucheron2013concentration}}}{32}{lemma.2.5.3}%
-\contentsline {proof}{{\hspace {2em}证明}{10}{引理 \ref {lemma:staerr:pdim}}}{33}{proof.10}%
-\contentsline {lemma}{{\hspace {2em}引理}{2.5.{4}}{}}{34}{lemma.2.5.4}%
-\contentsline {assumption}{{\hspace {2em}假设}{3.1.{1}}{正则性条件}}{38}{assumption.3.1.1}%
-\contentsline {theorem}{{\hspace {2em}定理}{3.1.{1}}{先验估计}}{39}{theorem.3.1.1}%
-\contentsline {proof}{{\hspace {2em}证明}{11}{}}{39}{proof.11}%
-\contentsline {theorem}{{\hspace {2em}定理}{3.2.{1}}{}}{39}{theorem.3.2.1}%
-\contentsline {proof}{{\hspace {2em}证明}{12}{}}{40}{proof.12}%
-\contentsline {theorem}{{\hspace {2em}定理}{3.2.{2}}{稳定性估计}}{41}{theorem.3.2.2}%
-\contentsline {proof}{{\hspace {2em}证明}{13}{}}{41}{proof.13}%
-\contentsline {lemma}{{\hspace {2em}引理}{3.3.{1}}{}}{43}{lemma.3.3.1}%
-\contentsline {proof}{{\hspace {2em}证明}{14}{}}{43}{proof.14}%
-\contentsline {theorem}{{\hspace {2em}定理}{3.3.{1}}{误差分解}}{44}{theorem.3.3.1}%
-\contentsline {proof}{{\hspace {2em}证明}{15}{}}{44}{proof.15}%
-\contentsline {lemma}{{\hspace {2em}引理}{3.3.{2}}{全局逼近}}{44}{lemma.3.3.2}%
-\contentsline {theorem}{{\hspace {2em}定理}{3.3.{2}}{逼近误差}}{45}{theorem.3.3.2}%
-\contentsline {proof}{{\hspace {2em}证明}{16}{}}{45}{proof.16}%
-\contentsline {lemma}{{\hspace {2em}引理}{3.3.{3}}{}}{46}{lemma.3.3.3}%
-\contentsline {theorem}{{\hspace {2em}定理}{3.3.{3}}{统计误差}}{47}{theorem.3.3.3}%
-\contentsline {proof}{{\hspace {2em}证明}{17}{}}{47}{proof.17}%
-\contentsline {theorem}{{\hspace {2em}定理}{3.3.{4}}{总误差估计，Robin边界条件}}{47}{theorem.3.3.4}%
-\contentsline {proof}{{\hspace {2em}证明}{18}{}}{47}{proof.18}%
-\contentsline {corollary}{{\hspace {2em}推论}{3.3.{1}}{}}{48}{corollary.3.3.1}%
-\contentsline {theorem}{{\hspace {2em}定理}{3.3.{5}}{总误差估计，Dirichle边界条件}}{48}{theorem.3.3.5}%
-\contentsline {proof}{{\hspace {2em}证明}{19}{}}{49}{proof.19}%
-\contentsline {corollary}{{\hspace {2em}推论}{3.3.{2}}{}}{49}{corollary.3.3.2}%
-\contentsline {theorem}{{\hspace {2em}定理}{3.5.{1}}{先验估计}}{50}{theorem.3.5.1}%
-\contentsline {proof}{{\hspace {2em}证明}{20}{Robin边界条件}}{50}{proof.20}%
-\contentsline {proof}{{\hspace {2em}证明}{21}{Dirichlet边界条件}}{53}{proof.21}%
-\contentsline {lemma}{{\hspace {2em}引理}{3.5.{1}}{截断与平滑估计}}{55}{lemma.3.5.1}%
-\contentsline {proof}{{\hspace {2em}证明}{22}{}}{55}{proof.22}%
-\contentsline {definition}{{\hspace {2em}定义}{3.5.{1}}{单位分解 $\lambda _{\mathbf {I}}(x)$}}{56}{definition.3.5.1}%
-\contentsline {lemma}{{\hspace {2em}引理}{3.5.{2}}{局部逼近}}{56}{lemma.3.5.2}%
-\contentsline {proof}{{\hspace {2em}证明}{23}{}}{56}{proof.23}%
-\contentsline {lemma}{{\hspace {2em}引理}{3.5.{3}}{全局逼近}}{57}{lemma.3.5.3}%
-\contentsline {proof}{{\hspace {2em}证明}{24}{}}{57}{proof.24}%
+\contentsline {assumption}{{\hspace {2em}假设}{2.1.{1}}{正则性与有界性假设}}{10}{assumption.2.1.1}%
+\contentsline {assumption}{{\hspace {2em}假设}{2.2.{1}}{真实解的正则性}}{12}{assumption.2.2.1}%
+\contentsline {theorem}{{\hspace {2em}定理}{2.2.{1}}{稳定性估计}}{12}{theorem.2.2.1}%
+\contentsline {proof}{{\hspace {2em}证明}{1}{}}{12}{proof.1}%
+\contentsline {remark}{{\hspace {2em}注}{2.2.{1}}{}}{15}{remark.2.2.1}%
+\contentsline {lemma}{{\hspace {2em}引理}{2.4.{1}}{误差分解}}{16}{lemma.2.4.1}%
+\contentsline {proof}{{\hspace {2em}证明}{2}{}}{16}{proof.2}%

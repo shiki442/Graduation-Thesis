@@ -95,7 +95,7 @@ J^{\mu}(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\p
 \end{equation*}
 根据 \cite{Maury2009Numerical}（命题 2.3 的证明）中的已知结论，我们有误差估计：
 \begin{equation}\label{eq:fuzhu}
-\|w^{\mu}-u^{D}\|_{H^{1}}\leq C(\Omega,f(u^{D}),g,h)\frac{1}{\mu}.
+\|w^{\mu}-u^{D}\|_{H^{1}}\leq C(\Omega,V(u^{D}),g,h)\frac{1}{\mu}.
 \end{equation}
 由 $w^{\mu}$ 与 $u^{\mu}$ 所满足的弱形式相减，并选取测试函数为 $e^{\mu}=w^{\mu} - u^{\mu}$，结合边界条件可直接推得：
 $$\int_{\Omega} |\nabla e^{\mu}|^2 \,dx + \mu \int_{\partial \Omega} (e^{\mu})^2 \,dS = \int_{\Omega} -\left( V(u^{D}) - V(u^{\mu}) \right) e^{\mu} \,dx$$
@@ -470,59 +470,139 @@ r = \frac{q}{4(dq + 2d + q)}.
 
 
 
-% \section{数值实验}\label{sec:num}
-% \textcolor{black}{正如引言所述，由于维数灾难，传统的依赖网格的 PDE 数值解法在高维情况下面临挑战。然而，通过我们的全面分析，我们在理论上建立了 Deep Ritz 方法的与维数无关的收敛性分析。为了进一步验证我们的理论在高维情形下的有效性，我们进行了一系列数值实验。}
+\section{数值实验}\label{sec:num}
+正如引言所述，由于维数灾难，传统的依赖网格的 PDE 数值解法在高维情况下面临挑战。然而，通过我们的全面分析，我们在理论上建立了 Deep Ritz 方法的与维数无关的收敛性分析。为了进一步验证我们的理论在高维情形下的有效性，我们进行了一系列数值实验。
 
-% 在本节中，我们提供了逼近半线性椭圆方程解的算例，包括具有齐次和非齐次边界条件的 Dirichlet 问题。
+在本节中，我们提供了逼近半线性椭圆方程解的算例，包括具有齐次和非齐次边界条件的 Dirichlet 问题。
 
-% 我们利用一个包含两个模块的神经网络来求解方程。每个模块包含两个线性变换、两个激活函数和一个残差连接，这可以被视为一个四层的深度神经网络。在优化过程中，我们使用 Adagrad 或 Adam 算法，配合逐步衰减的学习率来最小化等式~\eqref{eq:ch3conloss}。
+我们利用一个包含两个模块的神经网络来求解方程。每个模块包含两个线性变换、两个激活函数和一个残差连接，这可以被视为一个四层的深度神经网络。在优化过程中，我们使用 Adagrad 或 Adam 算法，配合逐步衰减的学习率来最小化等式~\eqref{eq:ch3conloss}。
 
-% 所有实验和实现均基于 CentOS 系统上的 Python 3.9.12 和 PyTorch 进行，使用的硬件包括两个主频为 2.40 GHz 的 Intel(R) Xeon(R) E5-2640 v4 x86\_64 处理器和一块拥有 16 GB 显存的 Nvidia Tesla V100 GPU。
+所有实验和实现均基于 CentOS 系统上的 Python 3.9.12 和 PyTorch 进行，使用的硬件包括两个主频为 2.40 GHz 的 Intel(R) Xeon(R) E5-2640 v4 x86\_64 处理器和一块拥有 16 GB 显存的 Nvidia Tesla V100 GPU。
 
-% \subsection{双峰问题}
-% \begin{equation}\label{eq:eq1}
-% \left\{\begin{aligned}
-% -\Delta u + \text{exp}(u) & = g_1(x) & \text{in } & \Omega,\\
-% Tu& = 0 & \text{on }  & \partial\Omega.\\
-% \end{aligned}\right.
-% \end{equation}
+\subsection{高维双峰问题 (High-dimensional Bimodal Problem)}
+本节考虑一个具有复杂解结构的五维非线性椭圆型方程，旨在考察模型处理高维复杂特征的能力。在此类高维设定下，传统的基于网格的数值方法（如有限元法）往往因“维数灾难”而难以直接应用。本文考虑的具体边值问题如下：
+\begin{equation}\label{eq:eq1}
+\left\{\begin{aligned}
+-\Delta u + \exp(u) & = g_1(\mathbf{x}), & \mathbf{x} \in \Omega, \\
+u(\mathbf{x}) & = 0, & \mathbf{x} \in \partial\Omega,
+\end{aligned}\right.
+\end{equation}
 
-% 这里$\Omega=[0,1]^5$，$u$的精确解$u_1(x)=\text{sin}(2\pi x_1)\prod_{i=2}^{d}4x_i(1-x_i)$，
+其中，计算域定义为五维超立方体 $\Omega=[0,1]^5$。为了定量验证算法的精确性，我们构造了如下精确解：
+$$u_1(\mathbf{x}) = \sin(2\pi x_1) \prod_{i=2}^{5} 4x_i(1-x_i)$$
+由此推导得到源项 $g_1(\mathbf{x})$ 为：
+$$g_1(\mathbf{x}) = 4\pi^2 u_1(\mathbf{x}) + 2\sum_{i=2}^{5} \frac{u_1(\mathbf{x})}{x_i(1-x_i)} + \exp(u_1(\mathbf{x}))$$
 
-% $\displaystyle g_1(x)=-4\pi^2u_1(x)+2\sum_{i=2}^{d}\frac{u_1(x)}{x_i(1-x_i)}+\text{exp}(u_1(x))$
+需要特别指出的是，尽管该方程中的非线性势能项 $\exp(u)$ 并不满足假设 \ref{ass:f}(c) 所要求的增长性条件，但根据定理 \ref{th:ch3reg} 的证明过程可知，该边值问题解的唯一性依然成立。同时，本文构造的精确解 $u_1$ 具备明确的解析形式与良好的光滑性。因此，从理论层面而言，本文所提方法完全适用于求解该问题。
+% 数值结果分析
+模型采用 Adam 优化器进行训练，设置初始学习率为 $1.0\times 10^{-3}$，边界惩罚系数 $\mu$ 取值为 $5000$。经过 4000 步迭代后，模型表现出良好的收敛性，最终的相对误差降至 $5.44 \times 10^{-3}$。训练过程中的损失函数与验证误差随迭代步数的变化曲线如图 \ref{fig:loss_curve} 所示。
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{./figures2/eq1_loss_val_error_curves.png}
+    \caption{五维双峰问题的训练损失与验证误差曲线}
+    \label{fig:loss_curve}
+\end{figure}
 
-% \subsection{不光滑问题}
-% \begin{equation}\label{eq:eq2}
-% \left\{\begin{aligned}
-% -\Delta u + 2\text{sin}(\frac{\pi}{2}u) & = g_2(x) & \text{in } & \Omega,\\
-% Tu& = 0 & \text{on }  & \partial\Omega.\\
-% \end{aligned}\right.
-% \end{equation}
+为了更直观地考察模型在高维空间域内的局部拟合效果，我们固定后三个空间维度，选取二维切面 $(x_1, x_2, 0.5, 0.5, 0.5)$，绘制了精确解、预测解及其绝对误差的热力图（详见图 \ref{fig:heatmap}）。此外，图 \ref{fig:diagonal} 进一步展示了沿对角线方向上预测解与精确解的分布对比。实验结果表明，本文所提方法能够准确捕捉解的波峰与波谷等复杂的非线性特征，并在全域内保持了较高的拟合精度
 
-% 这里$\Omega=[0,1]^5$，$u$的精确解
-% \[
-% u_2=\begin{array}{lll}
-% \frac{1}{2}-r^2  &,& r^2>\frac{1}{6},\\
-% \frac{1}{3} &,& r^2\leq\frac{1}{6}.\\
-% \end{array}
-% \]
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{./figures2/eq1_twopeak_heatmap.png}
+    \caption{高维切面上的精确解、预测解与误差分布}
+    \label{fig:heatmap}
+\end{figure}
 
-% % $u_2(x)=0.5-\sum_{i=1}^{d}x_i^2*1_{r>1/3}$，
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{./figures2/eq1_twopeak_diagonal.png}
+    \caption{沿对角线方向的解对比图}
+    \label{fig:diagonal}
+\end{figure}
 
-% $g_1(x)=-4\pi^2u_1(x)+2\sum_{i=2}^{d}\frac{u_1(x)}{x_i(1-x_i)}+\text{exp}(u_1(x))$
+综上所述，针对五维双峰问题，本文采用的深度学习求解框架展现出了优异的数值表现。通过合理的超参数配置，模型不仅在有限的迭代步数内实现了稳定收敛，而且在面对高维空间中多变的局部特征时，依然展现出极强的表达与泛化能力。
 
-% \subsection{liouville方程}
-% 在几何中，它描述了常曲率曲面的度量变换。例如，当你在平面上寻找一个共形变换，使得新度量的曲率为常数（如构造双曲几何模型）时，就需要解这个方程。
+\subsection{不光滑问题}
+为了进一步验证本文提出的深度学习求解框架在面对低正则性（低光滑度）解时的拟合能力与鲁棒性，本节将考察如下带有三角函数非线性项的偏微分方程边值问题：
+\begin{equation}\label{eq:eq2}
+\left\{\begin{aligned}
+-\Delta u + 2\text{sin}(\frac{\pi}{2}u) & = g_2(x) & \text{in } & \Omega,\\
+Tu& = 0 & \text{on }  & \partial\Omega.\\
+\end{aligned}\right.
+\end{equation}
 
-% 在物理中，它也出现在二维量子引力理论和等离子体物理中。
-% \begin{equation}\label{eq:eq3}
-% \left\{\begin{aligned}
-% \Delta u + \text{exp}(u) & = 0 & \text{in } & \Omega,\\
-% Tu& = h_3(x) & \text{on }  & \partial\Omega.\\
-% \end{aligned}\right.
-% \end{equation}
+本算例的空间定义域设定为五维超立方体 $\Omega=[0,1]^5$。我们构造该方程的精确解 $u_2$ 为一个分段函数：
+$$u_2(x) = \begin{cases}
+\frac{1}{2}-r^2, & r^2 > \frac{1}{6},\\[2mm]
+\frac{1}{3}, & r^2 \leq \frac{1}{6}.
+\end{cases}$$
 
-% $u_3 = -2 * \text{log}(1 + r^2)$
+其中 $r$ 表示空间点到特定中心的距离。容易看出，该精确解在临界界面 $r^2 = \frac{1}{6}$ 处其导数是不连续的，即存在“不可导”的折点。方程右端源项 $g_2(x)$ 的解析表达式为：
+$\displaystyle g_1(x)=-4\pi^2u_1(x)+2\sum_{i=2}^{d}\frac{u_1(x)}{x_i(1-x_i)}+\text{exp}(u_1(x))$
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{./figures2/eq2_loss_val_error_curves.png}
+    \caption{五维不光滑问题的训练损失与验证误差曲线}
+    \label{fig:loss_curveeq2}
+\end{figure}
+
+针对上述五维不光滑问题，我们利用神经网络进行了迭代求解。图 \ref{fig:loss_curveeq2} 记录了模型在训练过程中的损失函数与验证误差随迭代步数的下降趋势。尽管目标解在局部区域缺乏光滑性，模型依然展现出了稳定且良好的收敛态势。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{./figures2/eq2_nondiff_heatmap.png}
+    \caption{高维切面上的精确解、预测解与误差分布}
+    \label{fig:heatmapeq2}
+\end{figure}
+为了直观地展示神经网络对不光滑界面的捕捉能力，我们选取了特定的高维切面，并绘制了精确解、预测解及其对应误差的热力图分布（见图 \ref{fig:heatmapeq2}）。从图中可以清晰地观察到，预测解在全域内与精确解保持了高度一致，并且误差水平被有效控制在极低的量级。
+
+此外，图 \ref{fig:diagonaleq3} 给出了沿对角线方向上预测解与精确解的一维对比。结果清晰地表明，即使在 $r^2 = \frac{1}{6}$ 这一导致导数突变的不光滑点附近，神经网络不仅没有发生振荡或平滑过度，反而较准确地拟合了真实的折点特征。
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{./figures2/eq2_nondiff_diagonal.png}
+    \caption{沿对角线方向的解对比图}
+    \label{fig:diagonaleq3}
+\end{figure}
+本节的数值实验表明，本文所采用的深度学习方法具备更强的几何灵活性和非线性表达能力，能够高效地处理带有一些带有不光滑特征的高维偏微分方程。
+
+\subsection{Liouville方程}
+Liouville方程在数学与物理中均有广泛的应用。在微分几何中，该方程常用于描述常曲率曲面的度量变换；例如，在平面上寻找共形变换以构造具有常曲率的新度量（如双曲几何模型）时，其核心即为求解Liouville方程。在物理学领域，该方程也经常出现于二维量子引力理论及等离子体物理的研究中。本文考虑如下形式的边值问题：
+\begin{equation}\label{eq:eq3}
+\left\{\begin{aligned}
+\Delta u + \lambda\text{exp}(u) & = 0 & \text{in } & \Omega,\\
+Tu& = h_3(x) & \text{on }  & \partial\Omega.\\
+\end{aligned}\right.
+\end{equation}
+
+% 在$[0,1]^2$上的拉普拉斯算子的基态特征值为$2\pi^2$
+这里$\Omega=[0,1]^2$，$h_3(x) = -2 \ln(1 + x_1^2+x_2^2) $通常情况下，受指数型非线性项的影响，Liouville方程的解并不具备唯一性。然而存在一个特殊情形：当临界参数 $\lambda = 8$ 时，方程 \eqref{eq:eq3} 存在唯一的精确解，其解析形式为 $ u_3 = -2 \ln(1 + x_1^2+x_2^2) $。在解的正则性得到保证的前提下，本文后续章节所提出的定理依然适用。
+
+本节采用 Deep Ritz 方法对该方程进行数值求解。我们在区域边界与内部区域分别采样了 200,000 个和 500,000 个配点。模型训练采用 Adam 优化器，设定初始学习率为 $ 6\times 10^{-4} $，共迭代训练 10,000 步。训练过程中的损失函数与验证误差下降曲线如图 \ref{fig:loss_curveeq3} 所示。
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{./figures2/eq3_loss_val_error_curves.png}
+\caption{Liouville方程的训练损失与验证误差曲线}
+\label{fig:loss_curveeq3}
+\end{figure}
+
+图 \ref{fig:heatmapeq3} 以热力图的形式直观地展示了精确解、神经网络预测解以及两者之间的误差分布。实验结果表明，Deep Ritz 方法能够高精度地逼近该方程的精确解。
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{./figures2/eq3_liouville_heatmap.png}
+\caption{精确解、预测解与误差分布}
+\label{fig:heatmapeq3}
+\end{figure}
+
+% 为了进一步评估数值解的局部精度，我们沿定义域的对角线方向提取了预测解与精确解的值进行对比，结果如图 \ref{fig:diagonaleq3} 所示。
+
+% \begin{figure}[htbp]
+% \centering
+% \includegraphics[width=0.9\textwidth]{./figures2/eq1_twopeak_diagonal.png}
+% \caption{沿对角线方向的解对比图}
+% \label{fig:diagonaleq3}
+% \end{figure}
+
+该数值算例表明，假设 \ref{ass:f} 仅为 Deep Ritz 方法收敛的一个充分条件。对于自身具备良好正则性的边值问题，假设 \ref{ass:f}(c)(d) 中的条件可被放宽至仅需满足单调性。这一结论在理论与实践上均进一步拓展了本文所提方法的适用范围。
 
 % \subsection{Yamabe方程}
 % \begin{equation}\label{eq:eq4}
@@ -534,109 +614,110 @@ r = \frac{q}{4(dq + 2d + q)}.
 
 % $u_4 = \left(\frac{\sqrt{d(d-2)}}{1 + |x-x_0|^2} \right)^{\frac{d}{2}-1}$
 
-% \subsection{具有齐次边界条件的 Dirichlet 问题}
-% 我们首先考虑以下具有齐次边界条件的 Dirichlet 问题：
-% \begin{equation}\label{eq:example1}
-% \left\{\begin{aligned}
-% -\Delta u + S(u) & = g_1(x) & \text{在 } & \Omega \text{ 中},\\
-% Tu& = 0 & \text{在 }  & \partial\Omega \text{ 上}.\\
-% \end{aligned}\right.
-% \end{equation}
-% 其中 $\Omega=[0,1]^{10}$ 且 $S(x)$ 是 Sigmoid 函数：
-% \begin{equation*}
-% S(x) = \frac{1}{1+e^{-x}}.
-% \end{equation*}
-% 并且
-% \begin{equation*}
-% g_1(x)=8\sum_{\stackrel{1\leq i\leq d}{i\neq j}}\prod_{j=1}^{d}x_{j}(1-x_{j})+S\left(\prod_{i=1}^{d}4x_{i}(1-x_{i})\right),
-% \end{equation*}
-% \textcolor{black}{$S(x)$ 是 $L^{\infty}(\Omega)$ 中的非线性函数，且是 Lipschitz 连续和非递减的。因此，它满足假设 \ref{ass:f}。方程 \eqref{eq:example1} 的精确解为 $u_1(x)=\prod_{i=1}^{d}4x_{i}(1-x_{i})$。}
 
-% \textcolor{black}{我们首先考察 $d=2$ 的情形。我们在各种网络参数配置下进行了大量的数值实验。这些经验结果为我们算法的收敛性质提供了有力的证据支持。}
+\subsection{具有齐次边界条件的 Dirichlet 问题}
+我们首先考虑以下具有齐次边界条件的 Dirichlet 问题：
+\begin{equation}\label{eq:example1}
+\left\{\begin{aligned}
+-\Delta u + S(u) & = g_1(x) & \text{在 } & \Omega \text{ 中},\\
+Tu& = 0 & \text{在 }  & \partial\Omega \text{ 上}.\\
+\end{aligned}\right.
+\end{equation}
+其中 $\Omega=[0,1]^{10}$ 且 $S(x)$ 是 Sigmoid 函数：
+\begin{equation*}
+S(x) = \frac{1}{1+e^{-x}}.
+\end{equation*}
+并且
+\begin{equation*}
+g_1(x)=8\sum_{\stackrel{1\leq i\leq d}{i\neq j}}\prod_{j=1}^{d}x_{j}(1-x_{j})+S\left(\prod_{i=1}^{d}4x_{i}(1-x_{i})\right),
+\end{equation*}
+\textcolor{black}{$S(x)$ 是 $L^{\infty}(\Omega)$ 中的非线性函数，且是 Lipschitz 连续和非递减的。因此，它满足假设 \ref{ass:f}。方程 \eqref{eq:example1} 的精确解为 $u_1(x)=\prod_{i=1}^{d}4x_{i}(1-x_{i})$。}
 
-% \begin{figure}[htbp]
-%     \centering
-%     \includegraphics[width=\textwidth]{./figures2/func1_2d/HeatFig_n.eps}
-%     \caption{$($具有齐次边界条件的 Dirichlet 问题, $d=2)$。在不同样本量 $n$ 下，Deep Ritz 解 $u_{DRM}$ 与真解 $u_1(x)$ 之间的逐点差。} \label{fig:fig_n}
-% \end{figure}
+\textcolor{black}{我们首先考察 $d=2$ 的情形。我们在各种网络参数配置下进行了大量的数值实验。这些经验结果为我们算法的收敛性质提供了有力的证据支持。}
 
-% \begin{figure}[htbp]
-%     \centering
-%     \includegraphics[width=0.5\textwidth]{./figures2/func1_2d/solution_err_under_diff_n.eps}
-%     \caption{$($具有齐次边界条件的 Dirichlet 问题, $d=2)$。在不同样本量 $n$ 下的 $L_2$ 解误差。} \label{fig:fig_n1}
-% \end{figure}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{./figures2old/func1_2d/HeatFig_n.eps}
+    \caption{$($具有齐次边界条件的 Dirichlet 问题, $d=2)$。在不同样本量 $n$ 下，Deep Ritz 解 $u_{DRM}$ 与真解 $u_1(x)$ 之间的逐点差。} \label{fig:fig_n}
+\end{figure}
 
-% \textcolor{black}{首先，我们重点评估采样大小 $n$ 对解精度的影响。我们将网络参数设置为 $\mathcal{W} = 120$ 和 $\mathcal{D} = 4$，同时采用不同的采样大小来解决问题 \ref{eq:example1}。结果如图 \ref{fig:fig_n} 所示，且正如 图 \ref{fig:fig_n1} 中所预期的那样，较大的采样大小会导致较高的精度。这一观察结果与定理 \ref{mainthm:diri} 的结论一致。}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{./figures2old/func1_2d/solution_err_under_diff_n.eps}
+    \caption{$($具有齐次边界条件的 Dirichlet 问题, $d=2)$。在不同样本量 $n$ 下的 $L_2$ 解误差。} \label{fig:fig_n1}
+\end{figure}
 
-% \textcolor{black}{值得注意的是，在上述数值实验中，我们在计算开始时仅对 $\{X_i\}_{i=1}^{n}$ 进行了一次采样。当 $n$ 较小时，算法表现不佳且收敛缓慢。为了同时提高算法的精度和效率，我们实施了一种在每个训练步或每几个训练步后对 $\{X_i\}_{i=1}^{n}$ 进行重采样的策略。这个过程类似于在无限样本集上的批量训练。通过采用这种方法，我们可以利用相对适度的计算资源有效地实现更大的 $n$，从而提高算法的泛化性能。我们的大量实验也证实了这种技术的有效性。除非另有说明，我们后续实验中提到的采样大小 $n$ 均指重采样的 $n$。}
+\textcolor{black}{首先，我们重点评估采样大小 $n$ 对解精度的影响。我们将网络参数设置为 $\mathcal{W} = 120$ 和 $\mathcal{D} = 4$，同时采用不同的采样大小来解决问题 \ref{eq:example1}。结果如图 \ref{fig:fig_n} 所示，且正如 图 \ref{fig:fig_n1} 中所预期的那样，较大的采样大小会导致较高的精度。这一观察结果与定理 \ref{mainthm:diri} 的结论一致。}
 
-% \textcolor{black}{网络宽度 $\mathcal{W}$ 对该方法的影响如图 \ref{fig:fig_w} 和图 \ref{fig:fig_w1} 所示。我们在 $\mathcal{D} = 4$ 和 $n = 150000$ 的条件下进行了实验。实验结果表明，更宽的网络可以获得更高的精度并收敛得更快。这一发现与我们先前的结论一致。}
+\textcolor{black}{值得注意的是，在上述数值实验中，我们在计算开始时仅对 $\{X_i\}_{i=1}^{n}$ 进行了一次采样。当 $n$ 较小时，算法表现不佳且收敛缓慢。为了同时提高算法的精度和效率，我们实施了一种在每个训练步或每几个训练步后对 $\{X_i\}_{i=1}^{n}$ 进行重采样的策略。这个过程类似于在无限样本集上的批量训练。通过采用这种方法，我们可以利用相对适度的计算资源有效地实现更大的 $n$，从而提高算法的泛化性能。我们的大量实验也证实了这种技术的有效性。除非另有说明，我们后续实验中提到的采样大小 $n$ 均指重采样的 $n$。}
 
-% \begin{figure}[htbp]
-%     \centering
-%     \includegraphics[width=\textwidth]{./figures2/func1_2d/HeatFig_w_5wstep.eps}
-%     \caption{$($具有齐次边界条件的 Dirichlet 问题， $d=2)$。在不同网络宽度 $\mathcal{W}$ 下，Deep Ritz 解 $u_{DRM}$ 与真解 $u_1(x)$ 之间的逐点差。} \label{fig:fig_w}
-% \end{figure}
+\textcolor{black}{网络宽度 $\mathcal{W}$ 对该方法的影响如图 \ref{fig:fig_w} 和图 \ref{fig:fig_w1} 所示。我们在 $\mathcal{D} = 4$ 和 $n = 150000$ 的条件下进行了实验。实验结果表明，更宽的网络可以获得更高的精度并收敛得更快。这一发现与我们先前的结论一致。}
 
-% \begin{figure}[htbp]
-%     \centering
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{./figures2old/func1_2d/HeatFig_w_5wstep.eps}
+    \caption{$($具有齐次边界条件的 Dirichlet 问题， $d=2)$。在不同网络宽度 $\mathcal{W}$ 下，Deep Ritz 解 $u_{DRM}$ 与真解 $u_1(x)$ 之间的逐点差。} \label{fig:fig_w}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
     
-%     % --- 子图 1: L2 误差 ---
-%     % 建议使用 0.45\textwidth 到 0.48\textwidth
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         % width=\linewidth 让图片自动充满子图容器(即上面的 0.48\textwidth)
-%         \includegraphics[width=\linewidth]{./figures2/func1_2d/solution_err_under_diff_w.eps}
-%         \caption{$L_2$ 解误差}
-%         \label{fig:l2_error_w}
-%     \end{subfigure}
-%     \hfill % 弹性间距，将两张图撑开
-%     % --- 子图 2: 训练误差 ---
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{./figures2/func1_2d/Fig_w_5wstep.eps}
-%         \caption{训练过程中的误差}
-%         \label{fig:training_error_w}
-%     \end{subfigure}
+    % --- 子图 1: L2 误差 ---
+    % 建议使用 0.45\textwidth 到 0.48\textwidth
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        % width=\linewidth 让图片自动充满子图容器(即上面的 0.48\textwidth)
+        \includegraphics[width=\linewidth]{./figures2old/func1_2d/solution_err_under_diff_w.eps}
+        \caption{$L_2$ 解误差}
+        \label{fig:l2_error_w}
+    \end{subfigure}
+    \hfill % 弹性间距，将两张图撑开
+    % --- 子图 2: 训练误差 ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{./figures2old/func1_2d/Fig_w_5wstep.eps}
+        \caption{训练过程中的误差}
+        \label{fig:training_error_w}
+    \end{subfigure}
     
-%     \caption{(具有齐次边界条件的 Dirichlet 问题， $d=2$)。Deep Ritz 方法在不同网络宽度 $\mathcal{W}$ 下的收敛性能。}
-%     \label{fig:fig_w1}
-% \end{figure}
+    \caption{(具有齐次边界条件的 Dirichlet 问题， $d=2$)。Deep Ritz 方法在不同网络宽度 $\mathcal{W}$ 下的收敛性能。}
+    \label{fig:fig_w1}
+\end{figure}
 
-% \textcolor{black}{随后我们研究 $d=10$ 的情形。由于高维性以及 $S(x)$ 引入的非线性，求解该方程变得极具挑战性。传统的计算技术，如有限差分法 (FDM) 和有限元法 (FEM)，已被证明难以奏效。尽管面临这些挑战，Deep Ritz 方法依然有效，如图 \ref{fig:func1} 所示。我们在 $\Omega$ 的对角线上绘制了近似解和精确解，如图 \ref{fig:func1} (a) 所示。$L^{2}$ 误差随训练轮次的变化趋势如图 \ref{fig:func1} (b) 所示，损失函数如图 \ref{fig:func1} (c) 所示}
+\textcolor{black}{随后我们研究 $d=10$ 的情形。由于高维性以及 $S(x)$ 引入的非线性，求解该方程变得极具挑战性。传统的计算技术，如有限差分法 (FDM) 和有限元法 (FEM)，已被证明难以奏效。尽管面临这些挑战，Deep Ritz 方法依然有效，如图 \ref{fig:func1} 所示。我们在 $\Omega$ 的对角线上绘制了近似解和精确解，如图 \ref{fig:func1} (a) 所示。$L^{2}$ 误差随训练轮次的变化趋势如图 \ref{fig:func1} (b) 所示，损失函数如图 \ref{fig:func1} (c) 所示}
 
-% \textcolor{black}{该数值实验的参数配置如下：$\varepsilon=2000$，深度 $\mathcal{D}=4$，宽度 $\mathcal{W}=80$，样本量为 $200000$，边界样本量为 $80000$。我们采用 Adam 算法来最小化目标函数，初始学习率设定为 1.8e-3。采用了等间隔学习率衰减策略，其中学习率每隔 $5000$ 步衰减为原来的 $0.9$。}
+\textcolor{black}{该数值实验的参数配置如下：$\varepsilon=2000$，深度 $\mathcal{D}=4$，宽度 $\mathcal{W}=80$，样本量为 $200000$，边界样本量为 $80000$。我们采用 Adam 算法来最小化目标函数，初始学习率设定为 1.8e-3。采用了等间隔学习率衰减策略，其中学习率每隔 $5000$ 步衰减为原来的 $0.9$。}
 
-% \begin{figure}[htbp]
-%     \centering
+\begin{figure}[htbp]
+    \centering
     
-%     % --- 子图 1: 解的近似 ---
-%     \begin{subfigure}{0.32\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{./figures2/func1/unn.eps}
-%         \caption{对角线上的解近似值}
-%         \label{fig:func1_approx}
-%     \end{subfigure}
-%     \hfill % 弹性间距
-%     % --- 子图 2: L2 误差 ---
-%     \begin{subfigure}{0.32\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{./figures2/func1/solution_err.eps}
-%         \caption{训练期间的 $L_2$ 误差}
-%         \label{fig:func1_err}
-%     \end{subfigure}
-%     \hfill % 弹性间距
-%     % --- 子图 3: 损失 ---
-%     \begin{subfigure}{0.32\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{./figures2/func1/loss.eps}
-%         \caption{训练期间的损失函数}
-%         \label{fig:func1_loss}
-%     \end{subfigure}
+    % --- 子图 1: 解的近似 ---
+    \begin{subfigure}{0.32\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{./figures2old/func1/unn.eps}
+        \caption{对角线上的解近似值}
+        \label{fig:func1_approx}
+    \end{subfigure}
+    \hfill % 弹性间距
+    % --- 子图 2: L2 误差 ---
+    \begin{subfigure}{0.32\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{./figures2old/func1/solution_err.eps}
+        \caption{训练期间的 $L_2$ 误差}
+        \label{fig:func1_err}
+    \end{subfigure}
+    \hfill % 弹性间距
+    % --- 子图 3: 损失 ---
+    \begin{subfigure}{0.32\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{./figures2old/func1/loss.eps}
+        \caption{训练期间的损失函数}
+        \label{fig:func1_loss}
+    \end{subfigure}
     
-%     \caption{具有齐次边界条件的 Dirichlet 问题 ($d=10$)。由于无法直接可视化高维空间中的函数，此处展示立方体区域对角线上的值并与真实解对比。}
-%     \label{fig:func1}
-% \end{figure}
+    \caption{具有齐次边界条件的 Dirichlet 问题 ($d=10$)。由于无法直接可视化高维空间中的函数，此处展示立方体区域对角线上的值并与真实解对比。}
+    \label{fig:func1}
+\end{figure}
 
 
 % \subsection{具有非齐次边界条件的 Dirichlet 问题}
@@ -673,7 +754,7 @@ r = \frac{q}{4(dq + 2d + q)}.
 %     % 设置宽度为 0.32 倍文本宽度，留出空隙给间距
 %     \begin{subfigure}{0.32\textwidth}
 %         \centering
-%         \includegraphics[width=\linewidth]{./figures2/func2/unn.eps}
+%         \includegraphics[width=\linewidth]{./figures2old/func2/unn.eps}
 %         \caption{立方体区域对角线上的解逼近}
 %         \label{fig:func2_approx}
 %     \end{subfigure}
@@ -681,7 +762,7 @@ r = \frac{q}{4(dq + 2d + q)}.
 %     % --- 第二张子图 ---
 %     \begin{subfigure}{0.32\textwidth}
 %         \centering
-%         \includegraphics[width=\linewidth]{./figures2/func2/solution_err.eps}
+%         \includegraphics[width=\linewidth]{./figures2old/func2/solution_err.eps}
 %         \caption{训练过程中的 $L_2$ 误差}
 %         \label{fig:func2_err}
 %     \end{subfigure}
@@ -689,7 +770,7 @@ r = \frac{q}{4(dq + 2d + q)}.
 %     % --- 第三张子图 ---
 %     \begin{subfigure}{0.32\textwidth}
 %         \centering
-%         \includegraphics[width=\linewidth]{./figures2/func2/loss.eps}
+%         \includegraphics[width=\linewidth]{./figures2old/func2/loss.eps}
 %         \caption{训练过程中的损失值}
 %         \label{fig:func2_loss}
 %     \end{subfigure}
