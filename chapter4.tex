@@ -18,7 +18,7 @@
 \right.
 \end{equation}
 其中，$\Omega \subset \mathbb{R}^{d}$ 是给定的物理区域，$\alpha$ 为传导系数，$g$ 为内部源项，$h$ 为边界通量，$\partial_{\nu}$ 表示沿单位外法向量的导数。
-给定一个确定的势函数 $q \in \mathcal{K}$，根据经典的椭圆偏微分方程理论 \cite{evans2010partial}，方程 \eqref{eq:pde:potential} 存在唯一的弱解 $u_V\in H^{1}(\Omega)$。基于此，我们可以良定义一个从参数空间到状态空间的非线性正演算子（Forward Operator）：
+给定一个确定的势函数 $V \in \mathcal{K}$，根据经典的椭圆偏微分方程理论 \cite{evans2010partial}，方程 \eqref{eq:pde:potential} 存在唯一的弱解 $u_V\in H^{1}(\Omega)$。基于此，我们可以良定义一个从参数空间到状态空间的非线性正演算子（Forward Operator）：
 $$\mathcal{F}: V \mapsto u_V$$
 为确保偏微分方程的适定性（Well-posedness）以及后续反问题理论分析的严密性，我们对计算区域和已知函数提出如下基本假设：
 
@@ -46,24 +46,24 @@ Tu^{\delta}(x)&=&T\mathcal{F}(V^{\dagger})(x)+\varepsilon_{\calB}(x),\quad &\var
 \end{equation}
 其中，$\delta > 0$ 表示噪声水平（Noise Level），$T$ 是经典的边界迹算子（Trace Operator）。基于上述统计模型，在 $L^2$ 范数意义下，含噪数据与真实状态之间满足如下确定性误差估计：
 
-$$\|u^{\delta}-\mathcal{F}(q^{\dagger})\|_{L^{2}(\Omega)}=|\Omega|^{1/2}\delta, \quad \|Tu^{\delta}-T\mathcal{F}(q^{\dagger})\|_{L^{2}(\partial\Omega)}=|\partial\Omega|^{1/2}\delta.$$
+$$\|u^{\delta}-\mathcal{F}(V^{\dagger})\|_{L^{2}(\Omega)}=|\Omega|^{1/2}\delta, \quad \|Tu^{\delta}-T\mathcal{F}(V^{\dagger})\|_{L^{2}(\partial\Omega)}=|\partial\Omega|^{1/2}\delta.$$
 
 \section{重构方法：Tikhonov-PINNs}\label{sec:tikpinns}
-基于前述的数学模型，反问题的核心在于寻找一个势函数 $q$，使得其对应的系统正向响应 $u_V = \mathcal{F}(q)$ 尽可能逼近实际的测量数据。为此，我们首先定义如下的数据失配项（Data Mismatch）或测量误差泛函：
+基于前述的数学模型，反问题的核心在于寻找一个势函数 $V$，使得其对应的系统正向响应 $u_V = \mathcal{F}(V)$ 尽可能逼近实际的测量数据。为此，我们首先定义如下的数据失配项（Data Mismatch）或测量误差泛函：
 \begin{equation}\label{eq:data_mismatch}
 \begin{aligned}
-    \mathcal{M}(q) &= \|u^{\delta}-u_V\|_{L^{2}(\Omega)}^{2}+\|Tu^{\delta}-Tu_q\|_{L^{2}(\partial\Omega)}^{2} \\
+    \mathcal{M}(V) &= \|u^{\delta}-u_V\|_{L^{2}(\Omega)}^{2}+\|Tu^{\delta}-Tu_V\|_{L^{2}(\partial\Omega)}^{2} \\
     &= \|u^{\delta}-\mathcal{F}(V)\|_{L^{2}(\Omega)}^{2}+\|Tu^{\delta}-T\mathcal{F}(V)\|_{L^{2}(\partial\Omega)}^{2}
 \end{aligned}
 \end{equation}
-给定公式 \eqref{eq:measurement} 中的观测数据，求解反问题等价于在满足控制方程 \eqref{eq:pde:potential} 的硬约束下，极小化上述测量误差 $\mathcal{M}(q)$。
+给定公式 \eqref{eq:measurement} 中的观测数据，求解反问题等价于在满足控制方程 \eqref{eq:pde:potential} 的硬约束下，极小化上述测量误差 $\mathcal{M}(V)$。
 
-然而，从算子理论的视角来看，给定右端项 $f \in L^2(\Omega)$，由经典的椭圆正则性理论可知，系统的弱解不仅存在且满足 $u \in H^2(\Omega)$。进一步，根据 Rellich-Kondrachov 定理，对于具有光滑边界的有界区域 $\Omega$，索伯列夫空间 $H^2(\Omega)$ 到观测空间 $L^2(\Omega)$ 的嵌入是紧的（Compact Embedding）。因此，从参数空间到观测空间的正演算子 $\mathcal{F}: q \mapsto u$ 本质上是一个紧算子，紧算子的核心特征在于其具有强烈的“积分平滑效应”，即势函数 $q$ 中的高频微扰在正向映射过程中会被极大地衰减。根据泛函分析理论，无限维空间中紧算子的逆算子必然是无界的，这意味着该反问题是高度病态的（Ill-posed）。在实际观测中，数据 $u^\delta$ 必然包含微小的随机噪声（如高频扰动）。由于逆过程会对高频分量产生极端的放大作用，若直接进行无约束或纯残差驱动的拟合，即使是极微小的测量误差也会引发灾难性的“噪声爆炸”，导致重构的势函数产生非物理的剧烈震荡。
+然而，从算子理论的视角来看，给定右端项 $f \in L^2(\Omega)$，由经典的椭圆正则性理论可知，系统的弱解不仅存在且满足 $u \in H^2(\Omega)$。进一步，根据 Rellich-Kondrachov 定理，对于具有光滑边界的有界区域 $\Omega$，索伯列夫空间 $H^2(\Omega)$ 到观测空间 $L^2(\Omega)$ 的嵌入是紧的（Compact Embedding）。因此，从参数空间到观测空间的正演算子 $\mathcal{F}: V \mapsto u$ 本质上是一个紧算子，紧算子的核心特征在于其具有强烈的”积分平滑效应”，即势函数 $V$ 中的高频微扰在正向映射过程中会被极大地衰减。根据泛函分析理论，无限维空间中紧算子的逆算子必然是无界的，这意味着该反问题是高度病态的（Ill-posed）。在实际观测中，数据 $u^\delta$ 必然包含微小的随机噪声（如高频扰动）。由于逆过程会对高频分量产生极端的放大作用，若直接进行无约束或纯残差驱动的拟合，即使是极微小的测量误差也会引发灾难性的“噪声爆炸”，导致重构的势函数产生非物理的剧烈震荡。
 
 为了克服这一不稳定性，我们在目标泛函中引入经典的 Tikhonov 正则化项，，不仅是为了平滑神经网络的损失曲面，更是恢复反问题适定性（Well-posedness）的数学必然要求。通过对势函数的一阶导数（梯度）和二阶导数（曲率）施加强烈惩罚，正则化项显式地压制了高频震荡，迫使算法在容许空间 $\mathcal{K}$ 中寻找与观测数据相容且具备物理光滑性的解。将其转化为如下的偏微分方程约束优化控制问题（PDE-constrained Optimization）：
 
 \begin{align*}
-&\min_{q,u}\quad\mathcal{J}_{\lambda}(q,u)=\|z^{\delta}-u\|_{L^{2}(\Omega)}^{2}+\|Tz^{\delta}-Tu\|_{L^{2}(\partial\Omega)}^{2}+\lambda\|q\|_{H^{2}(\Omega)}^{2}, \\
+&\min_{V,u}\quad\mathcal{J}_{\lambda}(V,u)=\|z^{\delta}-u\|_{L^{2}(\Omega)}^{2}+\|Tz^{\delta}-Tu\|_{L^{2}(\partial\Omega)}^{2}+\lambda\|V\|_{H^{2}(\Omega)}^{2}, \\
 &\subto\quad Eq.\eqref{eq:pde:potential}~\text{and}~Eq.\eqref{eq:box}.
 \end{align*}
 
@@ -71,96 +71,111 @@ $$\|u^{\delta}-\mathcal{F}(q^{\dagger})\|_{L^{2}(\Omega)}=|\Omega|^{1/2}\delta, 
 
 传统的伴随方法（Adjoint Method）求解此类约束优化问题往往需要反复进行正向和伴随方程的网格离散与迭代求解，计算成本高昂且对复杂几何区域适应性较弱。在此，我们引入物理信息神经网络（PINNs）的“软约束”思想，通过将偏微分方程及其边界条件作为惩罚项（Penalty Terms）加入到目标函数中，从而将上述带有 PDE 约束的优化问题优雅地松弛为无约束优化问题：
 \begin{equation}\label{eq:pinns:loss}
-\min_{q,u} \{ \mathcal{L}_{\lambda}(q,u) = \mathcal{J}_{\lambda}(q,u)+\mathcal{I}(q,u)+\mathcal{B}(q,u) \},
+\min_{V,u} \{ \mathcal{L}_{\lambda}(V,u) = \mathcal{J}_{\lambda}(V,u)+\mathcal{I}(V,u)+\mathcal{B}(V,u) \},
 \end{equation}
-其中，内部 PDE 残差惩罚项 $\mathcal{I}(q,u)$ 和边界条件残差惩罚项 $\mathcal{B}(u)$ 分别定义为：
+其中，内部 PDE 残差惩罚项 $\mathcal{I}(V,u)$ 和边界条件残差惩罚项 $\mathcal{B}(u)$ 分别定义为：
 \begin{equation*}
-\mathcal{I}(q,u)=\|\nabla\cdot(\alpha\nabla u)-qu+f\|_{L^{2}(\Omega)}^{2}, \quad \text{且} \quad
-\mathcal{B}(q,u)=\|\alpha\frac{\partial u}{\partial n}-g\|_{L^{2}(\partial\Omega)}^{2}.
+\mathcal{I}(V,u)=\|\nabla\cdot(\alpha\nabla u)-Vu+f\|_{L^{2}(\Omega)}^{2}, \quad \text{且} \quad
+\mathcal{B}(V,u)=\|\alpha\frac{\partial u}{\partial n}-g\|_{L^{2}(\partial\Omega)}^{2}.
 \end{equation*}
-与标准 PINNs 框架直接利用纯数据驱动加物理残差进行优化不同，我们在损失函数 \eqref{eq:pinns:loss} 中显式保留了 Tikhonov 正则化项 $\lambda\|q\|_{H^{2}(\Omega)}^{2}$。这一微小但关键的调整构成了本文 Tikhonov-PINNs 方法的核心。正如我们在后续理论分析中所将严格证明的，该正则化项不仅能够有效抑制测量噪声的放大，而且是建立重构势函数 $q$ 严密收敛性理论（即稳定性估计）的必要前提。
+与标准 PINNs 框架直接利用纯数据驱动加物理残差进行优化不同，我们在损失函数 \eqref{eq:pinns:loss} 中显式保留了 Tikhonov 正则化项 $\lambda\|V\|_{H^{2}(\Omega)}^{2}$。这一微小但关键的调整构成了本文 Tikhonov-PINNs 方法的核心。正如我们在后续理论分析中所将严格证明的，该正则化项不仅能够有效抑制测量噪声的放大，而且是建立重构势函数 $V$ 严密收敛性理论（即稳定性估计）的必要前提。
 
-基于前文（注记 \ref{remark:ill_posedness}）关于正则化必要性的探讨，本节将严格建立重构势函数 $q$ 的收敛性理论。这一理论在反问题文献中通常被称为稳定性估计（Stability Estimate）。它从数学上保证了：当我们的神经网络将损失函数优化到足够小，且测量噪声趋于零时，重构出的解能够稳定地收敛于真实解。
+基于前文（注记 \ref{remark:ill_posedness}）关于正则化必要性的探讨，本节将严格建立重构势函数 $V$ 的收敛性理论。这一理论在反问题文献中通常被称为稳定性估计（Stability Estimate）。它从数学上保证了：当我们的神经网络将损失函数优化到足够小，且测量噪声趋于零时，重构出的解能够稳定地收敛于真实解。
 
-为了推导这一结果，我们需要对真实的势函数 $q^\dagger$ 和对应的真实状态变量 $u^\dagger$ 施加如下的正则性假设：
+为了推导这一结果，我们需要对真实的势函数 $V^\dagger$ 和对应的真实状态变量 $u^\dagger$ 施加如下的正则性假设：
 
-\begin{assumption}[真实解的正则性]\label{ass:potential:qudaggerreg}
-令 $s \in \mathbb{N}_+$，我们假设真实的势函数满足 $q^\dagger \in W^{2,\infty}(\Omega) \cap H^{s+3}(\Omega) \cap \mathcal{K}$，且对应的真实状态变量满足 $u^\dagger \in W^{2,\infty}(\Omega) \cap H^{s+3}(\Omega)$。
+\begin{assumption}[真实解的正则性]\label{ass:potential:Vdaggerreg}
+令 $s \in \mathbb{N}_+$，我们假设真实的势函数满足 $V^\dagger \in W^{2,\infty}(\Omega) \cap H^{s+3}(\Omega) \cap \mathcal{K}$，且对应的真实状态变量满足 $u^\dagger \in W^{2,\infty}(\Omega) \cap H^{s+3}(\Omega)$。
 \end{assumption}
 
 \begin{theorem}[稳定性估计]\label{th:potential:stability}
-在方程 \eqref{eq:pde:potential} 和测量数据模型 \eqref{eq:measurement} 的设定下，令 $(q^{\dagger},u^{\dagger})$ 为满足原偏微分方程的真实物理状态对。假设 Assumption \ref{ass:potential:qudaggerreg} 成立，假设我们不仅在区域内部获得了带噪测量 $u^\delta$，在边界上也获得了带噪测量 $g^\delta$（或边界迹 $Tu^\delta$），且满足 $\|u^\dagger - u^\delta\|_{L^2(\Omega)} + \|Tu^\dagger - Tu^\delta\|_{L^2(\partial\Omega)} \leq \delta$。则对于优化过程中任意一对满足 $q\in H^{2}(\Omega)$ 和 $u \in H^1(\Omega)$ 的参数对 $(q,u)$，如下误差估计成立：
+在方程 \eqref{eq:pde:potential} 和测量数据模型 \eqref{eq:measurement} 的设定下，令 $(V^{\dagger},u^{\dagger})$ 为满足原偏微分方程的真实物理状态对。假设 Assumption \ref{ass:potential:Vdaggerreg} 成立，假设我们不仅在区域内部获得了带噪测量 $u^\delta$，在边界上也获得了带噪测量 $g^\delta$（或边界迹 $Tu^\delta$），且满足 $\|u^\dagger - u^\delta\|_{L^2(\Omega)} + \|Tu^\dagger - Tu^\delta\|_{L^2(\partial\Omega)} \leq \delta$。则对于优化过程中任意一对满足 $V\in H^{2}(\Omega)$ 和 $u \in H^1(\Omega)$ 的参数对 $(V,u)$，如下误差估计成立：
 \begin{equation*}
-\|(q-q^{\dagger})u^{\dagger}\|_{L^{2}(\Omega)} \leq C\left(1+\lambda^{-1/4}\mathcal{L}_{\lambda}^{1/4}(q,u)\right)\left(\mathcal{L}_{\lambda}^{1/4}(q,u)+\delta^{1/2}\right),
+\|(V-V^{\dagger})u^{\dagger}\|_{L^{2}(\Omega)} \leq C\left(1+\lambda^{-1/4}\mathcal{L}_{\lambda}^{1/4}(V,u)\right)\left(\mathcal{L}_{\lambda}^{1/4}(V,u)+\delta^{1/2}\right),
 \end{equation*}
-其中 $C$ 是一个严格依赖于区域维数 $d$、区域形状 $\Omega$、传导系数 $\alpha$、容许集上界 $\overline{q}$，以及真实解范数 $\|q^{\dagger}\|_{W^{2,\infty}(\Omega)}$ 和 $\|u^{\dagger}\|_{W^{2,\infty}(\Omega)}$ 的正常数。
+其中 $C$ 是一个严格依赖于区域维数 $d$、区域形状 $\Omega$、传导系数 $\alpha$、容许集上界 $\overline{V}$，以及真实解范数 $\|V^{\dagger}\|_{W^{2,\infty}(\Omega)}$ 和 $\|u^{\dagger}\|_{W^{2,\infty}(\Omega)}$ 的正常数。
 \end{theorem}
 
 \begin{proof}
 对于任意的测试函数 $\psi\in H^{2}(\Omega)$，考察误差项在 $L^2$ 内积下的弱形式：
 \begin{align*}
-&((q^{\dagger}-q)u^{\dagger},\psi)_{L^{2}(\Omega)} \\
-&=(-\nabla\cdot(\alpha\nabla u^{\dagger})_{L^{2}(\Omega)}+q^{\dagger}u^{\dagger},\psi)_{L^{2}(\Omega)}-(-\nabla\cdot(\alpha\nabla u^{\dagger})+qu^{\dagger},\psi)_{L^{2}(\Omega)} \\
-&=(f+\nabla\cdot(\alpha\nabla u)-qu,\psi)_{L^{2}(\Omega)}-(q(u^{\dagger}-u),\psi)_{L^{2}(\Omega)}+(\nabla\cdot(\alpha\nabla(u^{\dagger}-u)),\psi)_{L^{2}(\Omega)} \\
-% &=(f+\nabla\cdot(\alpha\nabla u)-qu,\psi)_{L^{2}(\Omega)}-(q(u^{\dagger}-u),\psi)_{L^{2}(\Omega)}+(u^{\dagger}-u,\nabla\cdot(\alpha\nabla\psi))_{L^{2}(\Omega)} \\
+&((V^{\dagger}-V)u^{\dagger},\psi)_{L^{2}(\Omega)} \\
+&=(-\nabla\cdot(\alpha\nabla u^{\dagger})_{L^{2}(\Omega)}+V^{\dagger}u^{\dagger},\psi)_{L^{2}(\Omega)}-(-\nabla\cdot(\alpha\nabla u^{\dagger})+Vu^{\dagger},\psi)_{L^{2}(\Omega)} \\
+&=(f+\nabla\cdot(\alpha\nabla u)-Vu,\psi)_{L^{2}(\Omega)}-(V(u^{\dagger}-u),\psi)_{L^{2}(\Omega)}+(\nabla\cdot(\alpha\nabla(u^{\dagger}-u)),\psi)_{L^{2}(\Omega)} \\
+% &=(f+\nabla\cdot(\alpha\nabla u)-Vu,\psi)_{L^{2}(\Omega)}-(V(u^{\dagger}-u),\psi)_{L^{2}(\Omega)}+(u^{\dagger}-u,\nabla\cdot(\alpha\nabla\psi))_{L^{2}(\Omega)} \\
 % &\quad-(T(u-u^{\dagger}),\alpha\partial_{\nu}\psi)_{L^{2}(\partial\Omega)}+(\alpha\frac{\partial u}{\partial n}-g,T\psi)_{L^{2}(\partial\Omega)},
 \end{align*}
-这里我们使用了真实解满足 $-\nabla\cdot(\alpha\nabla u^{\dagger}) + q^{\dagger}u^{\dagger} = f$ 这一事实。对最后一项应用格林公式（分部积分），将其展开为：
+这里我们使用了真实解满足 $-\nabla\cdot(\alpha\nabla u^{\dagger}) + V^{\dagger}u^{\dagger} = f$ 这一事实。对最后一项应用格林公式（分部积分），将其展开为：
 \begin{align*}
 (\nabla\cdot(\alpha\nabla(u^{\dagger}-u)),\psi)_{L^{2}(\Omega)} &= (u^{\dagger}-u,\nabla\cdot(\alpha\nabla\psi))_{L^{2}(\Omega)} \\
 &\quad + \langle T(u-u^{\dagger}),\alpha\partial_{\nu}\psi \rangle_{L^{2}(\partial\Omega)} - \langle \alpha\frac{\partial u}{\partial n}-g,T\psi \rangle_{L^{2}(\partial\Omega)}.
 \end{align*}
 将上式代入原内积等式，并应用柯西-施瓦茨不等式以及迹定理 \cite[Section 5.5, Theorem 1]{evans2010partial}，我们可得如下放缩：
 \begin{align*}
-&|((q-q^{\dagger})u^{\dagger},\psi)_{L^{2}(\Omega)}| \\
-&\leq C\Big\{ \|f+\nabla\cdot(\alpha\nabla u)-qu\|_{L^{2}(\Omega)} + \|q\|_{L^{\infty}(\Omega)}\|u-u^{\dagger}\|_{L^{2}(\Omega)} + \|u-u^{\dagger}\|_{L^{2}(\Omega)} \\
+&|((V-V^{\dagger})u^{\dagger},\psi)_{L^{2}(\Omega)}| \\
+&\leq C\Big\{ \|f+\nabla\cdot(\alpha\nabla u)-Vu\|_{L^{2}(\Omega)} + \|V\|_{L^{\infty}(\Omega)}\|u-u^{\dagger}\|_{L^{2}(\Omega)} + \|u-u^{\dagger}\|_{L^{2}(\Omega)} \\
 &\quad+ \|T(u-u^{\dagger})\|_{L^{2}(\partial\Omega)} + \|\alpha\frac{\partial u}{\partial n}-g\|_{L^{2}(\partial\Omega)} \Big\} (\|\alpha\|_{C^{1}(\bar{\Omega})}\vee 1) \|\psi\|_{H^{2}(\Omega)}.
 \end{align*}
 利用测量模型 \eqref{eq:measurement} 中的三角不等式，例如 $\|u-u^{\dagger}\|_{L^{2}(\Omega)} \leq \|u-u^{\delta}\|_{L^{2}(\Omega)} + \|u^{\delta}-u^{\dagger}\|_{L^{2}(\Omega)} \leq \|u-u^{\delta}\|_{L^{2}(\Omega)} + \delta$，可将上式进一步化简为：
 \begin{align*}
-&|((q-q^{\dagger})u^{\dagger},\psi)_{L^{2}(\Omega)}| \\
-&\leq C\Big\{ \|f+\nabla\cdot(\alpha\nabla u)-qu\|_{L^{2}(\Omega)} + \|\alpha\frac{\partial u}{\partial n}-g\|_{L^{2}(\partial\Omega)} + \|q\|_{L^{\infty}(\Omega)}\|u^{\delta}-u\|_{L^{2}(\Omega)} \\
-&\quad+ \|Tu^{\delta}-Tu\|_{L^{2}(\partial\Omega)} + (\|q\|_{L^{\infty}(\Omega)}+1)\delta \Big\} (\|\alpha\|_{C^{1}(\bar{\Omega})}\vee 1) \|\psi\|_{H^{2}(\Omega)},
+&|((V-V^{\dagger})u^{\dagger},\psi)_{L^{2}(\Omega)}| \\
+&\leq C\Big\{ \|f+\nabla\cdot(\alpha\nabla u)-Vu\|_{L^{2}(\Omega)} + \|\alpha\frac{\partial u}{\partial n}-g\|_{L^{2}(\partial\Omega)} + \|V\|_{L^{\infty}(\Omega)}\|u^{\delta}-u\|_{L^{2}(\Omega)} \\
+&\quad+ \|Tu^{\delta}-Tu\|_{L^{2}(\partial\Omega)} + (\|V\|_{L^{\infty}(\Omega)}+1)\delta \Big\} (\|\alpha\|_{C^{1}(\bar{\Omega})}\vee 1) \|\psi\|_{H^{2}(\Omega)},
 \end{align*}
 其中 $C$ 是一个仅依赖于 $\Omega$ 的常数。根据对偶空间范数的定义 $\|v\|_{(H^2)^*} = \sup_{\|\psi\|_{H^2}=1} (v,\psi)$，并应用算术-几何均值不等式，我们将各项与损失函数 $\mathcal{L}_{\lambda}$ 中的成分对应，可得：
 \begin{equation}
-\|(q-q^{\dagger})u^{\dagger}\|_{(H^{2}(\Omega))^{*}} \leq 2C(\|q\|_{L^{\infty}(\Omega)}+1)(\|\alpha\|_{C^{1}(\bar{\Omega})}\vee 1)\Big\{ \mathcal{L}_{\lambda}^{1/2}(q,u)+\delta \Big\}.
+\|(V-V^{\dagger})u^{\dagger}\|_{(H^{2}(\Omega))^{*}} \leq 2C(\|V\|_{L^{\infty}(\Omega)}+1)(\|\alpha\|_{C^{1}(\bar{\Omega})}\vee 1)\Big\{ \mathcal{L}_{\lambda}^{1/2}(V,u)+\delta \Big\}.
 \end{equation}
-最后，利用标准的 Sobolev 空间插值不等式，以及 Assumption \ref{ass:potential:qudaggerreg} 中真实解的正则性，我们有：
+最后，利用标准的 Sobolev 空间插值不等式，以及 Assumption \ref{ass:potential:Vdaggerreg} 中真实解的正则性，我们有：
 \begin{align*}
-\|(q-q^{\dagger})u^{\dagger}\|_{L^{2}(\Omega)} &\leq \|(q-q^{\dagger})u^{\dagger}\|_{H^{2}(\Omega)}^{1/2} \|(q-q^{\dagger})u^{\dagger}\|_{(H^{2}(\Omega))^{*}}^{1/2} \\
-&\lesssim \|q^{\dagger}\|_{W^{2,\infty}(\Omega)}^{1/2} \|u^{\dagger}\|_{W^{2,\infty}(\Omega)}^{1/2} \left(1+\|q\|_{H^{2}(\Omega)}^{1/2}\right) \|(q-q^{\dagger})u^{\dagger}\|_{(H^{2}(\Omega))^{*}}^{1/2}.
+\|(V-V^{\dagger})u^{\dagger}\|_{L^{2}(\Omega)} &\leq \|(V-V^{\dagger})u^{\dagger}\|_{H^{2}(\Omega)}^{1/2} \|(V-V^{\dagger})u^{\dagger}\|_{(H^{2}(\Omega))^{*}}^{1/2} \\
+&\lesssim \|V^{\dagger}\|_{W^{2,\infty}(\Omega)}^{1/2} \|u^{\dagger}\|_{W^{2,\infty}(\Omega)}^{1/2} \left(1+\|V\|_{H^{2}(\Omega)}^{1/2}\right) \|(V-V^{\dagger})u^{\dagger}\|_{(H^{2}(\Omega))^{*}}^{1/2}.
 \end{align*}
-注意到，根据损失函数方程 \eqref{eq:pinns:loss} 的定义，Tikhonov 正则化项天然提供了先验界限 $\lambda\|q\|_{H^{2}(\Omega)}^{2} \leq \mathcal{L}_{\lambda}(q,u)$，即 $\|q\|_{H^{2}(\Omega)} \leq \lambda^{-1/2}\mathcal{L}_{\lambda}^{1/2}(q,u)$。将其代入上式，可最终推导出：
+注意到，根据损失函数方程 \eqref{eq:pinns:loss} 的定义，Tikhonov 正则化项天然提供了先验界限 $\lambda\|V\|_{H^{2}(\Omega)}^{2} \leq \mathcal{L}_{\lambda}(V,u)$，即 $\|V\|_{H^{2}(\Omega)} \leq \lambda^{-1/2}\mathcal{L}_{\lambda}^{1/2}(V,u)$。将其代入上式，可最终推导出：
 \begin{equation*}
-\|(q-q^{\dagger})u^{\dagger}\|_{L^{2}(\Omega)} \leq C\left(1+\lambda^{-1/4}\mathcal{L}_{\lambda}^{1/4}(q,u)\right)\left(\mathcal{L}_{\lambda}^{1/4}(q,u)+\delta^{1/2}\right).
+\|(V-V^{\dagger})u^{\dagger}\|_{L^{2}(\Omega)} \leq C\left(1+\lambda^{-1/4}\mathcal{L}_{\lambda}^{1/4}(V,u)\right)\left(\mathcal{L}_{\lambda}^{1/4}(V,u)+\delta^{1/2}\right).
 \end{equation*}
 证明完毕。
 \end{proof}
 
+\subsection{Tikhonov-PINNs 求解反问题的算法实现}
+与前文深度里兹法（DRM）利用变分原理求解正问题的思路类似，基于物理信息神经网络（PINNs）求解反问题同样需要将连续的偏微分方程约束优化问题转化为离散的经验损失函数极小化问题。具体而言，该 Tikhonov-PINNs 方法在执行上可概括为以下四个关键步骤：
 
+\begin{itemize}
+    \item 构造双重参数化的深度神经网络，分别作为未知状态变量和未知势函数的试探空间；
+    \item 收集内部与边界的含噪观测数据，并结合控制方程和边界条件构建复合连续损失函数；
+    \item 利用蒙特卡洛积分对观测区域和偏微分方程残差进行离散化估算；
+    \item 采用随机梯度下降类算法与自动微分（Automatic Differentiation）技术求解该高度非线性的非凸优化问题。
+\end{itemize}
 
-\par 在实际应用中，只能获得由 Eq.\eqref{eq:measurement} 生成的有限测量数据。令 $\euD_{\calI}=\{(x_{i},z_{i}^{\delta})\}_{i=1}^{m_{\calI}}$ 和 $\euD_{\calB}=\{(\bar{x}_{i},Tz_{i}^{\delta})\}_{i=1}^{m_{\calB}}$ 为测量数据集，其中 $\{x_{i}\}_{i=1}^{m_{\calI}}\subseteq\Omega$, $\{\bar{x}_{i}\}_{i=1}^{m_{\calB}}\subseteq\partial\Omega$, $z_{i}^{\delta}=z^{\delta}(x_{i})$ 且 $\bar{z}_{i}^{\delta}=Tz^{\delta}(\bar{x}_{i})$。假设 $\euX_{\calI}=\{x_{j}^{\calI}\}_{j=1}^{n_{\calI}}$ 和 $\euX_{\calB}=\{x_{j}^{\calB}\}_{j=1}^{n_{\calB}}$ 是分别从 $\Omega$ 和 $\partial\Omega$ 上的均匀分布中独立同分布抽取的两组点集。
-通过将测量数据集代入目标泛函并使用蒙特卡洛方法离散化积分，我们可以获得如下经验损失函数
-\begin{equation}\label{eq:empirical:loss}
-\what{\calL}_{\lambda}(q,u)=\what{\calJ}_{\lambda}(q,u)+\what{\calI}(q,u)+\what{\calB}(u),
-\end{equation}
-该函数以数据集 $\euD_{\calI}$，$\euD_{\calB}$，$\euX_{\calI}$ 和 $\euX_{\calB}$ 为条件。其中
-\begin{align*}
-\what{\calJ}_{\lambda}(q,u)&=\|z^{\delta}-u\|_{L^{2}(\euD_{\calI})}^{2}+\|Tz^{\delta}-Tu\|_{L^{2}(\euD_{\calB})}^{2}+\lambda\|q\|_{H^{2}(\euX_{\calI})}^{2} \\
-&=\frac{|\Omega|}{m_{\calI}}\sum_{i=1}^{m_{\calI}}(z_{i}^{\delta}-u(x_{i}))^{2}+\frac{|\partial\Omega|}{m_{\calB}}\sum_{i=1}^{m_{\calB}}(\bar{z}_{i}^{\delta}-Tu(\bar{x}_{i}))^{2} \\
-&\quad+\lambda\frac{|\Omega|}{n_{\calI}}\sum_{j=1}^{n_{\calI}}\Big\{q(x_{j}^{\calI})^{2}+\sum_{k=1}^{d}\partial_{k}q(x_{j}^{\calI})^{2}+\sum_{k=1}^{d}\sum_{\ell=1}^{d}\partial_{k}\partial_{\ell}q(x_{j}^{\calI})^{2}\Big\}, \\
-\what{\calI}(q,u)&=\|\nabla\cdot(\alpha\nabla u)-qu+f\|_{L^{2}(\euX_{\calI})}^{2} \\
-&=\frac{|\Omega|}{n_{\calI}}\sum_{j=1}^{n_{\calI}}(\nabla\cdot(\alpha(x_{j}^{\calI})\nabla u(x_{j}^{\calI}))-q(x_{j}^{\calI})u(x_{j}^{\calI})+f(x_{j}^{\calI}))^{2}, \\
-\what{\calB}(u)&=\|\alpha\frac{\partial u}{\partial n}-g\|_{L^{2}(\euX_{\calB})}^{2}=\frac{|\partial\Omega|}{n_{\calB}}\sum_{i=1}^{n_{\calB}}(\alpha(x_{j}^{\calB})\frac{\partial u}{\partial n}(x_{j}^{\calB})-g(x_{j}^{\calB}))^{2}.
-\end{align*}
-随后数值解被定义为在某些神经网络类 $\calQ\times\calU$ 上最小化 Eq.\eqref{eq:empirical:loss}
+针对前文定义的连续损失函数 $\mathcal{L}_{\lambda}(V,u)$，我们引入两个独立的深度神经网络 $u_{\theta} \in \mathcal{N}_{u}$ 和 $V_{\phi} \in \mathcal{N}_{V}$ 分别逼近状态变量 $u$ 和势函数 $V$，其中 $\theta$ 和 $\phi$ 代表网络的权重和偏置参数。为保证 Tikhonov 正则化项中 $\|V\|_{H^2(\Omega)}^2$ 的可微性以及偏微分方程二阶残差的计算，网络通常选择具有二阶或更高阶连续导数的激活函数（如 $\tanh$ 或 $\mathrm{SiLU}$）。
+
+记 $U(\Omega)$ 和 $U(\partial\Omega)$ 分别为区域 $\Omega$ 及其边界 $\partial\Omega$ 上的均匀分布。通过引入独立同分布的配点（Collocation Points）样本集 $\{X_{i}\}_{i=1}^{N_f}\sim U(\Omega)$ 和 $\{Y_{j}\}_{j=1}^{M_b}\sim U(\partial\Omega)$ 用于计算物理残差。同时，我们收集实际的观测数据点集 $\{X_{k}^{d}\}_{k=1}^{N_d} \subset \Omega$ 和 $\{Y_{l}^{d}\}_{l=1}^{M_d} \subset \partial\Omega$。
+
+此时，对于参数对 $(\phi, \theta)$，离散经验损失函数 $\widehat{\mathcal{L}}_{\lambda}(\phi, \theta)$ 可表示为以下四部分之和：
+
+$$\widehat{\mathcal{L}}_{\lambda}(\phi, \theta) = \widehat{\mathcal{M}}(\theta) + \widehat{\mathcal{I}}(\phi, \theta) + \widehat{\mathcal{B}}(\theta) + \widehat{\mathcal{R}}(\phi)$$
+
+其中，数据失配项（Data Mismatch）基于实际观测数据点进行离散：
+$$\widehat{\mathcal{M}}(\theta) = \frac{|\Omega|}{N_d}\sum_{k=1}^{N_d}|u^{\delta}(X_{k}^{d}) - u_{\theta}(X_{k}^{d})|^2 + \frac{|\partial\Omega|}{M_d}\sum_{l=1}^{M_d}|Tu^{\delta}(Y_{l}^{d}) - Tu_{\theta}(Y_{l}^{d})|^2$$
+
+内部 PDE 残差惩罚项通过在区域 $\Omega$ 内采样的配点进行蒙特卡洛计算：
+$$\widehat{\mathcal{I}}(\phi, \theta) = \frac{|\Omega|}{N_f}\sum_{i=1}^{N_f} \left| \nabla \cdot (\alpha(X_{i}) \nabla u_{\theta}(X_{i})) - V_{\phi}(X_{i})u_{\theta}(X_{i}) + f(X_{i}) \right|^2$$
+
+Neumann 边界条件残差项在边界 $\partial\Omega$ 上的配点进行离散：
+$$\widehat{\mathcal{B}}(\theta) = \frac{|\partial\Omega|}{M_b}\sum_{j=1}^{M_b} \left| \alpha(Y_{j})\frac{\partial u_{\theta}}{\partial n}(Y_{j}) - g(Y_{j}) \right|^2$$
+最后，Tikhonov 正则化项同样利用区域内配点对 $V_\phi$ 的 $H^2$ 范数进行估计。注意到 $\|V\|_{H^2(\Omega)}^2$ 的等价范数包含了函数本身及其一阶、二阶导数，其离散形式为：
+$$\widehat{\mathcal{R}}(\phi) = \lambda \frac{|\Omega|}{N_f}\sum_{i=1}^{N_f} \left( |V_{\phi}(X_{i})|^2 + |\nabla V_{\phi}(X_{i})|^2 + \sum_{p,q=1}^{d} \left| \frac{\partial^2 V_{\phi}}{\partial x_p \partial x_q}(X_{i}) \right|^2 \right)$$
+
+在上述表达式中，网络输出关于空间坐标的各阶导数（如 $\nabla u_{\theta}$, $\nabla V_{\phi}$, $\frac{\partial^2 V_{\phi}}{\partial x_p \partial x_q}$ 等）均可通过深度学习框架中的自动微分机制精确计算，这直接避免了传统伴随方法中有限差分离散所带来的截断误差与网格依赖性。
+
+随后数值解被定义为在某些神经网络类 $\mathcal{N}_V\times\mathcal{N}_u$ 上最小化 Eq.\eqref{eq:empirical:loss}
 \begin{equation}\label{eq:erm}
-(\hat{q},\hat{u})\in\argmin_{(q,u)\in\calQ\times\calU}\what{\calL}_{\lambda}(q,u).
+(\hat{V},\hat{u})\in\argmin_{(V,u)\in\mathcal{N}_V\times\mathcal{N}_u}\what{\calL}_{\lambda}(V,u).
 \end{equation}
 在统计学术语中，Eq.\eqref{eq:erm} 被视为经验风险最小化，这等价于参数空间上的一个优化问题
 \begin{equation*}
-(\hat{\theta}_{q},\hat{\theta}_{u})\in\argmin_{(\theta_{q},\theta_{u})\in\Theta_{q}\times\Theta_{u}}\what{\calL}_{\lambda}(q(\theta_{q}),u(\theta_{u})).
+(\phi,\theta)\in\argmin_{(\phi,\theta)\in\Theta_{V}\times\Theta_{u}}\what{\calL}_{\lambda}(V(\phi),u(\theta)).
 \end{equation*}
 详细的重构过程如算法 \ref{alg:TikPINNs} 所示。
 \par\noindent
@@ -172,132 +187,26 @@ $$\|u^{\delta}-\mathcal{F}(q^{\dagger})\|_{L^{2}(\Omega)}=|\Omega|^{1/2}\delta, 
 \label{alg:TikPINNs}
 \begin{algorithmic}[1]
 \Require 数据集 $\euD_{\calI}$, $\euD_{\calB}$, $\euX_{\calI}$ 和 $\euX_{\calB}$。
-\State 构建由 $(\theta_{q},\theta_{u})$ 参数化的神经网络 $(q(\theta_{q}),u(\theta_{u}))$。
-\State 初始化参数 $(\theta_{q},\theta_{u})$。
+\State 构建由 $(\phi,\theta)$ 参数化的神经网络 $(V(\phi),u(\theta))$。
+\State 初始化参数 $(\phi,\theta)$。
 \State \textcolor{white!30!black}{\texttt{\# Tikhonov-PINNs 训练。}}
-\State \textcolor{white!30!black}{\texttt{\# 通过 Tikhonov-PINNs 损失估计 $(q(\theta_{q}),u(\theta_{u}))$。}}
+\State \textcolor{white!30!black}{\texttt{\# 通过 Tikhonov-PINNs 损失估计 $(V(\phi),u(\theta))$。}}
 \For {$k=1:\texttt{epochs}$}
 \State {计算由 Eq.\eqref{eq:empirical:loss} 定义的经验 Tikhonov-PINNs 损失
 \begin{equation*}
-\what{\calL}_{\lambda}(q(\theta_{q}),u(\theta_{u}))=\what{\calJ}_{\lambda}(q(\theta_{q}),u(\theta_{u}))+\what{\calI}(q(\theta_{q}),u(\theta_{u}))+\what{\calB}(u(\theta_{u})).
+\what{\calL}_{\lambda}(V(\phi),u(\theta))=\what{\calJ}_{\lambda}(V(\phi),u(\theta))+\what{\calI}(V(\phi),u(\theta))+\what{\calB}(u(\theta)).
 \end{equation*}}
-\State {反向传播 $(g_{\theta_{q}},g_{\theta_{u}})=\nabla\what{\calL}(q(\theta_{q}),u(\theta_{u}))$。}
-\State {通过 SGD 类算法更新 $(\theta_{q},\theta_{u})$：$(\theta_{q},\theta_{u})\leftarrow\operatorname{SGD}\big\{(\theta_{q},\theta_{u}),(g_{\theta_{q}},g_{\theta_{u}}),\tau\big\}$。}
+\State {反向传播 $(g_{\phi},g_{\theta})=\nabla\what{\calL}(V(\phi),u(\theta))$。}
+\State {通过 SGD 类算法更新 $(\phi,\theta)$：$(\phi,\theta)\leftarrow\operatorname{SGD}\big\{(\phi,\theta),(g_{\phi},g_{\theta}),\tau\big\}$。}
 \EndFor
-\Ensure {$(\hat{q},\hat{u})\leftarrow(q(\theta_{q}),u(\theta_{u}))$.}
+\Ensure {$(\hat{V},\hat{u})\leftarrow(V(\phi),u(\theta))$.}
 \end{algorithmic}
 \end{algorithm}
 \end{minipage}
 \begin{remark}
-通过选择合适的激活函数，可以确保 $\calQ\subseteq H^{2}(\Omega)$。因此，Eqs.\eqref{eq:pinns:loss}\eqref{eq:empirical:loss} 中的 $H^{2}$-范数惩罚项是良定的，并且在理论上是合理的。
+通过选择合适的激活函数，可以确保 $\mathcal{N}_V\subseteq H^{2}(\Omega)$。因此，Eqs.\eqref{eq:pinns:loss}\eqref{eq:empirical:loss} 中的 $H^{2}$-范数惩罚项是良定的，并且在理论上是合理的。
 \end{remark}
 
-
-\section{理论结果的证明}\label{sec:proof}
-
-\subsection{稳定性估计的证明}\label{sec:lemma4}
-
-本节我们给出定理 \ref{th:potential:stability} 的完整证明。为便于读者理解，我们首先重述该定理：
-
-
-
-\section{误差分析}\label{sec:erroranalysis}
-
-在本节中，我们对 Tikhonov-PINNs 方法的误差进行系统分析。遵循第 \ref{sec:main} 章和第 \ref{sec:mainres} 章中建立的误差分析框架，我们将总误差分解为逼近误差、统计误差和正则化误差三个部分。
-
-\subsection{误差分解}
-
-设 $(\hat{q}_{nn}, \hat{u}_{nn})$ 为离散损失函数 $\widehat{\calL}_{\lambda}$ 在神经网络假设空间 $\calQ\times\calU$ 上的极小值点，$(q^\dagger, u^\dagger)$ 为原问题的真解。我们有如下误差分解：
-
-\begin{lemma}[误差分解]\label{lem:error_decomp}
-在上述记号下，存在如下误差分解：
-\begin{equation*}
-\begin{aligned}
-\mathbb{E}\left[\calL_{\lambda}(\hat{q}_{nn}, \hat{u}_{nn}) - \calL_{\lambda}(q^\dagger, u^\dagger)\right]
-\lesssim \underbrace{\inf_{(q,u)\in\calQ\times\calU}\left[\calL_{\lambda}(q,u) - \calL_{\lambda}(q^\dagger, u^\dagger)\right]}_{\calE_{\text{app}}}
-+ \underbrace{2\sup_{(q,u)\in\calQ\times\calU}\left|\calL_{\lambda}(q,u) - \widehat{\calL}_{\lambda}(q,u)\right|}_{\calE_{\text{sta}}}
-+ \underbrace{C\lambda\|q^\dagger\|_{H^2(\Omega)}^2}_{\calE_{\text{reg}}},
-\end{aligned}
-\end{equation*}
-其中三项分别对应于逼近误差（Approximation Error）、统计误差（Statistical Error）和正则化误差（Regularization Error）。
-\end{lemma}
-
-\begin{proof}
-证明遵循标准误差分解框架。对于任意 $(q,u)\in\calQ\times\calU$，有：
-\begin{equation*}
-\begin{aligned}
-\calL_{\lambda}(\hat{q}_{nn}, \hat{u}_{nn}) - \calL_{\lambda}(q^\dagger, u^\dagger)
-=& \left[\calL_{\lambda}(\hat{q}_{nn}, \hat{u}_{nn}) - \widehat{\calL}_{\lambda}(\hat{q}_{nn}, \hat{u}_{nn})\right]
-+ \left[\widehat{\calL}_{\lambda}(\hat{q}_{nn}, \hat{u}_{nn}) - \widehat{\calL}_{\lambda}(q, u)\right] \\
-&+ \left[\widehat{\calL}_{\lambda}(q, u) - \calL_{\lambda}(q, u)\right]
-+ \left[\calL_{\lambda}(q, u) - \calL_{\lambda}(q^\dagger, u^\dagger)\right].
-\end{aligned}
-\end{equation*}
-由于 $(\hat{q}_{nn}, \hat{u}_{nn})$ 是 $\widehat{\calL}_{\lambda}$ 的极小值点，第二项非正。第一项和第三项由统计误差控制，第四项在取下确界后得到逼近误差。正则化误差项来自于 Tikhonov 正则化项 $\lambda\|q\|_{H^2(\Omega)}^2$ 的引入。证毕。
-\end{proof}
-
-% \subsection{逼近误差}
-
-% 对于逼近误差的分析，我们依赖于神经网络的万能逼近定理和 Sobolev 空间的嵌入理论。
-
-% \begin{theorem}[逼近误差界]\label{thm:approx_error}
-% 设神经网络类 $\calQ$ 和 $\calU$ 分别为深度 $\calD$、宽度 $\calW$ 的 ReLU 网络。若 $q^\dagger \in H^s(\Omega)$ ($s>2$) 且 $u^\dagger \in H^{s+2}(\Omega)$，则存在常数 $C>0$ 使得：
-% \begin{equation*}
-% \calE_{\text{app}} \leq C\left(\calW^{-2s/d} + \calW^{-2(s+2)/d}\right).
-% \end{equation*}
-% \end{theorem}
-
-% \begin{proof}[证明概要]
-% 证明基于 Yarotsky \cite{yarotsky2017error} 和 Hon et al. \cite{hon2021simultaneous} 的神经网络逼近理论。关键步骤包括：
-% \begin{enumerate}
-%     \item 利用 Sobolev 嵌入定理将 $H^s$ 函数延拓到 $C^k$ 函数；
-%     \item 应用分片多项式逼近构造局部逼近网络；
-%     \item 通过单位分解拼接得到全局逼近；
-%     \item 估计 $H^2$ 范数惩罚项的逼近误差。
-% \end{enumerate}
-% 详细证明见附录 \ref{app:proof_approx}。
-% \end{proof}
-
-% \subsection{统计误差}
-
-% 统计误差的界定依赖于 Rademacher 复杂度理论。
-
-% \begin{theorem}[统计误差界]\label{thm:stat_error}
-% 设样本量 $n = \min\{m_{\calI}, m_{\calB}, n_{\calI}, n_{\calB}\}$。在假设 \ref{ass:potential:qudaggerreg} 下，统计误差满足：
-% \begin{equation*}
-% \calE_{\text{sta}} \leq C(\Omega, \alpha, \overline{q})\cdot \calD^2\calW\sqrt{\calD+\log\calW}\cdot\sqrt{\frac{\log n}{n}}.
-% \end{equation*}
-% \end{theorem}
-
-% \begin{proof}[证明概要]
-% 证明遵循第 \ref{subsec_gen} 章的框架：
-% \begin{enumerate}
-%     \item 将损失函数分解为五项（内部残差项、边界残差项、数据拟合项、正则化项）；
-%     \item 对每项应用 Rademacher 复杂度的 Lipschitz 收缩不等式；
-%     \item 利用 Dudley 熵积分公式界定 Rademacher 复杂度；
-%     \item 通过神经网络的伪维度（Pseudo-dimension）控制覆盖数。
-% \end{enumerate}
-% 详细证明见附录 \ref{app:proof_stat}。
-% \end{proof}
-
-% \subsection{总误差估计}
-
-% 综合上述结果，我们得到主定理：
-
-% \begin{theorem}[总误差估计]\label{thm:total_error}
-% 在假设 \ref{ass:domain}--\ref{ass:admissible} 和假设 \ref{ass:potential:qudaggerreg} 下，设网络参数和样本量满足：
-% \begin{equation*}
-% \calD = O(1), \quad \calW = O(n^{w}), \quad \lambda = O(n^{-\ell}),
-% \end{equation*}
-% 其中 $w = \frac{d}{2s+d}$，$\ell = \frac{2s}{2s+d}$。则总误差满足：
-% \begin{equation*}
-% \mathbb{E}\left[\|\hat{q}_{nn} - q^\dagger\|_{L^2(\Omega)}\right] \leq C n^{-\frac{s}{2s+d}}\cdot\max\left\{\log\left(\frac{1}{\delta}\right), 1\right\}.
-% \end{equation*}
-% \end{theorem}
-
-% \begin{remark}[维数灾难分析]
-% 从收敛速率 $n^{-\frac{s}{2s+d}}$ 可以看出，空间维数 $d$ 仅出现在指数的分母中。与有限元方法等网格依赖型方法相比，当 $d$ 增大时，本方法的收敛速率衰减相对缓慢，从而在一定程度上克服了维数灾难。然而，常数项 $C$ 仍可能对 $d$ 存在指数依赖，这是高维逼近问题的固有困难。
-% \end{remark}
 
 % \section{数值实验}\label{sec:numerical}
 
@@ -317,7 +226,7 @@ $$\|u^{\delta}-\mathcal{F}(q^{\dagger})\|_{L^{2}(\Omega)}=|\Omega|^{1/2}\delta, 
 
 % 考虑二维单位正方形区域 $\Omega=[0,1]^2$，传导系数 $\alpha\equiv 1$，源项 $f\equiv 0$，通量 $g\equiv 0$。精确势函数取为：
 % \begin{equation*}
-% q^\dagger(x) = 2 + \sin(2\pi x_1)\cos(2\pi x_2).
+% V^\dagger(x) = 2 + \sin(2\pi x_1)\cos(2\pi x_2).
 % \end{equation*}
 
 % 图 \ref{fig:eq1_twopeak} 展示了精确势函数、重构势函数及其误差的分布。可以看出，Tikhonov-PINNs 方法能够准确捕捉势函数的光滑变化特征，最大相对误差小于 5\%。
@@ -342,7 +251,7 @@ $$\|u^{\delta}-\mathcal{F}(q^{\dagger})\|_{L^{2}(\Omega)}=|\Omega|^{1/2}\delta, 
 
 % 为测试方法对非光滑势函数的适应能力，考虑分段常数势函数：
 % \begin{equation*}
-% q^\dagger(x) = \begin{cases}
+% V^\dagger(x) = \begin{cases}
 % 3, & \|x - (0.5, 0.5)\|_2 < 0.3, \\
 % 1, & \text{其他}.
 % \end{cases}
@@ -374,18 +283,5 @@ $$\|u^{\delta}-\mathcal{F}(q^{\dagger})\|_{L^{2}(\Omega)}=|\Omega|^{1/2}\delta, 
 % \end{tabular}
 % \end{table}
 
-\section{结论与讨论}\label{sec:conclusion}
-
-本章提出了 Tikhonov-PINNs，一种基于神经网络的求解反势问题的无网格数值方法。主要贡献包括：
-
-\begin{enumerate}
-    \item 将 Tikhonov 正则化与物理信息神经网络相结合，建立了新的稳定性估计，将物理信息损失误差与重构收敛率联系起来。
-
-    \item 进行了系统的误差分析，给出了逼近误差、统计误差和总误差的显式上界，证明了方法在适当参数设置下的收敛性。
-
-    \item 通过数值实验验证了方法的有效性，展示了其在光滑和不连续势函数重构任务中的优越性能，以及对测量噪声的鲁棒性。
-\end{enumerate}
-
-需要指出的是，本章的理论分析仍存在一些局限性：首先，收敛速率的上界常数可能对空间维数 $d$ 存在指数依赖；其次，最优网络结构和超参数的选择仍需要经验指导。未来工作将致力于改进这些方面，并将方法推广到更复杂的非线性反问题。
 
 \section{附录}\label{sec:appendix}
