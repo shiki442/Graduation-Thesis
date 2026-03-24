@@ -74,6 +74,14 @@ $$E: W^{k,p}(\Omega) \to W^{k,p}(\mathbb{R}^n)$$
 $$\|Ef\|_{W^{k,p}(\mathbb{R}^n)} \leq C \|f\|_{W^{k,p}(\Omega)}$$
 \end{lemma}
 
+\begin{lemma}[Brezis-Kato定理]\label{lem:Brezis}\cite{brezis1978remarks,willem2012minimax}
+设 $\Omega$ 为 $\mathbb{R}^N$ ($N \ge 3$) 中的一个开集。假设势函数 $a(x)$ 满足 $a \in L_{\text{loc}}^{N/2}(\Omega)$。若 $u \in H_{\text{loc}}^1(\Omega)$ 是如下微分不等式的弱下解：
+$$-\Delta u(x) \le a(x) u(x) \quad \text{in } \Omega$$
+\end{lemma}
+即对于任意非负测试函数 $\displaystyle \varphi \in C_0^\infty(\Omega)$，有 $\int_{\Omega} \nabla u \cdot \nabla \varphi \, dx \le \int_{\Omega} a(x)u\varphi \, dx$），
+则对于任意有限指数 $q \in [1, +\infty)$，均有：
+$$u \in L_{\text{loc}}^q(\Omega)$$
+
 \section{符号与定义}
 
 \subsection{神经网络架构与参数}

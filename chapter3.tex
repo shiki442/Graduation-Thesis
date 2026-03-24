@@ -1,6 +1,6 @@
 \chapter{深度里兹法求解半线性偏微分方程}
-\section{预备知识与记号}\label{sec:pre}
-非线性椭圆方程是偏微分方程（PDE）研究中非常核心且活跃的一个领域。其中，半线性方程（Semilinear Equations）指的是非线性仅出现在低阶项（如未知函数及其一阶导数）中的非线性椭圆方程。与高维特征值问题类似，传统的网格数值方法（如有限元法、有限差分法等）在高维问题上往往会遭遇严重的“维度灾难”（Curse of Dimensionality）。在这些基于网格的方法中，离散参数或自由度的数量随空间维度的增加呈指数级增长，导致其在实际的高维计算中面临难以克服的内存和算力瓶颈。
+\section{预备知识}\label{sec:pre}
+非线性椭圆偏微分方程（PDEs）是偏微分方程研究中备受瞩目的核心领域。其中，半线性椭圆方程（Semilinear Elliptic Equations）特指非线性项仅包含未知函数及其低阶（如一阶）导数的偏微分方程。在求解此类方程（尤其是在高维情形下）时，传统的基于网格的数值解法（如有限元法、有限差分法等）往往会遭遇严重的“维度灾难”（Curse of Dimensionality）。这是因为在网格方法中，离散参数或自由度的数量会随空间维度的增加呈指数级急剧增长，导致其在实际的高维计算中面临难以克服的内存和算力瓶颈。
 
 \subsection{问题背景与物理意义}
 半线性椭圆方程在描述自然界众多复杂现象时扮演着基础性角色，广泛出现于物理学、几何学、流体力学和生物学等理论模型中。这类方程的求解对于理解自然规律、设计工程系统以及推动前沿科学研究具有不可替代的重要意义。以下是几个典型且具有深远物理背景的半线性椭圆方程实例：
@@ -15,6 +15,21 @@ $$-D \Delta u = R(x, u)$$
 $$-\Delta u = e^u \quad \text{in } \mathbb{R}^n, \quad n \ge 3$$
 该方程的指数非线性项带来了极其剧烈的非线性增长特性，使其在高维空间下的理论分析和高效数值求解一直是计算数学领域的经典挑战。
 \end{itemize}
+
+\subsection{相关工作与研究现状}
+近年来，物理信息神经网络（PINNs）和深度里兹方法（Deep Ritz Method, DRM）的提出为高维 PDE 的求解开辟了新路径。研究者们相继开发了多种变体以提升其求解非线性 PDE 的精度和效率。例如，梯度增强 PINNs \cite{lawal2022physics} 通过动态调整各个损失函数分量的梯度来加速优化过程，有效防止了某一项的局部噪声主导整体的优化方向；自适应加权策略 \cite{wight2020solving,jiao2024gaussian} 依据残差信息对采样点分布进行针对性优化，在提升计算精度的同时降低了解的不确定性；此外，针对特定物理约束的模型架构优化 \cite{qiu2025data}，通过引入硬约束结构和先验信息，显著提升了网络在特定方程上的表现。然而，尽管这些基于深度学习的数值算法在实验层面取得了长足进展，其严密的收敛性理论发展却相对滞后。
+
+神经网络理论研究的核心难点在于，非线性激活函数引入了极其复杂的非凸优化空间，而 PDE 本身的非线性特性又使得解的性质更加难以捉摸。非线性 PDE 的解往往正则性较差，甚至存在多解或无解的情形，这直接导致了神经网络在训练过程中的极度不稳定性。正如引言所述，深度学习求解 PDE 的总误差通常可分解为逼近误差（Approximation Error）、泛化误差（也称统计误差，Statistical Error）以及优化误差（Optimization Error）\cite{mishra2023estimates}。受限于当前优化理论的瓶颈，本文将重点聚焦于前两项误差的严格理论分析。
+
+在误差理论的现有研究中，针对 PINNs 方法的分析率先取得突破。2022年，Perdikaris 团队 \cite{wang2022and} 首次将神经正切核（NTK）理论引入 PINNs 的分析框架，揭示了不同损失分量在收敛速率上的内在差异，并据此提出了基于 NTK 特征值的自适应梯度下降算法。尽管 NTK 理论证明了充分宽的过参数化神经网络能够以近似线性的方式逼近 PDE 的解，但在处理非线性 PDE 时仍面临巨大挑战 \cite{bonfanti2024challenges}。随后，针对特定非线性 PDE 的 PINNs 误差边界被逐步建立：Zhang 等人（2024）\cite{zhang2024priori} 证明了在两层 tanh 网络架构下，Allen-Cahn 与 Cahn-Hilliard 方程的解场逼近误差可由训练损失和配置点数量有效控制；De Ryck 等人（2023）\cite{de2024error} 建立了求解不可压 Navier-Stokes 方程的误差估计；黄云清等人（2023）\cite{qian2023physics} 则针对波动方程、非线性 Klein-Gordon 方程等建立了误差分析并改进了损失函数。然而，上述理论分析高度依赖于 PINNs 所采用的强形式残差损失，并不适用于以变分形式为基础的 Deep Ritz 方法；同时，这些成果多局限于特定形式的非线性方程，难以推广至更一般的半线性 PDE 框架。
+
+另一方面，关于 Deep Ritz 方法（DRM）的理论基础也在不断完善，但主要集中在纯线性或低阶方程域。Duan 等人（2022）\cite{duan2022convergence} 率先针对 DRM 求解线性椭圆 PDE 建立了完整的误差分析框架。随后，Jiao 等人（2024）\cite{jiao2024error} 首次推导了 DRM 求解二阶椭圆方程的非渐近收敛率，明确了在 $H^1$ 范数下如何根据样本量设定网络深度和宽度以达到期望的收敛速度。2025年，Ding 等人 \cite{ding2025convergence} 在过参数化假设下证明了收敛率可由网络权重范数控制；同年，Jiao 等人 \cite{jiao2025error} 进一步完善了基于三层双曲正切网络的 DRM 误差分析体系，并探讨了投影梯度下降算法的收敛表现。不可忽视的是，尽管这些工作极大地夯实了 DRM 的理论基石，但它们均未涉及非线性 PDE 这一核心难点，无法直接为求解半线性椭圆方程提供理论支撑。
+
+鉴于当前非线性 DRM 理论的严重缺失，本文针对半线性椭圆 PDE 开展了系统的算法设计与理论分析，主要贡献如下：
+首先，在算法层面，本文针对半线性方程的非线性特征，提出了一种改进的 Deep Ritz 算法，并为其构造了适配非线性项的修正变分损失函数；
+其次，在理论层面，本文在合理的正则性假设下，对该非线性变分损失给出了严格的数学分析。我们不仅推导了目标解的逼近误差上限，还结合统计机器学习理论，建立了相应的统计误差（泛化误差）界限；
+最后，通过权衡逼近误差与统计误差，本文证明了当空间维度 $n \ge 3$ 时，该算法总误差的渐近收敛速率在Robin边界条件和Dirichlet边界条件下分别可达 $\mathcal{O}(N^{-\frac{1}{8d}})$ 与 $\mathcal{O}(N^{-\frac{1}{16d-8}})$（其中 $N$ 为相关采样参数，$d$ 与维度相关，具体推导详见后文）。这一结果为 Deep Ritz 方法求解高维半线性 PDE 提供了坚实的理论保障。
+%TODO实验
 
 \subsection{数学描述与问题假设}
 在本文中，我们主要考虑如下形式的半线性椭圆方程：
@@ -471,15 +486,15 @@ r = \frac{q}{4(dq + 2d + q)}.
 
 
 \section{数值实验}\label{sec:num}
-正如引言所述，由于维数灾难，传统的依赖网格的 PDE 数值解法在高维情况下面临挑战。然而，通过我们的全面分析，我们在理论上建立了 Deep Ritz 方法的与维数无关的收敛性分析。为了进一步验证我们的理论在高维情形下的有效性，我们进行了一系列数值实验。
+正如引言所述，受制于“维数灾难”，传统基于网格的偏微分方程（PDE）数值解法在处理高维问题时往往面临巨大挑战。前文的理论推导已严格证明了 Deep Ritz 方法具有与维数无关的收敛性。为了进一步验证该理论结果在高维情形下的实际有效性，本节开展了一系列数值实验。
 
-在本节中，我们提供了逼近半线性椭圆方程解的算例，包括具有齐次和非齐次边界条件的 Dirichlet 问题。
+本节的数值算例重点考察模型对半线性椭圆方程解的逼近能力，具体涵盖了齐次与非齐次边界条件等多种情形。
 
-我们利用一个包含两个模块的神经网络来求解方程。每个模块包含两个线性变换、两个激活函数和一个残差连接，这可以被视为一个四层的深度神经网络。在优化过程中，我们使用 Adagrad 或 Adam 算法，配合逐步衰减的学习率来最小化等式~\eqref{eq:ch3conloss}。
+在求解框架上，我们构建了残差神经网络来参数化方程的解。在模型优化阶段，采用 Adam 优化算法，并辅以逐步衰减的学习率策略，以最小化损失函数~\eqref{eq:ch3conloss}。
 
-所有实验和实现均基于 CentOS 系统上的 Python 3.9.12 和 PyTorch 进行，使用的硬件包括两个主频为 2.40 GHz 的 Intel(R) Xeon(R) E5-2640 v4 x86\_64 处理器和一块拥有 16 GB 显存的 Nvidia Tesla V100 GPU。
+所有数值实验的程序实现均基于 CentOS 操作系统，编程环境为 Python 3.9.12 与 PyTorch 深度学习框架。硬件配置方面，计算节点配备了两颗主频为 2.40 GHz 的 Intel(R) Xeon(R) E5-2640 v4 处理器，以及一块拥有 16 GB 显存的 Nvidia Tesla V100 GPU。
 
-\subsection{高维双峰问题 (High-dimensional Bimodal Problem)}
+\subsection{高维双峰问题}
 本节考虑一个具有复杂解结构的五维非线性椭圆型方程，旨在考察模型处理高维复杂特征的能力。在此类高维设定下，传统的基于网格的数值方法（如有限元法）往往因“维数灾难”而难以直接应用。本文考虑的具体边值问题如下：
 \begin{equation}\label{eq:eq1}
 \left\{\begin{aligned}
@@ -503,7 +518,7 @@ $$g_1(\mathbf{x}) = 4\pi^2 u_1(\mathbf{x}) + 2\sum_{i=2}^{5} \frac{u_1(\mathbf{x
     \label{fig:loss_curve}
 \end{figure}
 
-为了更直观地考察模型在高维空间域内的局部拟合效果，我们固定后三个空间维度，选取二维切面 $(x_1, x_2, 0.5, 0.5, 0.5)$，绘制了精确解、预测解及其绝对误差的热力图（详见图 \ref{fig:heatmap}）。此外，图 \ref{fig:diagonal} 进一步展示了沿对角线方向上预测解与精确解的分布对比。实验结果表明，本文所提方法能够准确捕捉解的波峰与波谷等复杂的非线性特征，并在全域内保持了较高的拟合精度
+为了更直观地考察模型在高维空间域内的局部拟合效果，我们固定后三个空间维度，选取二维切面 $(x_1, x_2, 0.5, 0.5, 0.5)$，绘制了精确解、预测解及其绝对误差的热力图（详见图 \ref{fig:heatmap}）。此外，图 \ref{fig:diagonal} 进一步展示了沿对角线方向上预测解与精确解的分布对比。实验结果表明，本文所提方法能够准确捕捉解的波峰与波谷等复杂的非线性特征，并在全域内保持了较高的拟合精度。
 
 \begin{figure}[htbp]
     \centering
@@ -536,8 +551,11 @@ $$u_2(x) = \begin{cases}
 \frac{1}{3}, & r^2 \leq \frac{1}{6}.
 \end{cases}$$
 
-其中 $r$ 表示空间点到特定中心的距离。容易看出，该精确解在临界界面 $r^2 = \frac{1}{6}$ 处其导数是不连续的，即存在“不可导”的折点。方程右端源项 $g_2(x)$ 的解析表达式为：
-$\displaystyle g_1(x)=-4\pi^2u_1(x)+2\sum_{i=2}^{d}\frac{u_1(x)}{x_i(1-x_i)}+\text{exp}(u_1(x))$
+其中 $r$ 表示空间点到原点的距离。容易看出，该精确解在临界界面 $r^2 = \frac{1}{6}$ 处其导数是不连续的，即存在“不可导”的折点。方程右端源项 $g_2(x)$ 的解析表达式为：
+$$g_2(\mathbf{x}) = \begin{cases}
+10 + 2\sin\left(\frac{\pi}{4} - \frac{\pi}{2}r^2\right), & r^2 > \frac{1}{6},\\
+1, & r^2 \leq \frac{1}{6}.
+\end{cases}$$
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.9\textwidth]{./figures2/eq2_loss_val_error_curves.png}
@@ -627,31 +645,36 @@ Tu& = 0 & \text{在 }  & \partial\Omega \text{ 上}.\\
 \begin{equation*}
 g_4(x)=8\sum_{\stackrel{1\leq i\leq d}{i\neq j}}\prod_{j=1}^{d}x_{j}(1-x_{j})+\frac{1}{1+\left(\prod_{i=1}^{d}4x_{i}(1-x_{i})\right)^2},
 \end{equation*}
-这里，方程的非线性项 $S(u) = \frac{1}{1+u^2}$ 属于 $L^{\infty}(\Omega)$，且满足 Lipschitz 连续条件与有界性，从而满足前文所述的假设 \ref{ass:f}。该问题的精确解为 $u_4(x)=\prod_{i=1}^{d}4x_{i}(1-x_{i})$。
+这里，方程的非线性项 $S(u) = \frac{1}{1+u^2}$ 属于 $L^{\infty}(\Omega)$，且满足 Lipschitz 连续条件与有界性，从而符合前文所述的假设 \ref{ass:f}。该问题的精确解构造为 $u_4(x)=\prod_{i=1}^{d}4x_{i}(1-x_{i})$
 
-为了验证算法的有效性，我们在各种网络参数配置下进行了广泛的数值实验。这些经验结果为我们算法的收敛性质与鲁棒性提供了有力的证据支持。
+为了保证实验变量的单一性并验证算法的鲁棒性，本节的所有数值实验均采用一致的基础训练配置：使用 Adam 优化器，设置初始学习率为 $5.0\times 10^{-4}$，共进行 5000 步迭代优化，并将边界惩罚参数 $\lambda$ 设定为 4000。
 
+\subsubsection*{1. 采样点规模对求解精度的影响}
+
+我们首先固定神经网络结构（深度为 3，宽度为 80 的残差网络），在不同样本量配置下进行了对比实验。图 \ref{fig:fig_n} 展示了不同样本量下的训练误差收敛曲线。从图中可以清晰地看出，更大的样本量不仅能在相同的迭代步数下促使误差下降得更为迅速，且最终能收敛至更高的数值精度。此外，当样本量过小时，误差曲线在训练后期出现了先降低后上升的现象，这反映了低采样密度下模型容易发生过拟合或数值失稳，进一步凸显了充足样本量对维持算法稳定性的重要作用。
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.8\textwidth]{./figures2/eq5_n_error_epoch_curves.png}
 \caption{不同样本量下的训练误差曲线} \label{fig:fig_n}
 \end{figure}
 
-图 \ref{fig:fig_n1} 进一步展示了在各样本量配置下，模型预测解的热力图。
+图 \ref{fig:fig_n1} 直观地展示了各样本量配置下模型预测解的热力图分布对比。
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{./figures2/eq5_n_heatmaps_comparison.png}
 \caption{不同样本量下的预测解热力图对比} \label{fig:fig_n1}
 \end{figure}
 
-为了定量分析，图 \ref{fig:fig_n2} 绘制了相对误差随样本量变化的趋势线。结果表明，随着采样密度的增加，模型能够更好地捕捉空间域内的信息，整体泛化误差呈现出稳步下降的趋势。
+为了进行定量分析，图 \ref{fig:fig_n2} 绘制了模型相对误差随样本量变化的趋势线。结果表明，随着采样密度的增加，模型能够更充分地捕捉空间域内的全局与局部信息，整体泛化误差呈现出稳步下降的趋势。这一实验现象与推论 \ref{cor:cordiri} 中给出的理论衰减率（即误差随样本量呈多项式衰减）基本吻合。
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.8\textwidth]{./figures2/eq5_n_sample_size_vs_error.png}
 \caption{预测精度（相对误差）随样本量大小的变化曲线} \label{fig:fig_n2}
 \end{figure}
 
-接下来，我们探讨神经网络宽度（Network Width）对逼近精度的作用机制。在固定其他超参数的前提下，我们调整了网络隐藏层的神经元个数并重新进行训练。相应的训练误差收敛曲线如图 \ref{fig:fig_w} 所示。
+\subsubsection*{2. 神经网络宽度对逼近精度的作用机制}
+
+接下来，我们探讨网络参数量对模型表达能力的影响。参照推论 \ref{cor:cordiri} 中关于参数量的渐近设定，我们在保持基础超参数和网络深度不变的前提下，调整了残差网络隐藏层的神经元个数（即网络宽度）并重新进行训练。相应的训练误差收敛曲线如图 \ref{fig:fig_w} 所示。
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.8\textwidth]{./figures2/eq5_w_error_epoch_curves.png}
@@ -665,7 +688,7 @@ g_4(x)=8\sum_{\stackrel{1\leq i\leq d}{i\neq j}}\prod_{j=1}^{d}x_{j}(1-x_{j})+\f
 \caption{不同网络宽度下的预测解热力图对比} \label{fig:fig_w1}
 \end{figure}
 
-最后，图 \ref{fig:fig_w2} 总结了预测精度随网络宽度变化的规律。实验结果证实，适当扩展网络的宽度能够有效增强模型的非线性表达能力，从而获得更高的数值拟合精度。
+最后，图 \ref{fig:fig_w2} 总结了预测精度随网络宽度变化的规律。实验结果证实，适度扩展网络的宽度能够显著增强模型的非线性逼近能力与函数空间表达能力，从而获得更高的数值拟合精度，这再次印证了本文前述理论分析的正确性。
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.8\textwidth]{./figures2/eq5_w_width_vs_error.png}
@@ -720,9 +743,17 @@ $$\int_{\Omega} |\nabla u^*|^2 dx \le \liminf_{k \to \infty} \int_{\Omega} |\nab
 $$\int_{\partial \Omega} (u^*)^2 \, dS = \lim_{k \to \infty} \int_{\partial \Omega} u_k^2 \, dS$$
 \item {\heiti 线性项：}对于连续线性泛函，弱收敛直接保证了极限的交换性：
 $$\int_{\Omega} gu_k dx \to \int_{\Omega} gu^* dx \quad \text{且} \quad \int_{\partial \Omega} hu_k dS \to \int_{\partial \Omega} hu^* dS$$
-\item {\heiti 非线性项：}同样由紧嵌入定理，$H^1(\Omega)$ 紧嵌入到 $L^2(\Omega)$，故 $u_k \to u^*$ 在 $L^2(\Omega)$ 中强收敛。进一步可提取子列使得 $u_k(x) \to u^*(x)$ 几乎处处成立。由 $W(s)$ 的连续性及非负性，应用 Fatou 引理可得：
-$$\int_{\Omega} W(u^*) dx = \int_{\Omega} \liminf_{k\to\infty} W(u_k) dx \le \liminf_{k \to \infty} \int_{\Omega} W(u_k) dx$$
+\item {\heiti 非线性项：}同样由紧嵌入定理，$H^1(\Omega)$ 紧嵌入到 $L^2(\Omega)$，故 $u_k \to u^*$ 在 $L^2(\Omega)$ 中强收敛。进一步可提取子列使得 $u_k(x) \to u^*(x)$ 几乎处处成立。
+由假设 $V'(s) \ge -\gamma$（不妨设 $W(0)=0$ 以及 $V(0)=0$），可知辅助函数 $\tilde{W}(s) = W(s) + \frac{\gamma}{2}s^2 \ge 0$。由于 $\tilde{W}(s)$ 非负且连续，我们可以合法地对其应用 Fatou 引理：
+$$\int_{\Omega} \tilde{W}(u^*) \, dx \le \liminf_{k \to \infty} \int_{\Omega} \tilde{W}(u_k) \, dx$$
+即：
+$$\int_{\Omega} \left( W(u^*) + \frac{\gamma}{2}(u^*)^2 \right) \, dx \le \liminf_{k \to \infty} \int_{\Omega} \left( W(u_k) + \frac{\gamma}{2}u_k^2 \right) \, dx$$
+由于 $\frac{\gamma}{2} \int_{\Omega} u_k^2 \, dx$ 是一个存在确定极限的强收敛序列，我们可以利用下极限的性质 $\liminf (a_k + b_k) = \liminf a_k + \lim b_k$ 将其分离并抵消：
+$$\int_{\Omega} W(u^*) \, dx + \frac{\gamma}{2} \int_{\Omega} (u^*)^2 \, dx \le \liminf_{k \to \infty} \int_{\Omega} W(u_k) \, dx + \frac{\gamma}{2} \int_{\Omega} (u^*)^2 \, dx$$
+两边同时减去 $\frac{\gamma}{2} \int_{\Omega} (u^*)^2 \, dx$，得到：
+$$\int_{\Omega} W(u^*) \, dx \le \liminf_{k \to \infty} \int_{\Omega} W(u_k) \, dx$$
 \end{itemize}
+
 综合上述四项，严格得出结论：
 $$J(u^*) \le \liminf_{k \to \infty} J(u_k)$$
 
@@ -745,8 +776,38 @@ $$J(tu + (1-t)v) < tJ(u) + (1-t)J(v)$$
 这证明了 $J(u)$ 的严格凸性，从而全局极小值点唯一。
 
 最后一步，证明解的正则性。将原方程视作以 $g(x) - V(u(x))$ 为源项的线性椭圆边值问题：
-$$-\Delta u =  g(x) - V(u(x))$$   
-根据经典的椭圆正则性理论，弱解 $u$ 在区域 $\Omega$ 足够正则的条件下自动提升至 $H^2(\Omega)$，且存在仅依赖于区域 $\Omega$ 和参数 $\mu$ 的常数 $C > 0$，使得：
+\begin{equation}\label{eq:linearized}
+\left\{\begin{aligned}
+-\Delta u+ &=f & & \text { in } \Omega \\
+ \mu u + \frac{\partial u}{\partial n} &=h & & \text { on } \partial \Omega
+\end{aligned}\right.
+\end{equation}  
+
+要应用经典的 $L^2$ 椭圆正则性理论得出 $u \in H^2(\Omega)$，我们需要证明右端项 $f \in L^2(\Omega)$。由于已知 $g \in L^2(\Omega)$，问题归结为证明非线性项 $V(u) \in L^2(\Omega)$。根据假设 (c) 的增长性条件 $|V(s)| \le C(1 + |s|^p)$，这等价于证明 $u \in L^{2p}(\Omega)$。
+
+已知 $u \in H^1(\Omega)$，我们将根据空间维度 $N$ 分情况讨论：
+
+{\heiti 情形一：低维情形 ($N = 1, 2$)}
+
+根据 Sobolev 嵌入定理，当 $N=1$ 时，$H^1(\Omega) \hookrightarrow L^\infty(\Omega)$；当 $N=2$ 时，对于任意有限的 $q \in [1, +\infty)$，均有 $H^1(\Omega) \hookrightarrow L^q(\Omega)$。因此，无论 $p$ 为何有限值，我们直接有 $u \in L^{2p}(\Omega)$，从而 $V(u) \in L^2(\Omega)$ 自动成立。
+
+{\heiti 情形二：高维情形 ($N \ge 3$)}
+
+由 Sobolev 临界嵌入定理知 $u \in L^{2^*}(\Omega)$，其中临界指数 $2^* = \frac{2N}{N-2}$。
+我们将非线性项进行代数重写，令 $V(u) = a(x)u + b(x)$，其中
+$$a(x) = \begin{cases} \frac{V(u(x))}{u(x)}, & u(x) \neq 0 \\ 0, & u(x) = 0 \end{cases}$$
+由假设 (c) $|V(s)| \le C(1 + |s|^p)$ 可知，存在常数 $C' > 0$，使得：
+$$|a(x)| \le C'(1 + |u(x)|^{p-1})$$
+由于我们假设 $p \le \frac{N+2}{N-2}$，故 $p-1 \le \frac{4}{N-2}$。因为 $u \in L^{\frac{2N}{N-2}}(\Omega)$，所以 $|u|^{p-1}$ 最高具有 $\frac{2N}{(N-2)(p-1)} \ge \frac{N}{2}$ 的可积性。这意味着系数 $a(x) \in L^{N/2}(\Omega)$。
+此时，方程 \eqref{eq:linearized} 可以改写为：
+$$-\Delta u = a(x)u + \tilde{g}(x)$$
+其中 $\tilde{g}(x) = g(x) - b(x) \in L^2(\Omega)$。
+这是一个带有 $L^{N/2}$ 奇异系数的线性方程。根据经典的 Brezis-Kato 定理\ref{lem:Brezis}，由于 $a \in L^{N/2}(\Omega)$，弱解 $u$ 的可积性可以被提升至任意有限指数空间，即对于任意 $q < \infty$，都有：
+$$u \in L^q(\Omega)$$
+取 $q \ge 2p$，我们立即得到 $u \in L^{2p}(\Omega)$，进而严格推导出 $V(u) \in L^2(\Omega)$。
+
+综上所述，无论是哪种维度，我们均证明了源项 $f(x) = g(x) - V(u(x)) \in L^2(\Omega)$。
+再结合边界条件 $h \in H^{1/2}(\partial \Omega)$ 以及 $\partial \Omega$ 的 $C^{1,1}$（或凸多面体）正则性，根据标准的线性椭圆方程 $H^2$ 正则性理论，弱解自动提升为强解，即 $u \in H^2(\Omega)$，且满足先验估计：
 $$\|u\|_{H^2(\Omega)} \le C \left( \|g - V(u)\|_{L^2(\Omega)} + \|h\|_{H^{1/2}(\partial \Omega)} + \|u\|_{H^1(\Omega)} \right)$$
 定理得证。
 \end{proof}
