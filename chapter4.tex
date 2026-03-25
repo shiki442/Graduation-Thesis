@@ -71,7 +71,7 @@ $$\|u^{\delta}-\mathcal{F}(V^{\dagger})\|_{L^{2}(\Omega)}=|\Omega|^{1/2}\delta, 
 
 传统的伴随方法（Adjoint Method）求解此类约束优化问题往往需要反复进行正向和伴随方程的网格离散与迭代求解，计算成本高昂且对复杂几何区域适应性较弱。在此，我们引入物理信息神经网络（PINNs）的“软约束”思想，通过将偏微分方程及其边界条件作为惩罚项（Penalty Terms）加入到目标函数中，从而将上述带有 PDE 约束的优化问题优雅地松弛为无约束优化问题：
 \begin{equation}\label{eq:pinns:loss}
-\min_{V,u} \{ \mathcal{L}_{\lambda}(V,u) = \mathcal{J}_{\lambda}(V,u)+\mathcal{I}(V,u)+\mathcal{B}(V,u) \},
+\min_{V,u} \{ \mathcal{L}_{\lambda}(V,u) = \mathcal{M}(u)+\mathcal{I}(V,u)+\mathcal{B}(u) +\mathcal{R}(V)\},
 \end{equation}
 其中，内部 PDE 残差惩罚项 $\mathcal{I}(V,u)$ 和边界条件残差惩罚项 $\mathcal{B}(u)$ 分别定义为：
 \begin{equation*}
@@ -154,7 +154,9 @@ $$\|u^{\delta}-\mathcal{F}(V^{\dagger})\|_{L^{2}(\Omega)}=|\Omega|^{1/2}\delta, 
 
 此时，对于参数对 $(\phi, \theta)$，离散经验损失函数 $\widehat{\mathcal{L}}_{\lambda}(\phi, \theta)$ 可表示为以下四部分之和：
 
-$$\widehat{\mathcal{L}}_{\lambda}(\phi, \theta) = \widehat{\mathcal{M}}(\theta) + \widehat{\mathcal{I}}(\phi, \theta) + \widehat{\mathcal{B}}(\theta) + \widehat{\mathcal{R}}(\phi)$$
+\begin{equation}\label{eq:empirical:loss}
+\widehat{\mathcal{L}}_{\lambda}(\phi, \theta) = \widehat{\mathcal{M}}(\theta) + \widehat{\mathcal{I}}(\phi, \theta) + \widehat{\mathcal{B}}(\theta) + \widehat{\mathcal{R}}(\phi) 
+\end{equation}
 
 其中，数据失配项（Data Mismatch）基于实际观测数据点进行离散：
 $$\widehat{\mathcal{M}}(\theta) = \frac{|\Omega|}{N_d}\sum_{k=1}^{N_d}|u^{\delta}(X_{k}^{d}) - u_{\theta}(X_{k}^{d})|^2 + \frac{|\partial\Omega|}{M_d}\sum_{l=1}^{M_d}|Tu^{\delta}(Y_{l}^{d}) - Tu_{\theta}(Y_{l}^{d})|^2$$
@@ -186,17 +188,19 @@ $$\widehat{\mathcal{R}}(\phi) = \lambda \frac{|\Omega|}{N_f}\sum_{i=1}^{N_f} \le
 \caption{Tikhonov-PINNs}
 \label{alg:TikPINNs}
 \begin{algorithmic}[1]
-\Require 数据集 $\euD_{\calI}$, $\euD_{\calB}$, $\euX_{\calI}$ 和 $\euX_{\calB}$。
+\Require 配点数据集 $\{X_{i}\}_{i=1}^{N_f},$ $\{Y_{j}\}_{j=1}^{M_b}$。观测数据点集 $\{X_{k}^{d}\}_{k=1}^{N_d},$ $\{Y_{l}^{d}\}_{l=1}^{M_d}$。
 \State 构建由 $(\phi,\theta)$ 参数化的神经网络 $(V(\phi),u(\theta))$。
 \State 初始化参数 $(\phi,\theta)$。
-\State \textcolor{white!30!black}{\texttt{\# Tikhonov-PINNs 训练。}}
-\State \textcolor{white!30!black}{\texttt{\# 通过 Tikhonov-PINNs 损失估计 $(V(\phi),u(\theta))$。}}
+\State \textcolor{white!30!black}{\texttt{\# 预训练阶段：仅用 measurement 误差训练 $u$ 网络以获得较好的初始值。}}
+\For {$k=1:\texttt{pretrain epochs}$}
+\State {计算测量误差损失 $\what{\calM}(u(\theta)) $}
+\State {反向传播 $g_{\theta}=\nabla_{\theta}\what{\calM}(\theta)$。}
+\State {更新 $\theta$：$\theta\leftarrow\operatorname{SGD}\big\{\theta,g_{\theta},\tau\big\}$。}
+\EndFor
+\State \textcolor{white!30!black}{\texttt{\# Tikhonov-PINNs 联合训练阶段。}}
 \For {$k=1:\texttt{epochs}$}
-\State {计算由 Eq.\eqref{eq:empirical:loss} 定义的经验 Tikhonov-PINNs 损失
-\begin{equation*}
-\what{\calL}_{\lambda}(V(\phi),u(\theta))=\what{\calJ}_{\lambda}(V(\phi),u(\theta))+\what{\calI}(V(\phi),u(\theta))+\what{\calB}(u(\theta)).
-\end{equation*}}
-\State {反向传播 $(g_{\phi},g_{\theta})=\nabla\what{\calL}(V(\phi),u(\theta))$。}
+\State {计算经验 Tikhonov-PINNs 损失$$\what{\calL}_{\lambda}(V(\phi),u(\theta))=\what{\mathcal{M}}(u(\theta))+\what{\calI}(V(\phi),u(\theta))+\what{\calB}(u(\theta))+\what{\calR}_{\lambda}(V(\phi))$$}
+\State {反向传播 $(g_{\phi},g_{\theta})=\nabla\what{\calL}_{\lambda}(V(\phi),u(\theta))$。}
 \State {通过 SGD 类算法更新 $(\phi,\theta)$：$(\phi,\theta)\leftarrow\operatorname{SGD}\big\{(\phi,\theta),(g_{\phi},g_{\theta}),\tau\big\}$。}
 \EndFor
 \Ensure {$(\hat{V},\hat{u})\leftarrow(V(\phi),u(\theta))$.}
@@ -207,6 +211,479 @@ $$\widehat{\mathcal{R}}(\phi) = \lambda \frac{|\Omega|}{N_f}\sum_{i=1}^{N_f} \le
 通过选择合适的激活函数，可以确保 $\mathcal{N}_V\subseteq H^{2}(\Omega)$。因此，Eqs.\eqref{eq:pinns:loss}\eqref{eq:empirical:loss} 中的 $H^{2}$-范数惩罚项是良定的，并且在理论上是合理的。
 \end{remark}
 
+
+\subsection{超额风险的误差分析}\label{sec:error:excessrisk}
+\par 对于一对函数 $(q,u)$，我们将 $\calL(q,u)$ 记为 $(q,u)$ 的无正则化目标泛函
+\begin{equation*}
+\calL(q,u)=\|z^{\delta}-u\|_{L^{2}(\Omega)}^{2}+\|Tz^{\delta}-Tu\|_{L^{2}(\partial\Omega)}^{2}+\calI(q,u)+\calB(u).
+\end{equation*}
+令 $\calE_{\lambda}(q,u)$ 表示 \textbf{超额风险} (excess risk)
+\begin{equation}\label{eq:excessrisk0}
+  \calE_{\lambda}(q,u)=\calL_{\lambda}(q,u)-\calL(q^{\dagger},u^{\dagger}),
+\end{equation}
+利用 $(q^{\dagger},u^{\dagger})$ 的定义，我们可以得到
+\begin{equation}\label{eq:excessrisk1}
+\calL_{\lambda}(q,u)=\calE_{\lambda}(q,u)+(|\Omega|+|\partial\Omega|)\delta^{2}.
+\end{equation}
+
+
+\section{数值实验}\label{sec:numerical}
+在本节中，我们提供了几个例子来说明 Tikhonov-PINNs 的效率。首先，我们概述数值设置如下。
+
+\subsection{实验设置}
+在训练 Tikhonov-PINNs 时，我们分别采用两个神经网络来逼近未知解 $u$ 和势函数 $q$。每个网络都是具有 $tanh$ 激活函数和每两层之间存在残差连接的 DNN。对于所有算例，我们进行了多次运行以确保结果的可靠性，并且为每种情况提供了详细的训练设置。
+
+在接下来的小节中，我们将本文提出的方法与传统的基于有限元的方法进行了比较。具体而言，我们使用了开源库 \textbf{dolfin-adjoint} \cite{mitusch2019dolfin}，该库基于 \textbf{FEniCS} \cite{alnaes2015fenics,grossmann2024can} 构建，专为求解反问题和最优控制问题而设计。该库获得了 2015 年威尔金森数值软件奖 (Wilkinson Prize for Numerical Software)，并在科学界获得了广泛的认可和采用。
+
+所有数值实验均在武汉大学超算集群上进行，使用 Python 3.12.3 实现。该超算系统配备了 128GB ECC 2400MHz DDR4 内存、Intel Xeon E5-2640v4 2.4GHz CPU 和 NVIDIA Tesla V100 16GB GPU。
+
+我们已在 GitHub 上发布了所有训练代码，网址为 \url{https://github.com/shiki442/Tikhonov-PINNs}。该仓库包含完整的数据生成、训练和评估流程，以及每个算例的参考配置文件，以便于读者复现和进一步探索。
+
+\subsection{评估}
+为了衡量重构势函数 $\hat{q}$ 和解 $\hat{u}$ 的精度，我们采用如下定义的相对 $L^{2}$ 误差：
+\begin{equation*}
+\err(\hat{q})=\frac{\|\hat{q}-q^{\dagger}\|_{L^{2}(\Omega)}}{\|q^{\dagger}\|_{L^{2}(\Omega)}}\quad\text{and}\quad\err(\hat{u})=\frac{\|\hat{u}-u^{\dagger}\|_{L^{2}(\Omega)}}{\|u^{\dagger}\|_{L^{2}(\Omega)}},
+\end{equation*}
+这里，$L^2$ 范数是基于网格点上的值进行近似的，即 $\|v\|_{L^{2}(\Omega)}\approx\sqrt{\frac{1}{N}\sum_{i=1}^{N}v(x_{i})^{2}}$，其中 $\{x_{i}\}_{i=1}^{N}$ 为网格点。
+
+\subsection{光滑势问题}
+
+在本小节中，我们利用光滑算例进行定量分析。为了最小化优化误差的影响，我们使用充足的样本数量将网络训练了足够长的时间。
+
+\subsubsection{一维问题}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures3/ex0_q.eps}
+    \includegraphics[width=\textwidth]{figures3/ex0_u.eps}
+    \caption{例 \ref{example:1d} 的精确解、Tikhonov-PINN 解和绝对误差。第一行对应源项 $q$，第二行对应解 $u$。从左到右，结果是在不同的噪声水平下获得的。}
+    \label{fig:ex0_q_u}
+\end{figure}
+
+在本小节中，我们使用一个一维例子来验证 Tikhonov-PINNs 的收敛率，并研究超参数对重构误差的影响。
+\begin{example}\label{example:1d}
+令 $\Omega=(0,1)$ 且 $\alpha\equiv 1$，定义精确势函数为 $q^{\dagger}(x)=\exp(x)$，对应的解为 $u^{\dagger}(x) = 1+\sin(\pi x)$。源项 $f$ 和边界条件 $g$ 由模型方程 Eq.\eqref{eq:pde:potential} 确定。
+\end{example}
+
+$q$ 和 $u$ 的精确解与 Tikhonov-PINNs 解如图 \ref{fig:ex0_q_u} 所示。在本例中，我们设置 $\lambda=10^{-7}$，采样 50,000 个内部点，并将边界点设为 \{0, 1\}。优化使用 Adam 优化器进行，学习率为 $10^{-4}$，迭代次数为 10,000 次。我们采用一个具有 $tanh$ 激活函数且宽度为 64 的两层神经网络来逼近 $q$ 和 $u$，并在架构中每两个相邻隐藏层之间应用残差连接。除非另有说明，本小节中的所有一维算例均使用与本例相同的默认参数设置。
+
+\subsubsection{收敛率}
+在定理 \ref{thm:ConvergenceRate} 中，我们建立了 $q$ 和 $u$ 关于噪声水平 $\delta$ 的收敛率。为了验证这一结果，我们计算了不同噪声水平下 $q$ 和 $u$ 的相对误差，结果如图 \ref{fig:ex0:noise} 所示。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.49\textwidth]{figures3/ex0_noise_q.eps}
+    \includegraphics[width=0.49\textwidth]{figures3/ex0_noise_u.eps}
+    \caption{不同正则化参数下噪声水平对解误差的影响。左图显示了 $q$ 的结果，其中 $\lambda=$$10^{-7}$, $10^{-8}$, $10^{-9}$ 和 0 对应的对数回归曲线的斜率分别为 0.708、0.748、0.760 和 0.743，平均斜率为 0.744。右图显示了 $u$ 的结果，其中对应的斜率分别为 1.22、1.08、1.25 和 1.26，平均斜率为 1.21。}
+    \label{fig:ex0:noise}
+\end{figure}
+
+由于目标势函数具有正下界，该算例满足 $\beta = 0$ 的正性条件。根据定理~\ref{thm:ConvergenceRate} 和注 \ref{compare_Gar}，$q$ 和 $u$ 的收敛率可以任意接近 $O(\delta^{0.5})$ 和 $O(\delta)$。这一点在图 \ref{fig:ex0:noise} 中得到了检验，其中 $u$ 和 $q$ 的数值收敛率与理论收敛率非常一致。平均而言，在不同的 $\lambda$ 值下，我们观察到 $u$ 的经验收敛率为 $O(\delta^{1.21})$，$q$ 的经验收敛率为 $O(\delta^{0.74})$，这实际上快于理论收敛率，表明我们的理论界可能不是最优的。
+
+\subsubsection{正则化的影响}
+在本小节中，我们要研究不同正则化在求解算例 \ref{example:1d} 时的影响。如表 \ref{tab:regularization} 所示，当训练样本量相对较小（表 1 中的第一个子表）时，与 $L^2$ 正则化或原始 PINNs 相比，$H^2$ 正则化显著降低了 $q$ 的相对误差，尤其是当正则化系数 $\lambda$ 相对较大时。第二个子表表明，随着更多训练样本的可用，这种改进变得不那么明显。这是符合预期的，因为适当的正则化和增加数据量都有助于防止过拟合并提高精度。尽管如此，在两种情况下，当 $\lambda$ 选择得当时，$H^2$ 正则化都能产生最小的重构误差。这些结果凸显了 $H^2$ 正则化在求解此类反势问题时的有效性和优越性。
+
+\begin{table}[hbtp]
+\centering
+\footnotesize
+\caption{算例 \ref{example:1d} 中不同正则化下 $\hat{q}$ 的相对 $L^{2}$ 误差。}
+\begin{tabular}{lrrrrr}
+\hline
+\multirow{2}[0]{*}{$\text{err}(q_{\text{pinn}})$} & \multicolumn{5}{c}{正则化参数 $\lambda$} \\
+\cline{2-6}
+& \multicolumn{1}{l}{$1.0\times 10^{-3}$} & 
+\multicolumn{1}{l}{$1.0\times 10^{-4}$} &
+\multicolumn{1}{l}{$1.0\times 10^{-5}$} &
+\multicolumn{1}{l}{$1.0\times 10^{-6}$} & 
+\multicolumn{1}{l}{$1.0\times 10^{-7}$} \\
+   \hline
+$H^2$ 正则化 & $5.44\times 10^{-2}$ & $\textbf{5.26}\times \textbf{10}^{-2}$ & $8.27\times 10^{-2}$ & $8.99\times 10^{-2}$ & $9.07\times 10^{-2}$ \\
+$L^2$ 正则化 & $9.35\times 10^{-2}$ & $9.11\times 10^{-2}$ & $9.08\times 10^{-2}$ & $9.08\times 10^{-2}$ & $9.08\times 10^{-2}$ \\
+无正则化 & $9.08\times 10^{-2}$ & $9.08\times 10^{-2}$ & $9.08\times 10^{-2}$ & $9.08\times 10^{-2}$ & $9.08\times 10^{-2}$  \\
+\hline
+&       &       &       &       & \\
+\hline
+\multirow{2}[0]{*}{$\text{err}(q_{\text{pinn}})$} & \multicolumn{5}{c}{正则化参数 $\lambda$} \\
+\cline{2-6}
+& \multicolumn{1}{l}{$1.0\times 10^{-3}$} & 
+\multicolumn{1}{l}{$1.0\times 10^{-4}$} &
+\multicolumn{1}{l}{$1.0\times 10^{-5}$} &
+\multicolumn{1}{l}{$1.0\times 10^{-6}$} & 
+\multicolumn{1}{l}{$1.0\times 10^{-7}$} \\
+\hline
+$H^2$ 正则化 & $8.96\times 10^{-2}$ & $3.14\times 10^{-2}$ & $\textbf{2.94}\times \textbf{10}^{-2}$ & $3.03\times 10^{-2}$ & $3.04\times 10^{-2}$  \\
+$L^2$ 正则化 & $3.80\times 10^{-2}$ & $3.10\times 10^{-2}$ & $3.05\times 10^{-2}$ & $3.04\times 10^{-2}$ & $3.04\times 10^{-2}$ \\
+无正则化 & $3.04\times 10^{-1}$ & $3.04\times 10^{-2}$ & $3.04\times 10^{-2}$ & $3.04\times 10^{-2}$ & $3.04\times 10^{-2}$ \\
+\hline
+
+\end{tabular}
+\label{tab:regularization}
+\end{table}
+
+\subsubsection{其他超参数的影响}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.48\textwidth]{figures3/ex0_nsample.eps}
+    \includegraphics[width=0.48\textwidth]{figures3/ex0_width.eps}
+    \caption{样本大小和网络宽度对算法精度的影响。我们进行了多次运行，并展示了相应的置信区间。特别地，由于网络深度是固定的，非零参数的数量 $R_{\calQ}$ 与网络宽度近似成正比。}
+    \label{fig:ex0:width}
+\end{figure}
+
+我们研究了神经网络复杂度和样本复杂度对模型性能的影响。根据定理 \ref{thm:ConvergenceRate} 和假设 \ref{allcondition}，要实现更低的重构误差，需要增加样本大小和网络规模。我们通过以下实验验证了这种单调关系。在图~\ref{fig:ex0:width} 左侧，我们固定网络架构并改变样本大小以考察其影响。在图~\ref{fig:ex0:width} 右侧，我们保持两层的网络深度，同时调整网络宽度，从而按比例缩放神经元总数 $R_\mathbf{\calQ}$。对每个设置都进行了多次运行，图中显示的结果表明，误差随着样本大小和参数数量的增加而减小。
+
+\subsubsection{二维问题}
+接下来我们展示一个二维光滑算例，其中待反演的 $q^{\dagger}$ 和 $u^{\dagger}$ 均呈现正弦函数形式。
+
+\begin{example}\label{example:onemode}
+令 $\Omega=(0,1)^{2}$ 且 $\alpha\equiv 1$。我们考虑对以下势函数的识别
+\begin{equation*}
+q^{\dagger}(x_{1},x_{2})=1+0.5\times\sin(\pi x_{1})\sin(\pi x_{2}),
+\end{equation*}
+且精确解 $u^{\dagger}$ 为：
+\[
+u^{\dagger}(x_{1},x_{2})=1+\sin(\pi x_{1})\sin(\pi x_{2}).
+\]
+\end{example}
+
+在本实验中，神经网络包含两个宽度为 64 的隐藏层。我们在内部和边界上共采样 100,000 个点，并使用学习率为 $10^{-4}$ 的 Adam 优化器训练模型 50,000 次迭代。
+
+我们还使用有限元方法 (FEM) 求解了相同的问题。在 FEM 实现中，采用了一阶拉格朗日单元，并利用 L-BFGS 算法对解进行了 50 次迭代优化。为了确保比较的公平性，区域 $[0,1]^2$ 被离散化为 $320\times 320=102,400$ 个网格点，这与 Tikhonov-PINNs 中使用的总样本数（$100,000$ 个样本）相当。
+
+\begin{figure}[htbp]
+    \centering
+    % 第一个子图：Tikhonov-PINNs 方法（假设文件名暗示这是神经网络方法）
+    \begin{subfigure}[b]{\textwidth}
+        \centering
+        % 插入图片
+        \includegraphics[width=\textwidth]{figures3/one_peak_nn.eps}
+        % 简短的子标题
+        \caption{Tikhonov-PINNs 方法结果}
+        \label{fig:one_peak_nn}
+    \end{subfigure}
+    \hfill % 填充中间空白，让图片分别对齐左右
+    % 第二个子图：有限元方法 (FEM)
+    \begin{subfigure}[b]{\textwidth}
+        \centering
+        % 插入图片
+        \includegraphics[width=\textwidth]{figures3/one_peak_fem.eps}
+        % 简短的子标题
+        \caption{有限元方法 (FEM) 结果}
+        \label{fig:one_peak_fem}
+    \end{subfigure}
+    
+    % 总标题：包含详细描述
+    \caption{两种方法重构结果的比较：(a) Tikhonov-PINNs 和 (b) 有限元方法 (FEM)。
+    左侧小图展示了例 \ref{example:onemode} 中势函数 $q^{\dagger}$（上）和解 $u^{\dagger}$（下）的真值；
+    右侧小图展示了在不同噪声水平 $\delta$ 下，使用最优正则化参数 $\lambda$ 重构的势 $\hat{q}$ 和解 $\hat{u}$。}
+    \label{fig:example:one_peak}
+\end{figure}
+
+
+数值结果如图~\ref{fig:example:one_peak} 所示。这里，基于各种实验，$\lambda$ 被选为最优正则化参数。为了进一步阐明噪声 $\delta$ 的影响，我们在表~\ref{tab:onemode} 中提供了不同正则化参数 $\lambda$ 下相对误差的详细比较。显然，在低噪声水平下，FEM 和 Tikhonov-PINNs 方法均能有效地重构 $q$ 和 $u$。此外，随着噪声水平的增加，$q$ 的误差逐渐增大，这与我们的理论发现相符。在大多数情况下，FEM 优于 Tikhonov-PINNs 方法，当 $\lambda$ 选择得当时，产生的相对 $L^2$ 误差更低。这突显了 FEM 在处理此类光滑问题时的优越性，特别是在低维情况下。然而，正如第~\ref{sec:semi_converge} 节所讨论的，FEM 中的半收敛现象需要仔细的早停策略。此外，对于非光滑和高维问题，Tikhonov-PINNs 表现出优于标准 FEM 的性能。我们将在后续章节中对此进行讨论。
+
+聚焦于 Tikhonov-PINNs 的结果，很明显，较高的噪声水平需要较大的正则化参数 $\lambda$，以在重构解中获得最佳的误差控制。噪声强度与正则化参数之间的这种单调关系与定理~\ref{thm:ConvergenceRate} 中的分析一致。
+
+\begin{table}[htbp]
+   \centering
+   \footnotesize
+   \caption{例 \ref{example:onemode} 中重构势 $\hat{q}$ 和解 $\hat{u}$ 的相对 $L^{2}$ 误差。}
+   \begin{tabular}{lllllll}
+   \hline
+   \multirow{2}[0]{*}{$\delta  = 1\%$} & \multicolumn{6}{c}{正则化参数 $\lambda$} \\
+   \cline{2-7}
+   & $1.0\times 10^{-5}$ & $1.0\times 10^{-6}$ & $1.0\times 10^{-7}$ & $1.0\times 10^{-8}$ & $1.0\times 10^{-9}$ & \multicolumn{1}{r}{0} \\
+   \hline
+   $\text{err}(u_{\text{pinn}})$ & $3.14\times 10^{-3}$ & $1.49\times 10^{-3}$ & $7.67\times 10^{-4}$ & $5.99\times 10^{-4}$ & $5.81\times 10^{-4}$ & $5.72\times 10^{-4}$ \\
+   $\text{err}(u_{\text{fem}})$ & $1.93\times 10^{-4}$ & $1.84\times 10^{-4}$ & $1.19\times 10^{-4}$ & $1.44\times 10^{-4}$ & $1.68\times 10^{-4}$ & $1.03\times 10^{-4}$ \\
+   $\text{err}(q_{\text{pinn}})$ & $1.46\times 10^{-1}$ & $5.39\times 10^{-2}$ & $3.39\times 10^{-2}$ & $3.27\times 10^{-2}$ & $3.27\times 10^{-2}$ & $3.27\times 10^{-2}$ \\
+   $\text{err}(q_{\text{fem}})$ & $1.44\times 10^{-2}$ & \textbf{1.23$\times $10$^{-2}$} & $6.26\times 10^{-3}$ & $1.27\times 10^{-2}$ & $1.68\times 10^{-2}$ & $1.95\times 10^{-2}$ \\
+   \hline
+   &       &       &       &       &       &  \\
+   \hline
+   \multirow{2}[0]{*}{$\delta = 10\%$} & \multicolumn{6}{c}{正则化参数 $\lambda$} \\
+   \cline{2-7}
+   & $1.0\times 10^{-5}$ & $1.0\times 10^{-6}$ & $1.0\times 10^{-7}$ & $1.0\times 10^{-8}$ & $1.0\times 10^{-9}$ & \multicolumn{1}{r}{0} \\
+   \hline
+   $\text{err}(u_{\text{pinn}})$ & $3.08\times 10^{-3}$ & $1.97\times 10^{-3}$ & $1.48\times 10^{-3}$ & $1.41\times 10^{-3}$ & $1.40\times 10^{-3}$ & $1.40\times 10^{-3}$ \\
+   $\text{err}(u_{\text{fem}})$ & $1.09\times 10^{-3}$ & $6.30\times 10^{-4}$ & $1.71\times 10^{-3}$ & $2.51\times 10^{-3}$ & $2.71\times 10^{-3}$ & $3.43\times 10^{-3}$\\
+   $\text{err}(q_{\text{pinn}})$ & $1.50\times 10^{-1}$ & $6.18\times 10^{-2}$ & $4.33\times 10^{-2}$ & $4.13\times 10^{-2}$ & $4.11\times 10^{-2}$ & $4.11\times 10^{-2}$ \\
+   $\text{err}(q_{\text{fem}})$ & \textbf{1.72$\times $10$^{-2}$} & $2.84\times 10^{-2}$ & $8.56\times 10^{-2}$ & $3.23\times 10^{-1}$ & $3.80\times 10^{-1}$ & $5.40\times 10^{-1}$\\
+   \hline
+   &       &       &       &       &       &  \\
+   \hline
+   \multirow{2}[0]{*}{$\delta = 20\%$} & \multicolumn{6}{c}{正则化参数 $\lambda$} \\
+   \cline{2-7}
+   & $1.0\times 10^{-5}$ & $1.0\times 10^{-6}$ & $1.0\times 10^{-7}$ & $1.0\times 10^{-8}$ & $1.0\times 10^{-9}$ & \multicolumn{1}{r}{0} \\
+   \hline
+   $\text{err}(u_{\text{pinn}})$ & $3.38\times 10^{-3}$ & $2.47\times 10^{-3}$ & $2.19\times 10^{-3}$ & $2.17\times 10^{-3}$ & $2.17\times 10^{-3}$ & $2.17\times 10^{-3}$ \\
+   $\text{err}(u_{\text{fem}})$ & $8.88\times 10^{-4}$ & $2.16\times 10^{-3}$ & $4.76\times 10^{-3}$ & $4.30\times 10^{-3}$ & $3.44\times 10^{-3}$ & $4.98\times 10^{-3}$ \\
+   $\text{err}(q_{\text{pinn}})$ & $1.54\times 10^{-1}$ & $7.29\times 10^{-2}$ & $6.34\times 10^{-2}$ & $6.44\times 10^{-2}$ & $6.46\times 10^{-2}$ & $6.46\times 10^{-2}$ \\
+   $\text{err}(q_{\text{fem}})$ & \textbf{1.89$\times $10$^{-2}$} & $8.56\times 10^{-2}$ & $2.64\times 10^{-1}$ & $3.85\times 10^{-1}$ & $4.35\times 10^{-1}$ & $4.98\times 10^{-1}$\\
+   \hline
+   &       &       &       &       &       &  \\
+   \hline
+   \multirow{2}[0]{*}{$\delta = 50\%$} & \multicolumn{6}{c}{正则化参数 $\lambda$} \\
+   \cline{2-7}
+   & $1.0\times 10^{-5}$ & $1.0\times 10^{-6}$ & $1.0\times 10^{-7}$ & $1.0\times 10^{-8}$ & $1.0\times 10^{-9}$ & \multicolumn{1}{r}{0} \\
+   \hline
+   $\text{err}(u_{\text{pinn}})$ & $4.14\times 10^{-3}$ & $5.22\times 10^{-3}$ & $5.20\times 10^{-3}$ & $5.22\times 10^{-3}$ & $5.22\times 10^{-3}$ & $5.22\times 10^{-3}$ \\
+   $\text{err}(u_{\text{fem}})$ & $4.90\times 10^{-3}$ & $7.22\times 10^{-3}$ & $8.26\times 10^{-3}$ & $1.01\times 10^{-2}$ & $1.40\times 10^{-2}$ & $9.21\times 10^{-3}$ \\
+   $\text{err}(q_{\text{pinn}})$ & $1.65\times 10^{-1}$ & $1.03\times 10^{-1}$ & $1.05\times 10^{-1}$ & $1.06\times 10^{-1}$ & $1.06\times 10^{-1}$ & $1.06\times 10^{-1}$ \\
+   $\text{err}(q_{\text{fem}})$ & \textbf{5.64$\times $10$^{-2}$} & $2.32\times 10^{-1}$ & $5.85\times 10^{-1}$ & $0.85\times 10^{-1}$ & $1.10$ & $0.81\times 10^{-1}$\\
+   \hline
+   \end{tabular}
+   \label{tab:onemode}%
+\end{table}%
+
+% \subsection{非光滑势问题}
+% 为了进一步探索我们算法的局限性并评估神经网络对非光滑势的逼近能力，我们将我们的方法应用于几个非光滑算例，在这些算例中，诸如标准有限元方法 (FEM) 等传统方法的效果可能较差。参数设置保持与算例~\ref{example:onemode} 中相同。此外，我们将 Tikhonov-PINNs 方法的性能与经典有限元方法进行了比较。本节的 FEM 设置与算例 5.2 中的设置相同。
+
+% \subsubsection{连续问题}
+% 接下来，我们考虑如下定义的非光滑势函数的识别问题。
+
+% \begin{example}\label{example:nonsmooth}
+% % Table generated by Excel2LaTeX from sheet '5'
+% 令 $\Omega=(0,1)^{2}$ 且 $\alpha\equiv 1$。定义精确势函数 $q^{\dagger}$ 为：
+% \begin{align*}
+% \zeta(x_{1},x_{2})&=\exp\{-25\times(x_{1}-0.6)^{2}-25\times(x_{2}-0.4)^{2}\}, \\
+% q^{\dagger}(x_{1},x_{2})&=0.75+\min\{0.75,\max\{0.25,2\zeta(x_{1},x_{2})\}\},
+% \end{align*}
+% 精确解 $u^{\dagger}$ 为 $u^{\dagger}(x_{1},x_{2})=1+\sin(\pi x_{1})\sin(\pi x_{2})$。
+% \end{example}
+% 表 \ref{tab:nonsmooth} 展示了在不同 $\lambda$ 和 $\delta$ 下 $u$ 和 $q$ 的相对误差，并用粗体高亮了每种噪声水平下的最佳结果。正如我们所见，Tikhonov-PINNs 在所有配置下始终实现了约为 $\calO(10^{-2})$ 的 $q$ 相对误差，比有限元方法高出一个数量级。
+
+
+% \begin{table}[htbp]
+%    \centering
+%    \footnotesize
+%    \caption{Example \ref{example:nonsmooth} 中恢复的势 $\hat{q}$ 和解 $\hat{u}$ 的相对 $L^{2}$ 误差。}
+%    \begin{tabular}{lllllll}
+%    \hline
+%    \multirow{2}[0]{*}{$\delta  = 1\%$} & \multicolumn{6}{c}{正则化参数 $\lambda$} \\
+%    \cline{2-7}
+%    & $1.0\times 10^{-5}$ & $1.0\times 10^{-6}$ & $1.0\times 10^{-7}$ & $1.0\times 10^{-8}$ & $1.0\times 10^{-9}$ & \multicolumn{1}{r}{0} \\
+%    \hline
+%    $\text{err}(u_{\text{pinn}})$ & $3.14\times 10^{-3}$ & $2.01\times 10^{-3}$ & $6.03\times 10^{-4}$ & $5.71\times 10^{-4}$ & $4.94\times 10^{-4}$ & $4.03\times 10^{-4}$ \\
+%    $\text{err}(u_{\text{fem}})$& $2.60\times 10^{-3}$& $1.14\times 10^{-3}$& $7.09\times 10^{-4}$& $6.96\times 10^{-4}$ & $5.33\times 10^{-4}$ &$6.41\times 10^{-4}$\\
+%    $\text{err}(q_{\text{pinn}})$ & $1.46\times 10^{-1}$& $9.63\times 10^{-2}$ & $1.82\times 10^{-2}$ & $1.60\times 10^{-2}$ & \textbf{1.57$\times$ 10$^{-2}$} & \textbf{1.57$\times$ 10$^{-2}$}   \\
+%    $\text{err}(q_{\text{fem}})$& $1.28\times 10^{-1}$& $8.77\times 10^{-2}$& $7.39\times 10^{-2}$& $7.36\times 10^{-2}$ & $6.43\times 10^{-2}$ &$6.97\times 10^{-2}$\\
+%    \hline
+%    &       &       &       &       &       &  \\
+%    \hline
+%    \multirow{2}[0]{*}{$\delta = 10\%$} & \multicolumn{6}{c}{正则化参数 $\lambda$} \\
+%    \cline{2-7}
+%    & $1.0\times 10^{-5}$ & $1.0\times 10^{-6}$ & $1.0\times 10^{-7}$ & $1.0\times 10^{-8}$ & $1.0\times 10^{-9}$ & \multicolumn{1}{r}{0} \\
+%    \hline
+%    $\text{err}(u_{\text{pinn}})$ & $3.08\times 10^{-3}$ & $2.22\times 10^{-3}$ & $1.36\times 10^{-3}$ & $1.30\times 10^{-3}$ & $1.30\times 10^{-3}$ & $1.30\times 10^{-3}$ \\
+%    $\text{err}(u_{\text{fem}})$& $2.82\times 10^{-3}$& $1.30\times 10^{-3}$& $1.44\times 10^{-3}$& $1.18\times 10^{-3}$ & $1.30\times 10^{-3}$&$2.36\times 10^{-3}$\\
+%    $\text{err}(q_{\text{pinn}})$ & $1.50\times 10^{-1}$ & $1.03\times 10^{-1}$ & $1.78\times 10^{-2}$ & $1.60\times 10^{-2}$ & $1.71\times 10^{-2}$ & \textbf{1.58$\times$ 10$^{-2}$ }\\
+%    $\text{err}(q_{\text{fem}})$& $1.29\times 10^{-1}$& $8.77\times 10^{-2}$& $7.95\times 10^{-2}$& $9.02\times 10^{-2}$ & $1.16\times 10^{-1}$&$1.90\times 10^{-1}$\\
+%    \hline
+%    &       &       &       &       &       &  \\
+%    \hline
+%    \multirow{2}[0]{*}{$\delta = 20\%$} & \multicolumn{6}{c}{正则化参数 $\lambda$} \\
+%    \cline{2-7}
+%    & $1.0\times 10^{-5}$ & $1.0\times 10^{-6}$ & $1.0\times 10^{-7}$ & $1.0\times 10^{-8}$ & $1.0\times 10^{-9}$ & \multicolumn{1}{r}{0} \\
+%    \hline
+%    $\text{err}(u_{\text{pinn}})$ & $3.38\times 10^{-3}$ & $2.30\times 10^{-3}$ & $1.44\times 10^{-3}$ & $1.35\times 10^{-3}$ & $1.36\times 10^{-3}$ & $1.36\times 10^{-3}$ \\
+%    $\text{err}(u_{\text{fem}})$& $2.67\times 10^{-3}$& $2.17\times 10^{-3}$& $4.23\times 10^{-3}$&$ 3.75\times 10^{-3}$ & $2.50\times 10^{-3}$&$4.15\times 10^{-3}$\\
+%    $\text{err}(q_{\text{pinn}})$ & $1.54\times 10^{-1}$ & $9.09\times 10^{-2}$ & $1.71\times 10^{-2}$ & $1.60\times 10^{-2}$ & \textbf{1.59$\times$ 10$^{-2}$} & \textbf{1.59$\times$ 10$^{-2}$} \\
+%    $\text{err}(q_{\text{fem}})$& $1.27\times 10^{-1}$& $9.77\times 10^{-2}$& $2.21\times 10^{-1}$& $2.13\times 10^{-1}$ & $1.51\times 10^{-1}$&$3.79\times 10^{-1}$\\
+%    \hline
+%    &       &       &       &       &       &  \\
+%    \hline
+%    \multirow{2}[0]{*}{$\delta = 50\%$} & \multicolumn{6}{c}{正则化参数 $\lambda$} \\
+%    \cline{2-7}
+%    & $1.0\times 10^{-5}$ & $1.0\times 10^{-6}$ & $1.0\times 10^{-7}$ & $1.0\times 10^{-8}$ & $1.0\times 10^{-9}$ & \multicolumn{1}{r}{0} \\
+%    \hline
+%    $\text{err}(u_{\text{pinn}})$ & $4.14\times 10^{-3}$ & $4.43\times 10^{-3}$ & $4.07\times 10^{-3}$ & $3.43\times 10^{-3}$ & $4.01\times 10^{-3}$ & $4.04\times 10^{-3}$ \\
+%    $\text{err}(u_{\text{fem}})$& $4.41\times 10^{-3}$& $7.14\times 10^{-3}$& $7.90\times 10^{-3}$& $7.64\times 10^{-3}$& $1.26\times 10^{-2}$&$8.40\times 10^{-3}$\\
+%    $\text{err}(q_{\text{pinn}})$ & $1.65\times 10^{-1}$ & $1.22\times 10^{-1}$ & $6.30\times 10^{-2}$ & \textbf{3.16}$\times$ \textbf{10}$^{-2}$ & $4.99\times 10^{-2}$ & $5.14\times 10^{-1}$ \\
+%    $\text{err}(q_{\text{fem}})$& $1.45\times 10^{-1}$& $2.14\times 10^{-1}$& $4.64\times 10^{-1}$& $4.09\times 10^{-1}$& $9.07\times 10^{-1}$&$5.90\times 10^{-1}$\\
+%    \hline
+%    \end{tabular}%
+%    \label{tab:nonsmooth}%
+% \end{table}%
+
+% \begin{figure}[htbp]
+% \centering
+% \setlength{\abovecaptionskip}{10pt}
+% \includegraphics[width=\textwidth]{figures3/non_smooth_udag.eps}\par
+% \includegraphics[width=\textwidth]{figures3/non_smooth_unn.eps}\par
+% \includegraphics[width=\textwidth]{figures3/non_smooth_ufem.eps}\par
+% \includegraphics[width=\textwidth]{figures3/non_smooth_unn_err.eps}\par
+% \includegraphics[width=\textwidth]{figures3/non_smooth_ufem_err.eps}
+% \caption{从上到下依次为：Example \ref{example:nonsmooth} 中的真实势函数 $u^{\dagger}$，由 Tikhonov-PINNs 恢复的势函数 $u_{\text{pinn}}$，逐点绝对误差 $|u^{\dagger}-u_{\text{pinn}}|$，由 FEM 恢复的势函数 $u_{\text{fem}}$，逐点绝对误差 $|u^{\dagger}-u_{\text{fem}}|$。我们绘制了不同噪声水平下的结果。}
+% \label{fig:example:nonsmooth:u}
+% \end{figure}
+
+% \begin{figure}[htbp]
+% \centering
+% \setlength{\abovecaptionskip}{10pt}
+% \includegraphics[width=\textwidth]{figures3/non_smooth_qdag.eps}\par
+% \includegraphics[width=\textwidth]{figures3/non_smooth_qnn.eps}\par
+% \includegraphics[width=\textwidth]{figures3/non_smooth_q_fem.eps}\par
+% \includegraphics[width=\textwidth]{figures3/non_smooth_qnn_err.eps}\par
+% \includegraphics[width=\textwidth]{figures3/non_smooth_qfem_err.eps}
+% \caption{从上到下依次为：Example \ref{example:nonsmooth} 中的真实势函数 $q^{\dagger}$，由 Tikhonov-PINNs 恢复的势函数 $q_{\text{pinn}}$，逐点绝对误差 $|q^{\dagger}-q_{\text{pinn}}|$，由 FEM 恢复的势函数 $q_{\text{fem}}$，逐点绝对误差 $|q^{\dagger}-q_{\text{fem}}|$。我们绘制了不同噪声水平下的结果。}
+% \label{fig:example:nonsmooth}
+% \end{figure}
+
+% 在本例中，势函数 $q^{\dagger}$ 呈现出一种平台结构：它在红圈内部和蓝圈外部均保持常数。如图 \ref{fig:example:nonsmooth:u} 和图 \ref{fig:example:nonsmooth} 所示，重构 $u$ 相对简单，Tikhonov-PINNs 和基于有限元的方法均表现良好。然而，在重构 $q$ 时，Tikhonov-PINNs 成功捕捉到了常数值区域，而有限元方法未能精确识别 $q$ 中的界面，导致误差显著偏高。即使在高噪声水平下（例如 $\delta = 50\%$），我们的方法仍能恢复势函数的整体结构，而有限元方法几乎产生不了任何有意义的信息。
+
+% \subsubsection{不连续问题}
+
+% 作为第三个例子，我们将求解一个不连续势函数的反问题。
+% \begin{example}\label{example:discontinuous}
+% 令 $\Omega=(0,1)^{2}$ 且 $\alpha\equiv 1$。定义精确势函数 $q^{\dagger}$ 为：
+% \begin{align*}
+% \zeta(x_{1},x_{2})&=\exp\{-9\times(x_{1}-0.5)^{2}-9\times(x_{2}-0.5)^{2}\}, \\
+% q^{\dagger}(x_{1},x_{2})&=1.0+0.5\times\zeta(x_{1},x_{2})\chi_{\{x_{1}\geq x_{2}\}},
+% \end{align*}
+% 精确解 $u^{\dagger}$ 为：$u^{\dagger}(x_{1},x_{2})=1+\sin(\pi x_{1})\sin(\pi x_{2})$。
+% \end{example}
+
+% \begin{table}[hbtp]
+% \centering
+% \footnotesize
+% \caption{例 \ref{example:discontinuous} 中恢复的势函数 $\hat{q}$ 和解 $\hat{u}$ 的相对 $L^{2}$ 误差。}
+% \begin{tabular}{lrrrrrr}
+% \hline
+% \multirow{2}[0]{*}{$\delta $ = 1\%} & \multicolumn{6}{c}{正则化参数 $\lambda$} \\
+% \cline{2-7}
+% & \multicolumn{1}{l}
+% {$1.0\times 10^{-5}$} & 
+% \multicolumn{1}{l}{$1.0\times 10^{-6}$} &
+% \multicolumn{1}{l}{$1.0\times 10^{-7}$} &
+% \multicolumn{1}{l}{$1.0\times 10^{-8}$} & 
+%    \multicolumn{1}{l}{$1.0\times 10^{-9}$} & {0} \\
+%    \hline
+% $\text{err}(u_{\text{pinn}})$ & $2.05\times 10^{-3}$ & $1.54\times 10^{-3}$ & $1.07\times 10^{-3}$ & $9.83\times 10^{-4}$ & $7.55\times 10^{-4}$ & $6.42\times 10^{-4}$ \\
+% $\text{err}(u_{\text{fem}})$&$1.46\times 10^{-3}$ & $7.05\times 10^{-4}$ & $4.80\times 10^{-4}$ & $2.66\times 10^{-4}$ & $2.50\times 10^{-4}$ & $2.38\times 10^{-4}$\\
+% $\text{err}(q_{\text{pinn}})$ & $9.82\times 10^{-2}$ & $8.50\times 10^{-2}$ & $6.76\times 10^{-2}$ & $5.23\times 10^{-2}$ & $3.49\times 10^{-2}$ & \textbf{2.79$\times$ 10$^{-2}$} \\
+% $\text{err}(q_{\text{fem}})$&$8.42\times 10^{-2}$ & $6.36\times 10^{-2}$ & $5.62\times 10^{-2}$ & $4.84\times 10^{-2}$ & $4.53\times 10^{-2}$ & $4.55\times 10^{-2}$\\
+% \hline
+% &       &       &       &       &       &  \\
+% \hline
+% \multirow{2}[0]{*}{$\delta$ = 10\%} & \multicolumn{6}{c}{正则化参数 $\lambda$} \\
+% \cline{2-7}
+% & $1.0\times 10^{-5}$ & $1.0\times 10^{-6}$ & $1.0\times 10^{-7}$ & $1.0\times 10^{-8}$ & $1.0\times 10^{-9}$ & \multicolumn{1}{r}{0} \\
+% \hline
+% $\text{err}(u_{\text{pinn}})$ & $1.96\times 10^{-3}$ & $1.74\times 10^{-3}$ & $1.38\times 10^{-3}$ & $1.12\times 10^{-3}$ & $1.49\times 10^{-3}$ & $1.48\times 10^{-3}$ \\
+% $\text{err}(u_{\text{fem}})$&$1.80\times 10^{-3}$ & $9.42\times 10^{-4}$ & $1.42\times 10^{-3}$ & $1.53\times 10^{-3}$ & $1.69\times 10^{-3}$ & $1.97\times 10^{-3}$\\
+% $\text{err}(q_{\text{pinn}})$ & $1.01\times 10^{-1}$ & $8.74\times 10^{-2}$ & $7.07\times 10^{-2}$ & \textbf{5.01$\times$ 10$^{-2}$} & $5.59\times 10^{-2}$ & $5.28\times 10^{-2}$ \\
+% $\text{err}(q_{\text{fem}})$&$8.44\times 10^{-2}$ & $6.57\times 10^{-2}$ & $9.31\times 10^{-2}$ & $1.58\times 10^{-1}$ & $1.68\times 10^{-1}$ & $1.85\times 10^{-1}$\\
+% \hline
+% &       &       &       &       &       &  \\
+% \hline
+% \multirow{2}[0]{*}{$\delta = 20\%$} & \multicolumn{6}{c}{正则化参数 $\lambda$} \\
+% \cline{2-7}
+% & $1.0\times 10^{-5}$ & $1.0\times 10^{-6}$ & $1.0\times 10^{-7}$ & $1.0\times 10^{-8}$ & $1.0\times 10^{-9}$ & \multicolumn{1}{r}{0} \\
+% \hline
+% $\text{err}(u_{\text{pinn}})$ & $2.65\times 10^{-3}$ & $2.07\times 10^{-3}$ & $1.78\times 10^{-3}$ & $1.60\times 10^{-3}$ & $1.75\times 10^{-3}$ & $1.87\times 10^{-3}$ \\
+% $\text{err}(u_{\text{fem}})$&$1.74\times 10^{-3}$ & $2.18\times 10^{-3}$ & $4.48\times 10^{-3}$ & $3.91\times 10^{-3}$ & $4.67\times 10^{-3}$ & $3.08\times 10^{-3}$\\
+% $\text{err}(q_{\text{pinn}})$ & $1.05\times 10^{-1}$ & $9.18\times 10^{-2}$ & $7.22\times 10^{-2}$ & \textbf{6.50$\times$ 10$^{-2}$} & $7.20\times 10^{-2}$ & $7.73\times 10^{-2}$ \\
+% $\text{err}(q_{\text{fem}})$&$8.58\times 10^{-2}$ & $9.39\times 10^{-2}$ & $2.35\times 10^{-1}$ & $2.00\times 10^{-1}$ & $6.43\times 10^{-1}$ & $1.89\times 10^{-1}$\\
+% \hline
+% &       &       &       &       &       &  \\
+% \hline
+% \multirow{2}[0]{*}{$\delta = 50\%$} & \multicolumn{6}{c}{正则化参数 $\lambda$} \\
+% \cline{2-7}
+% & $1.0\times 10^{-5}$ & $1.0\times 10^{-6}$ & $1.0\times 10^{-7}$ & $1.0\times 10^{-8}$ & $1.0\times 10^{-9}$ & \multicolumn{1}{r}{0} \\
+% \hline
+% $\text{err}(u_{\text{pinn}})$ & $3.92\times 10^{-3}$ & $4.57\times 10^{-3}$ & $4.33\times 10^{-3}$ & $4.23\times 10^{-3}$ & $4.21\times 10^{-3}$ & $4.35\times 10^{-3}$ \\
+% $\text{err}(u_{\text{fem}})$&$4.99\times 10^{-3}$ & $7.18\times 10^{-3}$ & $8.53\times 10^{-3}$ & $8.25\times 10^{-3}$ & $1.29\times 10^{-2}$ & $1.01\times 10^{-2}$\\
+% $\text{err}(q_{\text{pinn}})$ & $1.21\times 10^{-1}$ & $1.04\times 10^{-1}$ & $8.50\times 10^{-2}$ & $8.08\times 10^{-2}$ & \textbf{8.04$\times$ 10$^{-2}$} & $1.06\times 10^{-1}$ \\
+% $\text{err}(q_{\text{fem}})$&$1.08\times 10^{-1}$ & $2.27\times 10^{-1}$ & $5.12\times 10^{-1}$ & $4.62\times 10^{-1}$ & $5.90\times 10^{-1}$ & $8.28\times 10^{-1}$\\
+% \hline
+% \end{tabular}
+% \label{tab:discontinuous}
+% \end{table}
+
+% \begin{figure}[htbp]
+% \centering
+% \setlength{\abovecaptionskip}{10pt}
+% \includegraphics[width=\textwidth]{figures3/discontinuous_udag.eps}\par
+% \includegraphics[width=\textwidth]{figures3/discontinuous_unn.eps}\par
+% \includegraphics[width=\textwidth]{figures3/discontinuous_ufem.eps}\par
+% \includegraphics[width=\textwidth]{figures3/discontinuous_unn_err.eps}\par
+% \includegraphics[width=\textwidth]{figures3/discontinuous_ufem_err.eps}
+% \caption{从上到下依次为：例 \ref{example:discontinuous} 中的真实解 $u^{\dagger}$，Tikhonov-PINNs 恢复的解 $u_{\text{pinn}}$，逐点绝对误差 $|u^{\dagger}-u_{\text{pinn}}|$，FEM 恢复的解 $u_{\text{fem}}$，以及逐点绝对误差 $|u^{\dagger}-u_{\text{fem}}|$。我们绘制了在不同噪声水平下的结果。}
+% \label{fig:example:discontinuous:u}
+% \end{figure}
+
+% \begin{figure}[htbp]
+% \centering
+% \setlength{\abovecaptionskip}{10pt}
+% \includegraphics[width=\textwidth]{figures3/discontinuous_qdag.eps}\par
+% \includegraphics[width=\textwidth]{figures3/discontinuous_qnn.eps}\par
+% \includegraphics[width=\textwidth]{figures3/discontinuous_q_fem.eps}\par
+% \includegraphics[width=\textwidth]{figures3/discontinuous_qnn_err.eps}\par
+% \includegraphics[width=\textwidth]{figures3/discontinuous_qfem_err.eps}
+% \caption{从上到下依次为：例 \ref{example:discontinuous} 中的真实势函数 $q^{\dagger}$，Tikhonov-PINNs 恢复的势函数 $q_{\text{pinn}}$，逐点绝对误差 $|q^{\dagger}-q_{\text{pinn}}|$，FEM 恢复的势函数 $q_{\text{fem}}$，以及逐点绝对误差 $|q^{\dagger}-q_{\text{fem}}|$。我们绘制了在不同噪声水平下的结果。}
+% \label{fig:example:discontinuous}
+% \end{figure}
+
+% 根据构造，势函数 $q$ 沿对角线 $x=y$ 呈现不连续性，这进一步加剧了反问题的不适定性。如图~\ref{fig:example:discontinuous:u} 和图~\ref{fig:example:discontinuous} 所示，Tikhonov-PINNs 能够在所有噪声水平下捕捉到这种不连续性。相比之下，有限元方法无法识别不连续区域，仅能在 1\% 的噪声水平下粗略定位高势区域。如表 \ref{tab:discontinuous} 所示，Tikhonov-PINNs 在所有噪声水平下对 $q$ 的相对误差均达到 $\calO(10^{-2})$ 左右，通常比有限元方法优越一个数量级。
+
+% 还应注意，在上述实验中，当 $\lambda$ 非零时，Tikhonov-PINNs 通常能获得最优解（参见表 \ref{tab:discontinuous}）。这一观察结果部分说明了损失函数中的 Tikhonov 正则化对于提升标准 PINNs 方法的性能至关重要。
+
+% \subsection{高维问题}
+% 由于其无网格的特性，基于神经网络的方法可以很容易地扩展到高维问题，并在一定程度上缓解维数灾难。在本小节中，依照 \cite{jin2023conductivity} 中算例 5.4 的设置，我们将 Tikhonov-PINNs 应用于一个五维问题，这是传统有限元方法难以实现的场景。
+
+% \begin{example}\label{example:highdim}
+% 令 $\Omega=(0,1)^{5}$ 且 $\alpha\equiv 1$。我们考虑识别如下势函数：
+% \begin{equation*}
+% \begin{array}{rcl}
+% q^{\dagger}(x)&=&1-(x_1-0.5)^2-(x_2-0.5)^2\\
+% &{}&+\cos(\pi(x_3+1.5))+\cos(\pi (x_4+1.5))+\cos(\pi (x_5+1.5)),
+% \end{array}
+% \end{equation*}
+% 准确解 $u^{\dagger}$ 为 $u^{\dagger}(x)=\sum_{i=1}^{5}(x_{i}+\frac{1}{3}x_{i}^3)$。
+% \end{example}
+
+
+% \begin{figure}
+% \centering
+% \setlength{\abovecaptionskip}{10pt}
+% \includegraphics[width=\textwidth]{figures3/ex_5_00.eps}\par
+% \includegraphics[width=\textwidth]{figures3/ex_5_10.eps}\par
+% \caption{算例 \ref{example:highdim} 在切片 $x_3=x_4=x_5=0.5$ 上的真实解与 Tikhonov-PINNs 解。第一行对应 $\delta=0$ 的情况，而第二行展示了 $\delta=10\%$ 的情况。}
+% \label{fig:example:highdim}
+% \end{figure}
+
+% \begin{table}[hbtp]
+% \centering
+% \caption{算例 \ref{example:highdim} 中恢复的势 $\hat{q}$ 和解 $\hat{u}$ 的相对 $L^{2}$ 误差。}
+% \begin{tabular}{crrrr}
+% \hline
+% 正则化参数 $\lambda$ & $1.0\times 10^{-7}$ & $1.0\times 10^{-8}$ & $1.0\times 10^{-9}$ & $0$ \\
+% \hline
+% $\text{err}(u_{\text{pinn}})(\delta=0)$ & $1.09\times 10^{-3}$ & $1.14\times 10^{-3}$ & $1.05\times 10^{-3}$ & $1.39\times 10^{-3}$ \\
+% $\text{err}(q_{\text{pinn}})(\delta=0)$ & $3.14\times 10^{-2}$ & $3.08\times 10^{-2}$ & \textbf{3.07$\times$ 10$^{-2}$} & $3.09\times 10^{-2}$  \\
+% $\text{err}(u_{\text{pinn}})(\delta=10\%)$ & $4.21\times 10^{-3}$ & $4.19\times 10^{-3}$ & $4.19\times 10^{-3}$ & $4.18\times 10^{-3}$  \\
+% $\text{err}(q_{\text{pinn}})(\delta=10\%)$ & $4.33\times 10^{-2}$ & $4.25\times 10^{-2}$ & \textbf{4.24$\times$ 10$^{-2}$} & \textbf{4.24$\times$ 10$^{-2}$}  \\
+% \hline
+% \end{tabular}
+% \label{tab:highdim}
+% \end{table}
+
+% 在实验中，我们使用了一个包含 4 个隐藏层且宽度为 26 的神经网络。我们在内部采样了 60,000 个点，在边界上采样了 60,000 个点。模型使用 Adam 优化器训练了 50,000 次迭代，学习率为 $10^{-4}$, 权重衰减系数为 $10^{-9}$。
+
+% 算法误差结果总结在表 \ref{tab:highdim} 中。此外，我们对 $x_{3}=x_{4}=x_{5}=0.5$ 处的切片进行了可视化，如图~\ref{fig:example:highdim} 所示。结果表明，Tikhonov-PINNs 在解决这一五维问题时依然有效，能够准确逼近解和潜在的势函数。
+
+\subsection{缓解半收敛现象}\label{sec:semi_converge}
+众所周知，半收敛现象经常出现在不适定反问题中 \cite{engl1996regularization}。在优化的早期阶段，迭代解逐渐逼近真实解。然而，随着迭代的进行，数据噪声的放大导致解偏离真实解，从而导致误差增加。正如 Figure~\ref{fig:err_q} 所示，对于算例 5.3，基于有限元的方法的重构误差最初下降，但随后显著上升，特别是在高噪声水平下。相比之下，Tikhonov-PINNs 有效地缓解了这一问题。我们方法的误差随着迭代次数的增加平滑且持续地下降，没有表现出明显的上升。半收敛的存在使得必须使用早停法来获得最优解，这降低了方法的鲁棒性并限制了可达到的精度。相比之下，Tikhonov-PINNs 固有的优势使其对噪声不那么敏感，允许更多的迭代，最终产生更准确的重构结果。
+
+此外，我们也可以使用算例 5.3 来比较计算成本。在求解算例 5.3 的单次迭代中，Tikhonov-PINNs 平均需要 1.91 秒，而基于 FEM 的方法需要 2.04 秒。如图 10 所示，经过 120 次迭代（229.2 秒）后，Tikhonov-PINNs 在约 $10^6$ 个采样点下达到了约 $O(10^{-2})$ 的精度。相比之下，基于 FEM 的方法进行 120 次迭代需要 244.8 秒，达到的精度为 $O(10^{-1})$。这些结果凸显了 Tikhonov-PINNs 在精度和计算效率方面的明显优势，特别是对于不连续问题。
+
+\begin{figure}[htbp]
+   \centering
+   \setlength{\abovecaptionskip}{10pt}
+   \includegraphics[width=\textwidth]{figures3/err_q.eps}
+   \caption{算例~\ref{example:nonsmooth} 中重构势函数 $q$ 的相对 $L^{2}$ 误差随迭代次数变化的曲线。左列显示了有限元方法获得的结果，而右列显示了 Tikhonov-PINNs 获得的结果。}
+   \label{fig:err_q}
+\end{figure}
 
 % \section{数值实验}\label{sec:numerical}
 

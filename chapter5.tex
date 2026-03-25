@@ -136,67 +136,54 @@ Tz^{\delta}(x)&=&T\calF(q^{\dagger})(x)+\varepsilon_{\calB}(x),\quad &\varepsilo
 
 
 
-% \section{误差分析}\label{sec:erroranalysis}
-% \par 在本节中，我们将首先对超额风险（见 Eq.\eqref{eq:excessrisk0}）进行误差分析，深度学习理论文献 \cite{Johannes2020Nonparametric,Shen2022approximation} 对此投入了大量的数学研究工作。然后，通过将超额风险的误差界与稳定性估计相结合，获得势函数重构的收敛率。为简单起见，我们假设 $\|\alpha\|_{C^{1}(\bar\Omega)}\leq B_{\alpha}$，$\|f\|_{L^{\infty}(\Omega)}\leq B_{f}$ 以及 $\|g\|_{L^{\infty}(\partial\Omega)}\leq B_{g}$。在本节以及第~\ref{sec:proof} 节的详细证明中，我们采用以下关于网络架构和样本复杂度的假设。
+\section{误差分析}\label{sec:erroranalysis}
+\par 在本节中，我们将首先对超额风险（见 Eq.\eqref{eq:excessrisk0}）进行误差分析，深度学习理论文献 \cite{Johannes2020Nonparametric,Shen2022approximation} 对此投入了大量的数学研究工作。然后，通过将超额风险的误差界与稳定性估计相结合，获得势函数重构的收敛率。为简单起见，我们假设 $\|\alpha\|_{C^{1}(\bar\Omega)}\leq B_{\alpha}$，$\|f\|_{L^{\infty}(\Omega)}\leq B_{f}$ 以及 $\|g\|_{L^{\infty}(\partial\Omega)}\leq B_{g}$。在本节以及第~\ref{sec:proof} 节的详细证明中，我们采用以下关于网络架构和样本复杂度的假设。
 
-% \begin{assumption}\label{allcondition}
-% 令 $s\in\bbN_{+}$ 和 $\mu>0$ 为任意给定常数（在引理 \ref{lemma:app:tanh} 中引入）。我们选择如下的网络和样本复杂度：
-% \begin{enumerate}
-% \item[(i)] 令 $\varrho = \tanh$。设置 $Q = N_\varrho(L_\calQ, S_\calQ, R_\calQ)$ 和 $\mathcal{U} = N_\varrho(L_\mathcal{\calU}, S_\mathcal{\calU}, R_\mathcal{\calU})$，使得
-% \[
-% L_\calQ = c\log(d + 2), \quad S_\calQ = C \cdot \varepsilon^{-\frac{d}{s+1-\mu}}, \quad R_\calQ = C \cdot \varepsilon^{-\frac{9d+4+4\mu}{2(s+1-\mu)} - 2},
-% \]   
-% \[
-% L_\mathcal{\calU} = c\log(d + 2), \quad S_\mathcal{\calU} = C \cdot \varepsilon^{-\frac{d}{s+1-\mu}}, \quad R_\mathcal{\calU} = C \cdot \varepsilon^{-\frac{9d+4+4\mu}{2(s+1-\mu)} - 2}.
-% \]
-% 这里 $c$ 和 $C$ 是依赖于 $s$、$\Omega$ 和 $\mu$ 的常数，而 $C$ 还依赖于 $d$。
-% \item[(ii)] 令 $S = \{D_I, D_B, X_I, X_B\}$ 为数据集的集合，并且数据集大小由下式给出：
-% \[
-% \mathcal{O}(m_I) = \mathcal{O}(m_B) = \mathcal{O}(n_I) = \mathcal{O}(n_B)
-% \]    
-% \[
-% = C\left(\|q^\dagger\|_{H^{s+3}(\Omega)}^{-2} + \|u^\dagger\|_{H^{s+3}(\Omega)}^{-2}\right) \cdot \varepsilon^{-\frac{45d+16s+32}{s+1-\mu}c\log(d+2)-2}.
-% \]    
-% \item[(iii)] 令 $(\hat{q}, \hat{u}) \in Q \times \mathcal{U}$ 为由 \eqref{eq:erm} 给出的经验风险最小化器，它依赖于 $S$。
-% \end{enumerate}
-% \end{assumption}
+\begin{assumption}\label{allcondition}
+令 $s\in\bbN_{+}$ 和 $\mu>0$ 为任意给定常数（在引理 \ref{lemma:app:tanh} 中引入）。我们选择如下的网络和样本复杂度：
+\begin{enumerate}
+\item[(i)] 令 $\varrho = \tanh$。设置 $Q = N_\varrho(L_\calQ, S_\calQ, R_\calQ)$ 和 $\mathcal{U} = N_\varrho(L_\mathcal{\calU}, S_\mathcal{\calU}, R_\mathcal{\calU})$，使得
+\[
+L_\calQ = c\log(d + 2), \quad S_\calQ = C \cdot \varepsilon^{-\frac{d}{s+1-\mu}}, \quad R_\calQ = C \cdot \varepsilon^{-\frac{9d+4+4\mu}{2(s+1-\mu)} - 2},
+\]   
+\[
+L_\mathcal{\calU} = c\log(d + 2), \quad S_\mathcal{\calU} = C \cdot \varepsilon^{-\frac{d}{s+1-\mu}}, \quad R_\mathcal{\calU} = C \cdot \varepsilon^{-\frac{9d+4+4\mu}{2(s+1-\mu)} - 2}.
+\]
+这里 $c$ 和 $C$ 是依赖于 $s$、$\Omega$ 和 $\mu$ 的常数，而 $C$ 还依赖于 $d$。
+\item[(ii)] 令 $S = \{D_I, D_B, X_I, X_B\}$ 为数据集的集合，并且数据集大小由下式给出：
+\[
+\mathcal{O}(m_I) = \mathcal{O}(m_B) = \mathcal{O}(n_I) = \mathcal{O}(n_B)
+\]    
+\[
+= C\left(\|q^\dagger\|_{H^{s+3}(\Omega)}^{-2} + \|u^\dagger\|_{H^{s+3}(\Omega)}^{-2}\right) \cdot \varepsilon^{-\frac{45d+16s+32}{s+1-\mu}c\log(d+2)-2}.
+\]    
+\item[(iii)] 令 $(\hat{q}, \hat{u}) \in Q \times \mathcal{U}$ 为由 \eqref{eq:erm} 给出的经验风险最小化器，它依赖于 $S$。
+\end{enumerate}
+\end{assumption}
 
 
-% \subsection{超额风险的误差分析}\label{sec:error:excessrisk}
-% \par 对于一对函数 $(q,u)$，我们将 $\calL(q,u)$ 记为 $(q,u)$ 的无正则化目标泛函
-% \begin{equation*}
-% \calL(q,u)=\|z^{\delta}-u\|_{L^{2}(\Omega)}^{2}+\|Tz^{\delta}-Tu\|_{L^{2}(\partial\Omega)}^{2}+\calI(q,u)+\calB(u).
-% \end{equation*}
-% 令 $\calE_{\lambda}(q,u)$ 表示 \textbf{超额风险} (excess risk)
-% \begin{equation}\label{eq:excessrisk0}
-%   \calE_{\lambda}(q,u)=\calL_{\lambda}(q,u)-\calL(q^{\dagger},u^{\dagger}),
-% \end{equation}
-% 利用 $(q^{\dagger},u^{\dagger})$ 的定义，我们可以得到
-% \begin{equation}\label{eq:excessrisk1}
-% \calL_{\lambda}(q,u)=\calE_{\lambda}(q,u)+(|\Omega|+|\partial\Omega|)\delta^{2}.
-% \end{equation}
-% %Furthermore, using the definition of $(q^{\dagger},u^{\dagger})$, we get 
-% %\begin{equation}
-% %\calL_{\lambda}(q,u)\leq\|u-u^{\dagger}\|_{L^{2}(\Omega)}^{2}+\|Tu-Tu^{\dagger}\|_{L^{2}(\partial\Omega)}^{2}+\calI(q,u)+\calB(u)+\lambda\|q\|_{H^{2}(\Omega)}^{2}.
-% %\end{equation}
-% 正如我们将在 \ref{sec:lemma5} 小节中展示的那样，$\calE_{\lambda}(q,u)$ 可以分解为逼近误差和泛化误差。逼近误差代表了假设类 $\mathcal{Q} \times \mathcal{U}$ 上超额风险的下确界，并刻画了该类中函数的表达能力。另一方面，泛化误差衡量了由蒙特卡洛离散化引起的差异（即总体风险与其经验对应项之间的差距）。基于神经网络的逼近理论和学习理论，我们可以证明，通过恰当地选择网络和样本复杂度，可以在这两个误差之间实现权衡，从而得出以下关于超额风险的收敛结果。
+%Furthermore, using the definition of $(q^{\dagger},u^{\dagger})$, we get 
+%\begin{equation}
+%\calL_{\lambda}(q,u)\leq\|u-u^{\dagger}\|_{L^{2}(\Omega)}^{2}+\|Tu-Tu^{\dagger}\|_{L^{2}(\partial\Omega)}^{2}+\calI(q,u)+\calB(u)+\lambda\|q\|_{H^{2}(\Omega)}^{2}.
+%\end{equation}
+正如我们将在 \ref{sec:lemma5} 小节中展示的那样，$\calE_{\lambda}(q,u)$ 可以分解为逼近误差和泛化误差。逼近误差代表了假设类 $\mathcal{Q} \times \mathcal{U}$ 上超额风险的下确界，并刻画了该类中函数的表达能力。另一方面，泛化误差衡量了由蒙特卡洛离散化引起的差异（即总体风险与其经验对应项之间的差距）。基于神经网络的逼近理论和学习理论，我们可以证明，通过恰当地选择网络和样本复杂度，可以在这两个误差之间实现权衡，从而得出以下关于超额风险的收敛结果。
 
-% %For the As stated in Lem. \ref{lemma:approximation}, the approximation error can be made arbitrarily small, provided that functions in the hypothesis class can approximate the target functions with sufficiently small error.
-% %
-% %As shown in the proof of Lem. \ref{lemma:errdec}, the generalization error increases as the metric entropy of the hypothesis classes becomes larger and converges to zero at a rate of $\calO(1/n)$ as the number of samples $n$ increases.
-% %
-% %The approximation and generalization errors both depend on the network parameters $L$, $S$, and $R$, but exhibit opposite trends. Thus, the sample sizes should be chosen to be sufficiently large to ensure that the generalization error converges to zero. By properly choosing the hyperparameters, a trade-off between the approximation and generalization errors can be achieved, leading to the following convergence result for the excess risk.
+%For the As stated in Lem. \ref{lemma:approximation}, the approximation error can be made arbitrarily small, provided that functions in the hypothesis class can approximate the target functions with sufficiently small error.
+%
+%As shown in the proof of Lem. \ref{lemma:errdec}, the generalization error increases as the metric entropy of the hypothesis classes becomes larger and converges to zero at a rate of $\calO(1/n)$ as the number of samples $n$ increases.
+%
+%The approximation and generalization errors both depend on the network parameters $L$, $S$, and $R$, but exhibit opposite trends. Thus, the sample sizes should be chosen to be sufficiently large to ensure that the generalization error converges to zero. By properly choosing the hyperparameters, a trade-off between the approximation and generalization errors can be achieved, leading to the following convergence result for the excess risk.
 
-% \begin{theorem}[超额风险界]\label{thm:excess}
-% 在模型 Eq.\eqref{eq:pde:potential} 和 Eq.\eqref{eq:measurement} 下。令 $\varepsilon \in (0, 1)$ 并记 $\delta \in (0, 1)$ 为噪声水平。假设假设 \ref{ass:potential:qudaggerreg} 成立，如果我们按照假设 \ref{allcondition} 选择网络和样本复杂度，则我们有
-% $$
-% \mathbb{E}_S[\mathcal{E}_\lambda(\hat{q}, \hat{u})] \leq C\left(\|q^\dagger\|_{H^{s+3}(\Omega)}^{2} + \|u^\dagger\|_{H^{s+3}(\Omega)}^{2}\right) \cdot \varepsilon^2 \log(\frac{1}{\varepsilon}) + C\left(\|q^\dagger\|_{H^2(\Omega)}^{2} + 1\right) \cdot \lambda.
-% $$
-% 这里 $C$ 是一个依赖于 $d$, $\Omega$, $s$, $B_\alpha$, $B_f$, $B_g$, $\overline{q}$, $q^\dagger$ 和 $u^\dagger$ 的正常数。
-% \end{theorem}
-% \begin{proof}
-% 详细证明请参见 \ref{sec:excessrisk} 小节。
-% \end{proof}
+\begin{theorem}[超额风险界]\label{thm:excess}
+在模型 Eq.\eqref{eq:pde:potential} 和 Eq.\eqref{eq:measurement} 下。令 $\varepsilon \in (0, 1)$ 并记 $\delta \in (0, 1)$ 为噪声水平。假设假设 \ref{ass:potential:qudaggerreg} 成立，如果我们按照假设 \ref{allcondition} 选择网络和样本复杂度，则我们有
+$$
+\mathbb{E}_S[\mathcal{E}_\lambda(\hat{q}, \hat{u})] \leq C\left(\|q^\dagger\|_{H^{s+3}(\Omega)}^{2} + \|u^\dagger\|_{H^{s+3}(\Omega)}^{2}\right) \cdot \varepsilon^2 \log(\frac{1}{\varepsilon}) + C\left(\|q^\dagger\|_{H^2(\Omega)}^{2} + 1\right) \cdot \lambda.
+$$
+这里 $C$ 是一个依赖于 $d$, $\Omega$, $s$, $B_\alpha$, $B_f$, $B_g$, $\overline{q}$, $q^\dagger$ 和 $u^\dagger$ 的正常数。
+\end{theorem}
+\begin{proof}
+详细证明请参见 \ref{sec:excessrisk} 小节。
+\end{proof}
 
 
 % \subsection{收敛率}

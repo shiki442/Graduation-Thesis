@@ -1,7 +1,7 @@
 \chapter{深度里兹法求解椭圆多特征值问题}
 椭圆方程的特征值问题在数学、物理学和工程学中有着广泛的应用。 例如，在量子力学中，薛定谔方程描述了量子系统的行为，其解的特征值对应于系统的能级。 在结构力学中，特征值问题用于分析结构的振动模式和稳定性。 传统的数值方法，如有限元法和谱方法，已经被广泛应用于求解椭圆方程的特征值问题。然而，这些方法在处理高维问题或复杂几何形状时可能面临计算成本高和精度不足的挑战。
 
-\section{预备知识与记号}
+\section{概述}\label{sec_pre}
 \subsection{问题背景与物理意义}
 椭圆型特征值问题在数学物理中占据核心地位，其理论根植于对自然界基本波动现象的描述。在宏观尺度上，经典的薄膜振动模型（如鼓面振动）提供了最直观的物理背景。设鼓面位移为 $U(x, t)$，其运动遵循波动方程 $U_{tt} = c^2 \Delta U$。若寻求驻波解（Standing Wave），即通过分离变量法设 $U(x, t) = u(x) \cos(\omega t)$，则空间分布函数 $u(x)$ 满足如下亥姆霍兹（Helmholtz）方程：
 \begin{equation}
@@ -25,9 +25,11 @@ $$-\frac{\hbar^2}{2m}\Delta \psi + V\psi = E\psi$$
 
 第二类方法则回归特征值的数学本源，即基于瑞利商（Rayleigh Quotient）公式进行无监督学习。 瑞利商不仅赋予了特征值清晰的能量最小化物理直觉，也为神经网络提供了一个极其自然的损失函数格式。Ben-Shaul\cite{ben2023deep}率先提出了基于瑞利商的网络训练框架；Zhang等人\cite{zhang2024deep}在此基础上引入正交性约束，确保了生成的特征函数能够自动满足正交性要求；Yoo等人\cite{yoo2025physics}则进一步将该框架拓展至土木与机械工程领域的结构振动计算中。然而，现有基于瑞利商的方法大多局限于1维或2维等低维简单区域的数值实验，在面对高维复杂物理场景（如高维薛定谔方程）时，如何高效实现高维空间中的正交化约束并保证收敛，仍是一个亟待解决的难题。
 
-更为关键的是，当前绝大多数深度神经求解算法严重缺乏系统的理论支撑。与具备完备误差分析体系的传统线性泛函分析方法不同\cite{lu2021priori,duan2022convergence,mishra2022estimates,lu2021deepxde}，神经网络求解本质上是一个高度非线性的机器学习过程。大量采样数据的使用引入了传统逼近理论中罕见的统计泛化误差；同时，神经网络的函数空间难以直接纳入经典的索伯列夫（Sobolev）或赫尔德（Hölder）等基于正则性的框架中。尽管Lu等人\cite{lu2021priorieigen}在谱Barron空间（Spectral Barron space）内，针对高维薛定谔问题的两层神经网络给出了先验泛化误差分析，初步论证了神经网络克服维数灾难的潜力，但该空间的严苛定义限制了其在更广泛物理情形下的适用性。此外，现有理论大多局限于系统主特征值（基态）的求解。根据极大极小原理（Min-Max Principle），系统的第 $K$ 个特征值在变分意义上对应于能量泛函的 $K$ 阶鞍点（Saddle point）。这种非全局极小的几何特性，引出了一个极具挑战性的核心问题：如何构造一个既稳定又实用的变分形式，以实现多重特征值（激发态）的同步高精度求解？
+更为关键的是，当前绝大多数深度神经求解算法严重缺乏系统的理论支撑。与具备完备误差分析体系的传统线性泛函分析方法不同\cite{duan2022convergence,mishra2022estimates,lu2021deepxde}，神经网络求解本质上是一个高度非线性的机器学习过程。大量采样数据的使用引入了传统逼近理论中罕见的统计泛化误差；同时，神经网络的函数空间难以直接纳入经典的索伯列夫（Sobolev）或赫尔德（Hölder）等基于正则性的框架中。尽管Lu等人\cite{lu2021priorieigen}在谱Barron空间（Spectral Barron space）内，针对高维薛定谔问题的两层神经网络给出了先验泛化误差分析，初步论证了神经网络克服维数灾难的潜力，但该空间的严苛定义限制了其在更广泛物理情形下的适用性。此外，现有理论大多局限于系统主特征值（基态）的求解。根据极大极小原理（Min-Max Principle），系统的第 $K$ 个特征值在变分意义上对应于能量泛函的 $K$ 阶鞍点（Saddle point）。这种非全局极小的几何特性，引出了一个极具挑战性的核心问题：如何构造一个既稳定又实用的变分形式，以实现多重特征值（激发态）的同步高精度求解？
 
-针对上述算法通用性与理论基础的双重缺失，本文旨在开发一种系统的方法，以求解高维空间中的多重椭圆型特征值（EME）问题。本研究不仅致力于获取高精度的多阶特征值与特征函数，更着重于提供一套独立于空间维数的严密先验误差分析理论。具体而言，本文首先基于椭圆型特征值问题的惩罚变分原理，提出了一种计算多重EME的通用无约束优化公式。随后，我们采用深度里兹方法（Deep Ritz Method, DRM）对该惩罚变分形式进行高效求解。在理论层面，我们建立了一个刻画计算特征值与真实特征值之间误差的严格上界，该界限由前馈神经网络（FNN）的深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 以及训练样本量 $n$ 共同显式表达。通过深入挖掘EME特征函数的内在正则性，并自适应地配置网络容量参数 $\mathcal{D}$ 和 $\mathcal{W}$，我们从理论上严谨地证明了该方法可达到 $O(n^{-1/16})$ 的收敛率。这一结论不仅填补了多重特征值神经网络求解的理论空白，更在数学上严格证明了本方法能够有效规避维数灾难
+针对上述算法通用性与理论基础的双重缺失，本文旨在开发一种系统的方法，以求解高维空间中的多重椭圆型特征值（EME）问题。本研究不仅致力于获取高精度的多阶特征值与特征函数，更着重于提供一套独立于空间维数的严密先验误差分析理论。具体而言，本文首先基于椭圆型特征值问题的惩罚变分原理，提出了一种计算多重EME的通用无约束优化公式。随后，我们采用深度里兹方法（Deep Ritz Method, DRM）对该惩罚变分形式进行高效求解。在理论层面，我们建立了一个刻画计算特征值与真实特征值之间误差的严格上界，该界限由前馈神经网络（FNN）的深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 以及训练样本量 $n$ 共同显式表达。通过深入挖掘EME特征函数的内在正则性，并自适应地配置网络容量参数 $\mathcal{D}$ 和 $\mathcal{W}$，我们从理论上严谨地证明了该方法可达到 $O(n^{-1/16})$ 的收敛率。这一结论不仅填补了多重特征值神经网络求解的理论空白，更在数学上严格证明了本方法能够有效规避维数灾难。
+
+此外，本文针对所提出的惩罚变分格式与深度里兹求解框架，精心设计了一系列具有代表性的高维数值实验。本文在最高达20维的复杂算例上开展了实验验证。在如此高的空间维度下，传统数值方法早已彻底失效，而本文提出的深度神经求解器所计算出的前几阶特征值的相对误差仍能保持在 $10^{-2}$ 量级，并且能够准确捕捉相应的本征模态特征。这一数值表现不仅彰显了本文方法在处理超高维特征值问题上的强大能力，更为前文所推导的先验误差分析与收敛率理论提供了强有力的实证支撑。
 
 本文的组织结构如下：第\ref{sec_pre}节概述全文所需的基本假设、预备知识与符号系统；第\ref{sec_model}节详细推导多重EME的惩罚变分公式及神经网络求解框架；第\ref{sec_main}节提供核心的先验误差分析与收敛率证明；第\ref{sec_num}节通过数值实验验证算法在高维场景下的有效性与理论分析的客观性；最后，第\ref{sec dis}节总结全文，相关定理的严谨证明则完整收录于附录\ref{app:proofingen}中。
 
@@ -120,7 +122,7 @@ $$ \forall \alpha>0, \quad \varphi(x) \lesssim x^{1+\alpha}, \quad \psi(x) \gtrs
 值得指出的是，虽然本文的理论推导基于上述光滑性假设，但结论通常可以推广到更广泛的几何情形。例如，$\mathbb{R}^{d}$ 中的单位立方体虽然在角点处不满足 $C^m$ 边界条件，但若势函数为常数或齐次势，我们的定理结论显然依然成立。针对此类非光滑区域的有效性，我们将在第 \ref{sec_num} 节通过数值算例进一步验证。
 
 \section{模型构建}
-\subsection{特征值与瑞利商}
+\subsection{特征值与瑞利商}\label{sec_model}
 针对前文公式 \eqref{eq:eigendiriproblem} 定义的椭圆型特征值问题，其变分形式自然对应于瑞利商（Rayleigh Quotient）的极值问题。为此，我们首先定义如下的双线性能量泛函：
 
 \begin{equation*}
@@ -427,50 +429,39 @@ $$\delta^{2} \mathcal{L}_{k}(\xi_k;\delta u)=\frac{1}{2}(\lambda_{k}-\lambda_{l_
 \widehat{\xi}_{\phi j}\in\mathop{\arg\min}_{v_{\phi}\in \mathcal{N}^{2}}\widehat{\mathcal{L}}_{\phi j}(v_{\phi}),\quad 1\leq j\leq k.
 \end{equation}
 
-% \begin{algorithm}[H]
-% \caption{基于 Deep Ritz Method 的前 $k$ 个特征对求解算法}
-% \label{alg:drm_eigen}
-% \begin{algorithmic}[1]
-% \Require 
-%     计算区域 $\Omega$ 及边界 $\partial\Omega$；
-%     特征值数量 $k$；
-%     网络结构 $\mathcal{N}^{2}$；
-%     罚参数 $\mu_1, \mu_2$；
-%     每轮迭代样本量 $n$；
-%     最大迭代次数 $T_{max}$ 和学习率 $\eta$。
-% \Ensure 
-%     近似特征函数序列 $\{\widehat{\xi}_{\phi 1}, \dots, \widehat{\xi}_{\phi k}\}$。
-
-% \State 初始化空集合 $\mathcal{V} \leftarrow \emptyset$；
-
-% \For{$j = 1$ to $k$} \Comment{逐个求解第 $j$ 个特征函数}
-%     \State 初始化神经网络参数 $\phi$；
-%     \For{$t = 1$ to $T_{max}$}
-%         \State {\heiti 数据采样：}
-%         \State \quad 在区域内部独立采样 $\{X_i\}_{i=1}^n \sim U(\Omega)$；
-%         \State \quad 在边界上独立采样 $\{Y_i\}_{i=1}^n \sim U(\partial\Omega)$；
-        
-%         \State {\heiti 构建经验损失函数 $\widehat{\mathcal{L}}_{\phi j}$：}
-%         \State \quad 计算瑞利商项与边界惩罚项：
-%         \State \quad \quad $\displaystyle J_{base} = \frac{|\Omega|}{n}\sum_{i=1}^{n} \left[ \frac{|\nabla v(X_{i})|^2}{2}+\frac{w(X_{i})v^{2}(X_{i})}{2}\right] + \frac{\mu_{1}}{2}\frac{|\partial\Omega|}{n}\sum_{i=1}^{n} T v^{2}(Y_{i})$
-%         \State \quad 计算归一化约束项：
-%         \State \quad \quad $\displaystyle J_{norm} = \frac{\mu_{2}}{4}\left[\frac{|\Omega|}{n}\sum_{i=1}^{n}|v(X_{i})|^{2}-1\right]^{2}$
-%         \State \quad 计算正交化约束项（利用已求得的 $\{\widehat{\xi}_{\phi l}\}_{l < j}$）：
-%         \State \quad \quad $\displaystyle J_{orth} = \frac{\mu_{2}}{2}\sum_{l=1}^{j-1}\left[\frac{|\Omega|}{n}\sum_{i=1}^{n}v(X_{i})\widehat{\xi}_{\phi l}(X_{i})\right]^{2}$
-%         \State \quad 总损失 $\widehat{\mathcal{L}}_{\phi j} \leftarrow J_{base} + J_{norm} + J_{orth}$；
-        
-%         \State {\heiti 参数更新：}
-%         \State \quad $\phi \leftarrow \phi - \eta \nabla_{\phi} \widehat{\mathcal{L}}_{\phi j}$； \Comment{使用 Adam 或 SGD 优化器}
-%     \EndFor
-%     \State 更新集合 $\mathcal{V} \leftarrow \mathcal{V} \cup \{\widehat{\xi}_{\phi j}\}$；
-% \EndFor
-
-% \State \Return $\mathcal{V}$
-% \end{algorithmic}
-% \end{algorithm}
-
-为简化表述，下文将统一样本量 $N$ 和 $M$ 为 $n$。
-
+为简化表述，下文将统一样本量 $N$ 和 $M$ 为 $n$，算法总结为以下伪代码\ref{alg:DRM_Eigen}。
+\par\noindent
+\begin{minipage}{\textwidth}
+\renewcommand*\footnoterule{}
+\renewcommand{\thempfootnote}{\fnsymbol{mpfootnote}}
+\begin{algorithm}[H]
+\caption{基于 Deep Ritz Method 的多重特征值求解算法}
+\label{alg:DRM_Eigen}
+\begin{algorithmic}[1]
+\Require 计算区域 $\Omega$ 及边界 $\partial\Omega$；需要求解的特征值数量 $k$；由参数 $\phi$ 参数化的神经网络模型 $v_{\phi} \in \mathcal{N}^{2}$；惩罚参数 $\mu_1, \mu_2$；每轮迭代采样点数 $N, M$；最大迭代次数 $T_{max}$ 以及学习率 $\eta$。
+\State 初始化空集合保存已求得的特征函数：$\mathcal{V} \leftarrow \emptyset$。
+\State \textcolor{white!30!black}{\texttt{\# 外层循环：利用正交惩罚，逐级求解第 $j$ 个特征函数。}}
+\For {$j=1:k$}
+\State {初始化当前神经网络的参数 $\phi$。}
+\State \textcolor{white!30!black}{\texttt{\# 内层循环：训练网络以最小化包含多重惩罚项的经验损失函数。}}
+\For {$t=1:T_{max}$}
+\State {在区域内部独立采样 $\{X_i\}_{i=1}^N \sim U(\Omega)$，在边界上独立采样 $\{Y_i\}_{i=1}^M \sim U(\partial\Omega)$。}
+\State {计算瑞利商与边界惩罚项:
+$$J_{base} = \frac{|\Omega|}{N}\sum_{i=1}^{N} \left[ \frac{|\nabla v_{\phi}(X_{i})|^2}{2}+\frac{w(X_{i})v_{\phi}^{2}(X_{i})}{2}\right] + \frac{\mu_{1}}{2}\frac{|\partial\Omega|}{M}\sum_{i=1}^{M} T v_{\phi}^{2}(Y_{i})$$}
+\State {计算特征函数归一化约束项:
+$$J_{norm} = \frac{\mu_{2}}{4}\left[\frac{|\Omega|}{N}\sum_{i=1}^{N}|v_{\phi}(X_{i})|^{2}-1\right]^{2}$$}
+\State {计算正交化约束项（利用集合 $\mathcal{V}$ 中已求得的前 $j-1$ 个特征函数 $\widehat{\xi}_{\phi l}$）:
+$$J_{orth} = \frac{\mu_{2}}{2}\sum_{l=1}^{j-1}\left[\frac{|\Omega|}{N}\sum_{i=1}^{N}v_{\phi}(X_{i})\widehat{\xi}_{\phi l}(X_{i})\right]^{2}$$}
+\State {计算总的离散经验损失：$\widehat{\mathcal{L}}_{\phi j}(v_{\phi}) = J_{base} + J_{norm} + J_{orth}$。}
+\State {反向传播计算梯度 $g_{\phi} = \nabla_{\phi}\widehat{\mathcal{L}}_{\phi j}$。}
+\State {通过 Adam 或 SGD 优化器更新 $\phi$：$\phi \leftarrow \phi - \eta g_{\phi}$。}
+\EndFor
+\State {记录当前收敛的特征函数：$\widehat{\xi}_{\phi j} \leftarrow v_{\phi}$，并更新集合 $\mathcal{V} \leftarrow \mathcal{V} \cup \{\widehat{\xi}_{\phi j}\}$。}
+\EndFor
+\Ensure {近似多重特征函数序列 $\mathcal{V} = \{\widehat{\xi}_{\phi 1}, \dots, \widehat{\xi}_{\phi k}\}$。}
+\end{algorithmic}
+\end{algorithm}
+\end{minipage}
 
 \section{误差估计}\label{sec_main}
 \subsection{误差分解}
@@ -838,370 +829,370 @@ $$
 \end{remark}
 
 
-% \section{数值实验}\label{sec_num} 
-% \subsection{实验设置} 为了验证我们理论的有效性与正确性，我们开展了数值实验，以在不同条件下逼近特征值及其对应的特征函数。
+\section{数值实验}\label{sec_num} 
+\subsection{实验设置} 为了验证我们理论的有效性与正确性，我们开展了数值实验，以在不同条件下逼近特征值及其对应的特征函数。
 
-% 我们采用带有 $\mathrm{ReLU}^{2}$ 激活函数的残差神经网络 (ResNet) 来训练损失函数，该网络在许多情况下已被证明优于 FNN。ResNet 与 FNN 的主要区别在于，ResNet 在网络的不同层之间增加了一些捷径连接 (shortcut connections)。
+我们采用带有 $\mathrm{ReLU}^{2}$ 激活函数的残差神经网络 (ResNet) 来训练损失函数，该网络在许多情况下已被证明优于 FNN。ResNet 与 FNN 的主要区别在于，ResNet 在网络的不同层之间增加了一些捷径连接 (shortcut connections)。
 
-% 部分读者可能会质疑 ResNet 是否能得出与 FNN 相同的误差分析结果，例如定理 \ref{th4.3} 中所展示的结果。然而值得注意的是，只要考虑到以下事实，ResNet 即可被表示为具有相同层数的 FNN： 
-% \begin{equation*} 
-% \frac{1}{2}\left[\mathrm{ReLU}^{2}(x+1)+\mathrm{ReLU}^{2}(-x-1)-\mathrm{ReLU}^{2}(x)-\mathrm{ReLU}^{2}(-x)\right] = x, 
-% \end{equation*} 
-% 因此，误差分析可以通过几个简单的推导步骤得出。
+部分读者可能会质疑 ResNet 是否能得出与 FNN 相同的误差分析结果，例如定理 \ref{th4.3} 中所展示的结果。然而值得注意的是，只要考虑到以下事实，ResNet 即可被表示为具有相同层数的 FNN： 
+\begin{equation*} 
+\frac{1}{2}\left[\mathrm{ReLU}^{2}(x+1)+\mathrm{ReLU}^{2}(-x-1)-\mathrm{ReLU}^{2}(x)-\mathrm{ReLU}^{2}(-x)\right] = x, 
+\end{equation*} 
+因此，误差分析可以通过几个简单的推导步骤得出。
 
-% 在所有实验中，我们均使用标准的 Adam 优化器来训练网络。所有的实现与实验均基于 CentOS 系统下的 Python 3.9.12 和 PyTorch 框架，硬件环境配备 2 颗主频 2.40 GHz 的 Intel(R) Xeon(R) E5-2640 v4 x86\_64 处理器，以及一张 16 GB 显存的 Nvidia Tesla V100 GPU。
+在所有实验中，我们均使用标准的 Adam 优化器来训练网络。所有的实现与实验均基于 CentOS 系统下的 Python 3.9.12 和 PyTorch 框架，硬件环境配备 2 颗主频 2.40 GHz 的 Intel(R) Xeon(R) E5-2640 v4 x86\_64 处理器，以及一张 16 GB 显存的 Nvidia Tesla V100 GPU。
 
-% \subsection{超参数对解的影响}
-% 在本节中，我们考虑以下特征值问题。为了便于获取精确解，我们考虑一个变量分离形式的函数 $w$：
-% \begin{equation}\label{eq:example1}
-% \left\{\begin{aligned}
-% -\Delta u + \left(\sum_{i=1}^d w(x_{i})\right)u&=\lambda u & & \text { in } \Omega \
-% T u &=0 & & \text { on } \partial \Omega,
-% \end{aligned}\right.
-% \end{equation}
-% 其中 $\Omega=[0,1]^d$ 且 $w(t)=\exp(-\pi t)$（指数势）。\textcolor{red}{Eq.~\eqref{eq:conloss} 是一个变量分离方程，其解在每个维度上都表现出各向同性。可以通过利用有限元方法导出参考解。}
+\subsection{超参数对解的影响}
+在本节中，我们考虑以下特征值问题。为了便于获取精确解，我们考虑一个变量分离形式的函数 $w$：
+\begin{equation}\label{eq:example1}
+\left\{\begin{aligned}
+-\Delta u + \left(\sum_{i=1}^d w(x_{i})\right)u&=\lambda u & & \text { in } \Omega \
+T u &=0 & & \text { on } \partial \Omega,
+\end{aligned}\right.
+\end{equation}
+其中 $\Omega=[0,1]^d$ 且 $w(t)=\exp(-\pi t)$（指数势）。\textcolor{red}{Eq.~\eqref{eq:conloss} 是一个变量分离方程，其解在每个维度上都表现出各向同性。可以通过利用有限元方法导出参考解。}
 
-% 在本节中，我们首先考虑几种低维情形，并研究计算误差如何随 $\varepsilon_1$、$\varepsilon_2$、神经网络规模以及样本量变化，并与理论结果相对应。本节中所有实验的默认设置如下：$d=2$，学习率 = 0.001，$\varepsilon_1=1000$，$\varepsilon_2=200$，$\mathcal{W} = 100$，$\mathcal{D} = 4$，epoch $= 10000$，样本量 $= 10000/3000$。我们将以此作为进行各种对照实验的基准
-% 线。
-% \begin{figure}[htbp]
-%     \centering
-%     \includegraphics[width=0.7\textwidth]{figures1/EigFig2023/under-different-lambda1.png}
-%     \caption{Eigenvalue approximation under different $\varepsilon_1$}\label{lambda1}
-%     \label{fig:lambda1}
-% \end{figure}
+在本节中，我们首先考虑几种低维情形，并研究计算误差如何随 $\varepsilon_1$、$\varepsilon_2$、神经网络规模以及样本量变化，并与理论结果相对应。本节中所有实验的默认设置如下：$d=2$，学习率 = 0.001，$\varepsilon_1=1000$，$\varepsilon_2=200$，$\mathcal{W} = 100$，$\mathcal{D} = 4$，epoch $= 10000$，样本量 $= 10000/3000$。我们将以此作为进行各种对照实验的基准
+线。
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures1/EigFig2023/under-different-lambda1.png}
+    \caption{Eigenvalue approximation under different $\varepsilon_1$}\label{lambda1}
+    \label{fig:lambda1}
+\end{figure}
 
-% 首先，我们选取不同的 $\varepsilon_1$ 值并使用 Deep Ritz 方法进行求解。所得结果展示于图 \ref{fig:lambda1}。定理 \ref{mainthm} 指出，随着 $\varepsilon_1$ 的增加，计算得到的特征值将趋近于真实值，实验结果验证了这一观察结论。
+首先，我们选取不同的 $\varepsilon_1$ 值并使用 Deep Ritz 方法进行求解。所得结果展示于图 \ref{fig:lambda1}。定理 \ref{mainthm} 指出，随着 $\varepsilon_1$ 的增加，计算得到的特征值将趋近于真实值，实验结果验证了这一观察结论。
 
-% 接下来，我们将讨论 $\varepsilon_2$ 对解的影响。我们选取了满足以下条件的 $\varepsilon_2$ 值：小于 $2\lambda_1$，略大于 $2\lambda_1$ 但小于 $2\lambda_2$ 和 $2\lambda_3$，略大于 $2\lambda_2$ 和 $2\lambda_3$，以及显著大于 $2\lambda_2$ 和 $2\lambda_3$。相关结果呈现于图 \ref{fig:lambda2}。
+接下来，我们将讨论 $\varepsilon_2$ 对解的影响。我们选取了满足以下条件的 $\varepsilon_2$ 值：小于 $2\lambda_1$，略大于 $2\lambda_1$ 但小于 $2\lambda_2$ 和 $2\lambda_3$，略大于 $2\lambda_2$ 和 $2\lambda_3$，以及显著大于 $2\lambda_2$ 和 $2\lambda_3$。相关结果呈现于图 \ref{fig:lambda2}。
 
-% 根据定理 \ref{mainthm}，当 $\varepsilon_2$ 大于 $2\lambda_k$ 时，第 $k$ 个特征值是可以被计算出来的。实验结果也验证了这一论述。当 $\varepsilon_2=10<2\lambda_1$ 时，算法无法计算出任何特征值。当 $2\lambda_1<\varepsilon_2=62<2\lambda_2$ 时，第一个特征值能够被较好地计算出来，但无法收敛至第二个特征值。当 $\varepsilon_2>2\lambda_2$ 时，所有对应的特征值均可被准确计算。
+根据定理 \ref{mainthm}，当 $\varepsilon_2$ 大于 $2\lambda_k$ 时，第 $k$ 个特征值是可以被计算出来的。实验结果也验证了这一论述。当 $\varepsilon_2=10<2\lambda_1$ 时，算法无法计算出任何特征值。当 $2\lambda_1<\varepsilon_2=62<2\lambda_2$ 时，第一个特征值能够被较好地计算出来，但无法收敛至第二个特征值。当 $\varepsilon_2>2\lambda_2$ 时，所有对应的特征值均可被准确计算。
 
-% \begin{figure}[htbp]
-%     \centering
-%     \includegraphics[width=0.6\textwidth]{figures1/EigFig2023/under-different-lambda2.png}
-%     \caption{Eigenvalue approximation under different $\varepsilon_2$}
-%     \label{fig:lambda2}
-% \end{figure}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.6\textwidth]{figures1/EigFig2023/under-different-lambda2.png}
+    \caption{Eigenvalue approximation under different $\varepsilon_2$}
+    \label{fig:lambda2}
+\end{figure}
 
-% 值得注意的是，当 $\varepsilon_2=62$ 时，第三个特征值似乎已被正确计算，这可能令人费解。为了阐明这一点，我们需要借助近似特征函数的热力图，如图 \ref{fig:heatmap} 所示。众所周知，在二维情形下，第二和第三个特征值在数值上相等，但对应于两个正交的特征函数。通过特征函数的热力图可以观察到，在计算第二个特征值时，由于 $\varepsilon_2$ 取值较小，解退化为了第一个特征函数。然而，在计算第三个特征值时，损失函数包含了两个与第一个特征值相关的正交项。因此，这等价于使用 $2\varepsilon_2$ 计算第二个特征值。这一观察结果与我们的理论分析保持一致。
-% \begin{figure}[htbp]
-%     \centering
-%     \includegraphics[width=0.8\textwidth]{figures1/EigFig2023/heat-map-reference.png}
-%     \caption{Eigenfunction reference}
-% \end{figure}
-% \begin{figure}[htbp]
-%     \centering
-%     \includegraphics[width=0.8\textwidth]{figures1/EigFig2023/heat-map.png}
-%     \caption{Heatmap for eigenfunction approximation for $\varepsilon_2=125$ and $\varepsilon_2=200$. }\label{fig:heatmap}
-% \end{figure}
+值得注意的是，当 $\varepsilon_2=62$ 时，第三个特征值似乎已被正确计算，这可能令人费解。为了阐明这一点，我们需要借助近似特征函数的热力图，如图 \ref{fig:heatmap} 所示。众所周知，在二维情形下，第二和第三个特征值在数值上相等，但对应于两个正交的特征函数。通过特征函数的热力图可以观察到，在计算第二个特征值时，由于 $\varepsilon_2$ 取值较小，解退化为了第一个特征函数。然而，在计算第三个特征值时，损失函数包含了两个与第一个特征值相关的正交项。因此，这等价于使用 $2\varepsilon_2$ 计算第二个特征值。这一观察结果与我们的理论分析保持一致。
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures1/EigFig2023/heat-map-reference.png}
+    \caption{Eigenfunction reference}
+\end{figure}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures1/EigFig2023/heat-map.png}
+    \caption{Heatmap for eigenfunction approximation for $\varepsilon_2=125$ and $\varepsilon_2=200$. }\label{fig:heatmap}
+\end{figure}
 
-% 最后，我们考察了网络宽度和采样大小对解的影响。正如预期的那样，通过增加网络宽度和扩大采样规模，我们通常能够获得更精确的解
+最后，我们考察了网络宽度和采样大小对解的影响。正如预期的那样，通过增加网络宽度和扩大采样规模，我们通常能够获得更精确的解
 
-% \begin{figure}[htbp]
-%     \centering
-%     % 第一个子图
-%     \begin{subfigure}{0.45\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/EigFig2023/under-different-width.png}
-%         \caption{不同 $\mathcal{W}$ 下的特征值逼近}
-%         \label{fig:width}
-%     \end{subfigure}
-%     \hfill % 关键：把两图撑开到两边
-%     % 第二个子图
-%     \begin{subfigure}{0.45\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/EigFig2023/under-different-sample.png}
-%         \caption{不同样本量下的特征值逼近}
-%         \label{fig:sample}
-%     \end{subfigure}
+\begin{figure}[htbp]
+    \centering
+    % 第一个子图
+    \begin{subfigure}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/EigFig2023/under-different-width.png}
+        \caption{不同 $\mathcal{W}$ 下的特征值逼近}
+        \label{fig:width}
+    \end{subfigure}
+    \hfill % 关键：把两图撑开到两边
+    % 第二个子图
+    \begin{subfigure}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/EigFig2023/under-different-sample.png}
+        \caption{不同样本量下的特征值逼近}
+        \label{fig:sample}
+    \end{subfigure}
     
-%     \caption{网络宽度和采样大小的影响}
-%     \label{fig:main}
-% \end{figure}
+    \caption{网络宽度和采样大小的影响}
+    \label{fig:main}
+\end{figure}
 
-% \subsection{立方体区域上的拉普拉斯特征值问题}\label{sec:10dcube}
-% 在本节及下一节中，我们在 Eq.~\eqref{eq:conloss} 中选取了不同的函数 $w(x)$，包括常用的函数，如指数函数 $(w(x)=\exp(-\pi x))$ 和平方函数 $(w(x)=x^2)$。此外，我们探索了不同的区域，包括 10 维立方体和 10 维球体。在这些区域上，依赖于空间离散化的传统数值算法（如有限元法和有限差分法）一直无法提供令人满意的结果。实验的参数设置如下：
+\subsection{立方体区域上的拉普拉斯特征值问题}\label{sec:10dcube}
+在本节及下一节中，我们在 Eq.~\eqref{eq:conloss} 中选取了不同的函数 $w(x)$，包括常用的函数，如指数函数 $(w(x)=\exp(-\pi x))$ 和平方函数 $(w(x)=x^2)$。此外，我们探索了不同的区域，包括 10 维立方体和 10 维球体。在这些区域上，依赖于空间离散化的传统数值算法（如有限元法和有限差分法）一直无法提供令人满意的结果。实验的参数设置如下：
 
-% \begin{table}[htbp]
-% \centering
-% \begin{tabular}{l|ccc}
-% \toprule
-% {\heiti 参数} & {\heiti 平方势} & \multicolumn{1}{p{2.2cm}}{{\heiti 指数势}} & \multicolumn{1}{p{3.2cm}}{{\heiti 简谐振子}}\\
-% \midrule
-% 区域 & $[0,1]^{10}$ &  $[0,1]^{10}$ & $\mathbb{R}^{10}$ 中的单位球 \\
-% 学习率 & 0.001& 0.001& 0.001\\
-% 训练轮数 (Epoch)& 100000& 100000& 50000\\
-% $\varepsilon_1/\varepsilon_2$& 2000/1000&  2000/500& 2000/600\\
-% 宽度/深度
-% & 150/4 & 150/4 & 60/4 \\
-% 样本量 ($\Omega$)& 200000& 200000& 200000\\
-% 样本量 ($\partial\Omega$)& 80000& 80000& 80000\\
-% \bottomrule
-% \end{tabular}
-% \caption{第 \ref{sec:10dcube} 节和第 \ref{sec:10dball} 节中的参数设置。}
-% \end{table}
+\begin{table}[htbp]
+\centering
+\begin{tabular}{l|ccc}
+\toprule
+{\heiti 参数} & {\heiti 平方势} & \multicolumn{1}{p{2.2cm}}{{\heiti 指数势}} & \multicolumn{1}{p{3.2cm}}{{\heiti 简谐振子}}\\
+\midrule
+区域 & $[0,1]^{10}$ &  $[0,1]^{10}$ & $\mathbb{R}^{10}$ 中的单位球 \\
+学习率 & 0.001& 0.001& 0.001\\
+训练轮数 (Epoch)& 100000& 100000& 50000\\
+$\varepsilon_1/\varepsilon_2$& 2000/1000&  2000/500& 2000/600\\
+宽度/深度
+& 150/4 & 150/4 & 60/4 \\
+样本量 ($\Omega$)& 200000& 200000& 200000\\
+样本量 ($\partial\Omega$)& 80000& 80000& 80000\\
+\bottomrule
+\end{tabular}
+\caption{第 \ref{sec:10dcube} 节和第 \ref{sec:10dball} 节中的参数设置。}
+\end{table}
 
-% \begin{figure}[htbp]
-%     \centering
+\begin{figure}[htbp]
+    \centering
     
-%     % --- 第一行 ---
-%     % 创建一个子图容器，宽度约为页面宽度的一半
-%     \begin{subfigure}{0.48\linewidth}
-%         \centering
-%         % 图片宽度占满当前子图容器
-%         \includegraphics[width=\linewidth]{figures1/1square/unn_rank1.eps}
-%         \caption{方形势下的 $\widehat{\xi}_{\phi 1}$}
-%         \label{fig:sq1}
-%     \end{subfigure}
-%     \hfill % 弹性填充，将两个子图推向两侧
-%     \begin{subfigure}{0.48\linewidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/1expc/unn_rank1.eps}
-%         \caption{指数势下的 $\widehat{\xi}_{\phi 1}$}
-%         \label{fig:exp1}
-%     \end{subfigure}
+    % --- 第一行 ---
+    % 创建一个子图容器，宽度约为页面宽度的一半
+    \begin{subfigure}{0.48\linewidth}
+        \centering
+        % 图片宽度占满当前子图容器
+        \includegraphics[width=\linewidth]{figures1/1square/unn_rank1.eps}
+        \caption{方形势下的 $\widehat{\xi}_{\phi 1}$}
+        \label{fig:sq1}
+    \end{subfigure}
+    \hfill % 弹性填充，将两个子图推向两侧
+    \begin{subfigure}{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/1expc/unn_rank1.eps}
+        \caption{指数势下的 $\widehat{\xi}_{\phi 1}$}
+        \label{fig:exp1}
+    \end{subfigure}
     
-%     \vspace{1em} % 增加行间距
+    \vspace{1em} % 增加行间距
     
-%     % --- 第二行 ---
-%     \begin{subfigure}{0.48\linewidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/2square/unn_rank2.eps}
-%         \caption{方形势下的 $\widehat{\xi}_{\phi 2}$}
-%         \label{fig:sq2}
-%     \end{subfigure}
-%     \hfill
-%     \begin{subfigure}{0.48\linewidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/2expc/unn_rank2.eps}
-%         \caption{指数势下的 $\widehat{\xi}_{\phi 2}$}
-%         \label{fig:exp2}
-%     \end{subfigure}
+    % --- 第二行 ---
+    \begin{subfigure}{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/2square/unn_rank2.eps}
+        \caption{方形势下的 $\widehat{\xi}_{\phi 2}$}
+        \label{fig:sq2}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/2expc/unn_rank2.eps}
+        \caption{指数势下的 $\widehat{\xi}_{\phi 2}$}
+        \label{fig:exp2}
+    \end{subfigure}
     
-%     \vspace{1em} % 增加行间距
+    \vspace{1em} % 增加行间距
     
-%     % --- 第三行 ---
-%     \begin{subfigure}{0.48\linewidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/3square/unn_rank3.eps}
-%         \caption{方形势下的 $\widehat{\xi}_{\phi 3}$}
-%         \label{fig:sq3}
-%     \end{subfigure}
-%     \hfill
-%     \begin{subfigure}{0.48\linewidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/3expc/unn_rank3.eps}
-%         \caption{指数势下的 $\widehat{\xi}_{\phi 3}$}
-%         \label{fig:exp3}
-%     \end{subfigure}
+    % --- 第三行 ---
+    \begin{subfigure}{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/3square/unn_rank3.eps}
+        \caption{方形势下的 $\widehat{\xi}_{\phi 3}$}
+        \label{fig:sq3}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/3expc/unn_rank3.eps}
+        \caption{指数势下的 $\widehat{\xi}_{\phi 3}$}
+        \label{fig:exp3}
+    \end{subfigure}
     
-%     % 总标题
-%     \caption{方形势和指数势在立方体区域对角线上的本征函数。}
-%     \label{fig1}
-% \end{figure}
+    % 总标题
+    \caption{方形势和指数势在立方体区域对角线上的本征函数。}
+    \label{fig1}
+\end{figure}
 
-% \begin{figure}[htbp]
-%     \centering
+\begin{figure}[htbp]
+    \centering
     
-%     % --- 第一行：lambda_1 ---
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/1square/eigenvalue_rank1.eps}
-%         \caption{方势的 $\lambda_{1}$}
-%     \end{subfigure}
-%     \hfill
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/1expc/eigenvalue_rank1.eps}
-%         \caption{指数势的 $\lambda_{1}$}
-%     \end{subfigure}
+    % --- 第一行：lambda_1 ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/1square/eigenvalue_rank1.eps}
+        \caption{方势的 $\lambda_{1}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/1expc/eigenvalue_rank1.eps}
+        \caption{指数势的 $\lambda_{1}$}
+    \end{subfigure}
     
-%     \vspace{1em} % 增加行间距
+    \vspace{1em} % 增加行间距
     
-%     % --- 第二行：lambda_2 ---
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/2square/eigenvalue_rank2.eps}
-%         \caption{方势的 $\lambda_{2}$}
-%     \end{subfigure}
-%     \hfill
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/2expc/eigenvalue_rank2.eps}
-%         \caption{指数势的 $\lambda_{2}$}
-%     \end{subfigure}
+    % --- 第二行：lambda_2 ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/2square/eigenvalue_rank2.eps}
+        \caption{方势的 $\lambda_{2}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/2expc/eigenvalue_rank2.eps}
+        \caption{指数势的 $\lambda_{2}$}
+    \end{subfigure}
     
-%     \vspace{1em} % 增加行间距
+    \vspace{1em} % 增加行间距
     
-%     % --- 第三行：lambda_3 ---
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/3square/eigenvalue_rank3.eps}
-%         \caption{方势的 $\lambda_{3}$}
-%     \end{subfigure}
-%     \hfill
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/3expc/eigenvalue_rank3.eps}
-%         \caption{指数势的 $\lambda_{3}$}
-%     \end{subfigure}
+    % --- 第三行：lambda_3 ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/3square/eigenvalue_rank3.eps}
+        \caption{方势的 $\lambda_{3}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/3expc/eigenvalue_rank3.eps}
+        \caption{指数势的 $\lambda_{3}$}
+    \end{subfigure}
     
-%     % 总标题
-%     % 这一段红字依赖 \usepackage{xcolor}
-%     \caption{训练过程中方势与指数势的特征值逼近情况。}
-%     \label{fig2}
-% \end{figure}
+    % 总标题
+    % 这一段红字依赖 \usepackage{xcolor}
+    \caption{训练过程中方势与指数势的特征值逼近情况。}
+    \label{fig2}
+\end{figure}
 
-% 如图 \ref{fig1} 和 \ref{fig2} 所示，所有估计的特征值和特征函数均与其各自的精确值非常接近。计算得到的特征值小于精确值，这与定理 \ref{mainthm} 的结论相符。
+如图 \ref{fig1} 和 \ref{fig2} 所示，所有估计的特征值和特征函数均与其各自的精确值非常接近。计算得到的特征值小于精确值，这与定理 \ref{mainthm} 的结论相符。
 
-% \subsection{单位球上的拉普拉斯特征值问题}\label{sec:10dball}
-% 在本节中，我们求解 $\mathbb{R}^{10}$ 和 $\mathbb{R}^{20}$ 空间中单位球的特征值问题。与上述情形不同，在此情形下，由于受到无限深势阱的束缚，所有的 $x_{i}$ 不再是独立运动的：
-% \begin{equation*}
-% V(x)=\left\{
-% \begin{array}{ll}
-% 0&|x|<1,\\
-% +\infty&|x|\geq 1.
-% \end{array}\right.
-% \end{equation*}
-% 在此情形下，第一特征值 $\lambda_{1}$ 是四阶贝塞尔函数的第一根，而第二特征值 $\lambda_{2}$ 是五阶贝塞尔函数的第一根。所有对应的特征函数可表示为：
-% \begin{equation*}
-% \xi_{k}(x)\in\mathop{span}\left\{ \frac{1}{\left(\lambda_{k}|x|\right)^{4+l}}J_{4+l}(\lambda_{k}|x|)P_{l}(x),\quad l=0,1,2,\cdots, \quad k=1,2,3,\cdots .\right\},
-% \end{equation*}
-% 其中 $P_{l}(x)$ 是一个 $l$ 次齐次多项式。
+\subsection{单位球上的拉普拉斯特征值问题}\label{sec:10dball}
+在本节中，我们求解 $\mathbb{R}^{10}$ 和 $\mathbb{R}^{20}$ 空间中单位球的特征值问题。与上述情形不同，在此情形下，由于受到无限深势阱的束缚，所有的 $x_{i}$ 不再是独立运动的：
+\begin{equation*}
+V(x)=\left\{
+\begin{array}{ll}
+0&|x|<1,\\
++\infty&|x|\geq 1.
+\end{array}\right.
+\end{equation*}
+在此情形下，第一特征值 $\lambda_{1}$ 是四阶贝塞尔函数的第一根，而第二特征值 $\lambda_{2}$ 是五阶贝塞尔函数的第一根。所有对应的特征函数可表示为：
+\begin{equation*}
+\xi_{k}(x)\in\mathop{span}\left\{ \frac{1}{\left(\lambda_{k}|x|\right)^{4+l}}J_{4+l}(\lambda_{k}|x|)P_{l}(x),\quad l=0,1,2,\cdots, \quad k=1,2,3,\cdots .\right\},
+\end{equation*}
+其中 $P_{l}(x)$ 是一个 $l$ 次齐次多项式。
 
-% \begin{figure}[htbp]
-%     \centering
+\begin{figure}[htbp]
+    \centering
     
-%     % --- 第一行 (Rank 1) ---
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         % 使用 \linewidth 让图片自动适应子图容器的宽度
-%         \includegraphics[width=\linewidth]{figures1/ball/ball_unn_rank1.eps}
-%         \caption{单位球上的 $\widehat{\xi}_{\phi 1}$}
-%     \end{subfigure}
-%     \hfill % 左右推开
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/ball/ball_eigenvalue_rank1.eps}
-%         \caption{单位球上的 $\lambda_{1}$}
-%     \end{subfigure}
+    % --- 第一行 (Rank 1) ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        % 使用 \linewidth 让图片自动适应子图容器的宽度
+        \includegraphics[width=\linewidth]{figures1/ball/ball_unn_rank1.eps}
+        \caption{单位球上的 $\widehat{\xi}_{\phi 1}$}
+    \end{subfigure}
+    \hfill % 左右推开
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/ball/ball_eigenvalue_rank1.eps}
+        \caption{单位球上的 $\lambda_{1}$}
+    \end{subfigure}
     
-%     \vspace{0.5em} % 行间距，防止上下两行太挤
+    \vspace{0.5em} % 行间距，防止上下两行太挤
     
-%     % --- 第二行 (Rank 2) ---
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/ball/ball_unn_rank2.eps}
-%         \caption{单位球上的 $\widehat{\xi}_{\phi 2}$}
-%     \end{subfigure}
-%     \hfill
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/ball/ball_eigenvalue_rank2.eps}
-%         \caption{单位球上的 $\lambda_{2}$}
-%     \end{subfigure}
+    % --- 第二行 (Rank 2) ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/ball/ball_unn_rank2.eps}
+        \caption{单位球上的 $\widehat{\xi}_{\phi 2}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/ball/ball_eigenvalue_rank2.eps}
+        \caption{单位球上的 $\lambda_{2}$}
+    \end{subfigure}
     
-%     \vspace{0.5em} % 行间距
+    \vspace{0.5em} % 行间距
     
-%     % --- 第三行 (Rank 3) ---
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/ball/ball_unn_rank3.eps}
-%         \caption{单位球上的 $\widehat{\xi}_{\phi 3}$}
-%     \end{subfigure}
-%     \hfill
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/ball/ball_eigenvalue_rank3.eps}
-%         \caption{单位球上的 $\lambda_{3}$}
-%     \end{subfigure}
+    % --- 第三行 (Rank 3) ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/ball/ball_unn_rank3.eps}
+        \caption{单位球上的 $\widehat{\xi}_{\phi 3}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/ball/ball_eigenvalue_rank3.eps}
+        \caption{单位球上的 $\lambda_{3}$}
+    \end{subfigure}
     
-%     % --- 总标题 ---
-%     \caption{左图：对应于 10 维单位球对角线上的特征函数。右图：随训练轮数（epoch）变化的对应特征值演化。}
-%     \label{fig3}
-% \end{figure}
+    % --- 总标题 ---
+    \caption{左图：对应于 10 维单位球对角线上的特征函数。右图：随训练轮数（epoch）变化的对应特征值演化。}
+    \label{fig3}
+\end{figure}
 
-% 对于 $\mathbb{R}^{10}$，结果展示在图 \ref{fig3} 中，在此设置下，所提出的方法很好地估计了特征值和特征函数。
+对于 $\mathbb{R}^{10}$，结果展示在图 \ref{fig3} 中，在此设置下，所提出的方法很好地估计了特征值和特征函数。
 
-% 对于 $\mathbb{R}^{20}$ 的情形，使用蒙特卡洛方法计算积分面临挑战。具体而言，高维空间区域中的均匀采样会导致采样点在边界附近过度集中。为了克服这一挑战，常见的策略包括增加采样点数量以及实施更高效的采样技术。作为一种解决方案，我们采用了分层采样方法。该方法将单位球划分为两个不同的区域，记为 $B_{20}(0,1/2)$ 和 $B_{20}(0,1)/B_{20}(0,1/2)$。我们对每个区域分别计算蒙特卡洛积分，随后将所得数值进行加权求和。
+对于 $\mathbb{R}^{20}$ 的情形，使用蒙特卡洛方法计算积分面临挑战。具体而言，高维空间区域中的均匀采样会导致采样点在边界附近过度集中。为了克服这一挑战，常见的策略包括增加采样点数量以及实施更高效的采样技术。作为一种解决方案，我们采用了分层采样方法。该方法将单位球划分为两个不同的区域，记为 $B_{20}(0,1/2)$ 和 $B_{20}(0,1)/B_{20}(0,1/2)$。我们对每个区域分别计算蒙特卡洛积分，随后将所得数值进行加权求和。
 
-% 这种采样方法确保了采样在一定程度上能够捕捉到区域内部的信息，从而提升了算法的性能。实验结果展示在附图 \ref{fig:20dball} 中。
+这种采样方法确保了采样在一定程度上能够捕捉到区域内部的信息，从而提升了算法的性能。实验结果展示在附图 \ref{fig:20dball} 中。
 
-% \begin{table}[h]
-% \centering
-% \begin{tabular}{l|c}
-% \toprule
-% {\heiti 参数} & {\heiti 简谐振子}\\
-% \midrule
-% 区域 & $\mathbb{R}^{20}$ 中的单位球\\
-% 学习率 & 0.001\\
-% 第 1 个特征值的训练轮数 & 100000\\
-% 第 2、3 个特征值的训练轮数 & 200000\\
-% $\varepsilon_1/\varepsilon_2$ & 5000/3000\\
-% 宽度/深度 & 120/4\\
-% 样本数量 ($B_{20}(0,0.5)$) & 50000\\
-% 样本数量 ($B_{20}(0,1)/B_{20}(0,0.5)$) & 500000\\
-% 样本数量 ($\partial B_{20}(0,1)$) & 200000\\
-% \bottomrule
-% \end{tabular}
-% \caption{参数设置}
-% \end{table}
+\begin{table}[h]
+\centering
+\begin{tabular}{l|c}
+\toprule
+{\heiti 参数} & {\heiti 简谐振子}\\
+\midrule
+区域 & $\mathbb{R}^{20}$ 中的单位球\\
+学习率 & 0.001\\
+第 1 个特征值的训练轮数 & 100000\\
+第 2、3 个特征值的训练轮数 & 200000\\
+$\varepsilon_1/\varepsilon_2$ & 5000/3000\\
+宽度/深度 & 120/4\\
+样本数量 ($B_{20}(0,0.5)$) & 50000\\
+样本数量 ($B_{20}(0,1)/B_{20}(0,0.5)$) & 500000\\
+样本数量 ($\partial B_{20}(0,1)$) & 200000\\
+\bottomrule
+\end{tabular}
+\caption{参数设置}
+\end{table}
 
-% \begin{figure}[htbp]
-%     \centering
+\begin{figure}[htbp]
+    \centering
     
-%     % --- 第一行：Rank 1 ---
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/20d/unn_rank1.eps}
-%         \caption{单位球上的 $\widehat{\xi}_{\phi 1}$}
-%         \label{fig:xi_rank1}
-%     \end{subfigure}
-%     \hfill
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/20d/eigenvalue_rank1.eps}
-%         \caption{单位球上的 $\lambda_{1}$}
-%         \label{fig:lambda_rank1}
-%     \end{subfigure}
+    % --- 第一行：Rank 1 ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/20d/unn_rank1.eps}
+        \caption{单位球上的 $\widehat{\xi}_{\phi 1}$}
+        \label{fig:xi_rank1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/20d/eigenvalue_rank1.eps}
+        \caption{单位球上的 $\lambda_{1}$}
+        \label{fig:lambda_rank1}
+    \end{subfigure}
     
-%     \vspace{1em} % 增加行间距
+    \vspace{1em} % 增加行间距
     
-%     % --- 第二行：Rank 2 ---
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/20d/unn_rank2.eps}
-%         \caption{单位球上的 $\widehat{\xi}_{\phi 2}$}
-%         \label{fig:xi_rank2}
-%     \end{subfigure}
-%     \hfill
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/20d/eigenvalue_rank2.eps}
-%         \caption{单位球上的 $\lambda_{2}$}
-%         \label{fig:lambda_rank2}
-%     \end{subfigure}
+    % --- 第二行：Rank 2 ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/20d/unn_rank2.eps}
+        \caption{单位球上的 $\widehat{\xi}_{\phi 2}$}
+        \label{fig:xi_rank2}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/20d/eigenvalue_rank2.eps}
+        \caption{单位球上的 $\lambda_{2}$}
+        \label{fig:lambda_rank2}
+    \end{subfigure}
     
-%     \vspace{1em} % 增加行间距
+    \vspace{1em} % 增加行间距
     
-%     % --- 第三行：Rank 3 ---
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/20d/unn_rank3.eps}
-%         \caption{单位球上的 $\widehat{\xi}_{\phi 3}$}
-%         \label{fig:xi_rank3}
-%     \end{subfigure}
-%     \hfill
-%     \begin{subfigure}{0.48\textwidth}
-%         \centering
-%         \includegraphics[width=\linewidth]{figures1/20d/eigenvalue_rank3.eps}
-%         \caption{单位球上的 $\lambda_{3}$}
-%         \label{fig:lambda_rank3}
-%     \end{subfigure}
+    % --- 第三行：Rank 3 ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/20d/unn_rank3.eps}
+        \caption{单位球上的 $\widehat{\xi}_{\phi 3}$}
+        \label{fig:xi_rank3}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/20d/eigenvalue_rank3.eps}
+        \caption{单位球上的 $\lambda_{3}$}
+        \label{fig:lambda_rank3}
+    \end{subfigure}
     
-%     \caption{左列：20维单位球对角线上的特征函数。右列：特征值随训练轮次（Epoch）的演变情况。}
-%     \label{fig:20dball}
-% \end{figure}
+    \caption{左列：20维单位球对角线上的特征函数。右列：特征值随训练轮次（Epoch）的演变情况。}
+    \label{fig:20dball}
+\end{figure}
 
 \section{结论与讨论}\label{sec dis}
 本文研究了利用神经网络求解椭圆多重特征值问题。我们基于椭圆特征值问题的惩罚变分形式，提出了一种计算椭圆多重特征值的通用形式。我们利用 Deep Ritz 方法求解了该惩罚变分形式。我们建立了估计特征值与真实特征值之间误差的上界，该上界与网络的深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 以及训练样本量 $n$ 有关。通过探讨特征值问题的正则性并适当选择深度 $\mathcal{D}$ 和宽度 $\mathcal{W}$，我们表明该误差界克服了维数灾难。若干模拟结果证明了所提方法的有效性，并支持了我们的理论结果。

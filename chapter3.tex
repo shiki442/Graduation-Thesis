@@ -207,8 +207,32 @@ J^{\mu}(u^{\mu}+v) - J^{\mu}(u^{\mu}) \geq \frac{1}{2}\int_{\Omega} |\nabla v|^2
 u_{\text{nn}}= \underset{u \in \mathcal{N}^{2}}{\operatorname{argmin}}\,J^{\mu}(u),\quad
 \widehat{u}^{K}_{\text{nn}}= \underset{u \in \mathcal{N}^{2}}{\operatorname{argmin}}\,\widehat{J}_{K}^{\mu}(u).
 \end{equation}
-在后续讨论中，我们将统一使用 $n=O(N,M)$ 来表征样本量 $N$ 与 $M$ 的渐近规模。
+在后续讨论中，我们将统一使用 $n=O(N,M)$ 来表征样本量 $N$ 与 $M$ 的渐近规模。最终，我们总结得到如下\ref{alg:DRM_semilinear}的算法。
 
+\par\noindent
+\begin{minipage}{\textwidth}
+\renewcommand*\footnoterule{}
+\renewcommand{\thempfootnote}{\fnsymbol{mpfootnote}}
+\begin{algorithm}[H]
+\caption{深度里兹法求解半线性偏微分方程 (Deep Ritz Method)}
+\label{alg:DRM_semilinear}
+\begin{algorithmic}[1]
+\Require 区域 $\Omega$ 及其边界 $\partial \Omega$。源项 $g(x)$，边界函数 $h(x)$。非线性项 $V(u)$ 及其原函数 $W(s) = \int_0^s V(t) \, dt$。配点 $\{X_i\}_{i=1}^N \sim U(\Omega)$和$\{Y_j\}_{j=1}^M \sim U(\partial \Omega)$
+\State 初始化参数 $\theta$ 及神经网络 $u(\theta)$。
+\State 构造截断源项 $g^K(x) = \min\{g(x), K\}$ 。
+
+\State \textcolor{white!30!black}{\texttt{\# 模型训练阶段}}
+\For {$k=1:\texttt{epochs}$}
+\State {计算内部能量经验损失：$$\widehat{J}_{in}(u(\theta)) = \frac{|\Omega|}{N} \sum_{i=1}^{N} \left[ |\nabla u_{\theta}(X_i)|^2 + 2W(u_{\theta}(X_i)) - 2g^K(X_i)u_{\theta}(X_i) \right]$$}
+\State {计算边界惩罚经验损失：$$\widehat{J}_{bd}(u(\theta)) = \mu \frac{|\partial\Omega|}{M} \sum_{j=1}^{M} \left[ u_{\theta}^2(Y_j) - 2u_{\theta}(Y_j)h(Y_j) \right]$$}
+\State {计算带有截断的总离散损失函数：$$\widehat{J}_{K}^{\mu}(u(\theta)) = \widehat{J}_{in}(u(\theta)) + \widehat{J}_{bd}(u(\theta))$$}
+\State {反向传播 $g_{\theta}=\nabla_{\theta}\widehat{J}_{K}^{\mu}(u(\theta))$。}
+\State {通过 SGD 类或 Adam 算法更新 $\theta$：$\theta\leftarrow\operatorname{Optimizer}\big\{\theta,g_{\theta},\eta\big\}$。}
+\EndFor
+\Ensure {最优近似解 $\widehat{u}^{K}_{\text{nn}}\leftarrow u(\theta)$。}
+\end{algorithmic}
+\end{algorithm}
+\end{minipage}
 
 \section{误差分析}
 \subsection{误差分解}
