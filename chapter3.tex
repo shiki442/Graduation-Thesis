@@ -1,8 +1,8 @@
 \chapter{深度里兹法求解半线性偏微分方程}
-\section{预备知识}\label{sec:pre}
+\section{问题背景与预备知识}\label{sec:pre}
 非线性椭圆偏微分方程（PDEs）是偏微分方程研究中备受瞩目的核心领域。其中，半线性椭圆方程（Semilinear Elliptic Equations）特指非线性项仅包含未知函数及其低阶（如一阶）导数的偏微分方程。在求解此类方程（尤其是在高维情形下）时，传统的基于网格的数值解法（如有限元法、有限差分法等）往往会遭遇严重的“维度灾难”（Curse of Dimensionality）。这是因为在网格方法中，离散参数或自由度的数量会随空间维度的增加呈指数级急剧增长，导致其在实际的高维计算中面临难以克服的内存和算力瓶颈。
 
-\subsection{问题背景与物理意义}
+\subsection{物理意义与研究现状}
 半线性椭圆方程在描述自然界众多复杂现象时扮演着基础性角色，广泛出现于物理学、几何学、流体力学和生物学等理论模型中。这类方程的求解对于理解自然规律、设计工程系统以及推动前沿科学研究具有不可替代的重要意义。以下是几个典型且具有深远物理背景的半线性椭圆方程实例：
 \begin{itemize}
 \item {\heiti 非线性薛定谔方程}：在量子力学和非线性光学中，稳态薛定谔型方程通常表示为：
@@ -16,7 +16,6 @@ $$-\Delta u = e^u \quad \text{in } \mathbb{R}^n, \quad n \ge 3$$
 该方程的指数非线性项带来了极其剧烈的非线性增长特性，使其在高维空间下的理论分析和高效数值求解一直是计算数学领域的经典挑战。
 \end{itemize}
 
-\subsection{相关工作与研究现状}
 近年来，物理信息神经网络（PINNs）和深度里兹方法（Deep Ritz Method, DRM）的提出为高维 PDE 的求解开辟了新路径。研究者们相继开发了多种变体以提升其求解非线性 PDE 的精度和效率。例如，梯度增强 PINNs \cite{lawal2022physics} 通过动态调整各个损失函数分量的梯度来加速优化过程，有效防止了某一项的局部噪声主导整体的优化方向；自适应加权策略 \cite{wight2020solving,jiao2024gaussian} 依据残差信息对采样点分布进行针对性优化，在提升计算精度的同时降低了解的不确定性；此外，针对特定物理约束的模型架构优化 \cite{qiu2025data}，通过引入硬约束结构和先验信息，显著提升了网络在特定方程上的表现。然而，尽管这些基于深度学习的数值算法在实验层面取得了长足进展，其严密的收敛性理论发展却相对滞后。
 
 神经网络理论研究的核心难点在于，非线性激活函数引入了极其复杂的非凸优化空间，而 PDE 本身的非线性特性又使得解的性质更加难以捉摸。非线性 PDE 的解往往正则性较差，甚至存在多解或无解的情形，这直接导致了神经网络在训练过程中的极度不稳定性。正如引言所述，深度学习求解 PDE 的总误差通常可分解为逼近误差（Approximation Error）、泛化误差（也称统计误差，Statistical Error）以及优化误差（Optimization Error）\cite{mishra2023estimates}。受限于当前优化理论的瓶颈，本文将重点聚焦于前两项误差的严格理论分析。
@@ -74,7 +73,7 @@ $$\|u\|_{H^2(\Omega)} \le C \left( \|g - V(u)\|_{L^2(\Omega)} + \|h\|_{H^{1/2}(\
 
 
 \section{模型构建}\label{sec:mod}
-\subsection{能量泛函及稳定性估计}
+\subsection{能量泛函及其稳定性估计}
 建立方程的先验估计后，我们便可通过极小化泛函 \eqref{eq:ch3loss} 来求解 Robin 边值问题。然而，对于 Dirichlet 边值问题，通常需要通过引入带有大罚参数的惩罚项来对边界约束进行近似逼近。关于这一逼近过程的收敛性，我们有如下定理：
 \begin{theorem}\label{thm:model}
 对于 $u\in H^{1}(\Omega)$，定义引入边界惩罚项的能量泛函：
@@ -184,7 +183,7 @@ J^{\mu}(u^{\mu}+v) - J^{\mu}(u^{\mu}) \geq \frac{1}{2}\int_{\Omega} |\nabla v|^2
 \end{proof}
 
 
-\subsection{离散损失函数}
+\subsection{数值算法实现}
 与前文处理特征值问题的方法相类似，我们利用离散化版本的能量泛函来构建神经网络的训练目标。设 $\mathcal{N}^{2}=\mathcal{N}(\mathcal{D},\mathcal{W},\{2\},m)$，并令 $U(\Omega)$ 与 $U(\partial\Omega)$ 分别表示区域 $\Omega$ 及其边界 $\partial\Omega$ 上的均匀分布。通过引入独立同分布的样本集 $\{X_{i}\}_{i=1}^{N}\sim U(\Omega)$ 与 $\{Y_{j}\}_{j=1}^{M}\sim U(\partial\Omega)$，方程 \eqref{eq:ch3loss} 对应的离散经验损失函数可表示为 \cite{chen2021quasi}：
 \begin{equation}\label{eq:disloss0}
 \begin{aligned}
@@ -719,10 +718,10 @@ g_4(x)=8\sum_{\stackrel{1\leq i\leq d}{i\neq j}}\prod_{j=1}^{d}x_{j}(1-x_{j})+\f
 \caption{预测精度（相对误差）随网络宽度的变化曲线} \label{fig:fig_w2}
 \end{figure}
 
-\section{讨论}\label{sec:dis}
+\section{本章小结}\label{sec:dis}
 在本文中，我们研究了利用具有 $\mathrm{ReLU}^2$ 激活函数的 ResNet 求解半线性椭圆问题。我们提出了一种基于惩罚变分形式的通用公式，用于计算半线性椭圆方程的解。随后，我们使用 Deep Ritz 方法对该惩罚变分形式进行求解。我们根据 $\mathrm{ReLU}^2$ ResNet 的深度 $\mathcal{D}$ 和宽度 $\mathcal{W}$ 以及训练样本数量 $n$，推导了估计解与真解之间误差的上界。我们的数值模拟结果证明了所提方法在克服维数灾难方面的有效性，并验证了我们的理论结果。
 
-\section{附录}\label{sec:appd}
+\section{本章附录}\label{sec:appd}
 \subsection{定理\ref{th:ch3reg}的证明}\label{pf:th:ch3reg}
 \begin{theorem}[先验估计]
 在假设 \ref{ass:f} 成立的条件下，方程 \eqref{eq:maineq} 存在唯一的解 $u \in H^2(\Omega)$，且满足如下正则性估计：

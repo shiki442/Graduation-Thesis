@@ -1,7 +1,7 @@
 \chapter{深度里兹法求解椭圆多特征值问题}
 椭圆方程的特征值问题在数学、物理学和工程学中有着广泛的应用。 例如，在量子力学中，薛定谔方程描述了量子系统的行为，其解的特征值对应于系统的能级。 在结构力学中，特征值问题用于分析结构的振动模式和稳定性。 传统的数值方法，如有限元法和谱方法，已经被广泛应用于求解椭圆方程的特征值问题。然而，这些方法在处理高维问题或复杂几何形状时可能面临计算成本高和精度不足的挑战。
 
-\section{概述}\label{sec_pre}
+\section{问题背景与预备知识}\label{sec_pre}
 \subsection{问题背景与物理意义}
 椭圆型特征值问题在数学物理中占据核心地位，其理论根植于对自然界基本波动现象的描述。在宏观尺度上，经典的薄膜振动模型（如鼓面振动）提供了最直观的物理背景。设鼓面位移为 $U(x, t)$，其运动遵循波动方程 $U_{tt} = c^2 \Delta U$。若寻求驻波解（Standing Wave），即通过分离变量法设 $U(x, t) = u(x) \cos(\omega t)$，则空间分布函数 $u(x)$ 满足如下亥姆霍兹（Helmholtz）方程：
 \begin{equation}
@@ -389,7 +389,7 @@ $$\delta^{2} \mathcal{L}_{k}(\xi_k;\delta u)=\frac{1}{2}(\lambda_{k}-\lambda_{l_
 因此，$\xi_k$ 是 $\mathcal{L}_{k}$ 的鞍点而非局部极小值点。若 $\xi_{k}=\vec{0}$，同理可证。证毕。
 \end{proof}
 
-\subsection{Deep Ritz法求解特征值的算法}
+\subsection{数值算法实现}
 在众多基于神经网络求解偏微分方程（PDE）的数值策略中，鄂维南等人提出的深度 Ritz方法（Deep Ritz Method, DRM）\cite{Weinan2017The} 建立了一套基于变分原理的求解框架。该方法在执行上可概括为以下四个关键步骤：
 \begin{enumerate}
     \item 将原PDE特征值问题转化为等价的变分问题，即能量泛函最小化问题；
@@ -829,7 +829,7 @@ $$
 \end{remark}
 
 
-\section{数值实验}\label{sec_num} 
+\section{数值实验与超参数对解的影响}\label{sec_num} 
 \subsection{实验设置} 为了验证我们理论的有效性与正确性，我们开展了数值实验，以在不同条件下逼近特征值及其对应的特征函数。
 
 我们采用带有 $\mathrm{ReLU}^{2}$ 激活函数的残差神经网络 (ResNet) 来训练损失函数，该网络在许多情况下已被证明优于 FNN。ResNet 与 FNN 的主要区别在于，ResNet 在网络的不同层之间增加了一些捷径连接 (shortcut connections)。
@@ -842,7 +842,6 @@ $$
 
 在所有实验中，我们均使用标准的 Adam 优化器来训练网络。所有的实现与实验均基于 CentOS 系统下的 Python 3.9.12 和 PyTorch 框架，硬件环境配备 2 颗主频 2.40 GHz 的 Intel(R) Xeon(R) E5-2640 v4 x86\_64 处理器，以及一张 16 GB 显存的 Nvidia Tesla V100 GPU。
 
-\subsection{超参数对解的影响}
 在本节中，我们考虑以下特征值问题。为了便于获取精确解，我们考虑一个变量分离形式的函数 $w$：
 \begin{equation}\label{eq:example1}
 \left\{\begin{aligned}
@@ -1194,10 +1193,10 @@ $\varepsilon_1/\varepsilon_2$ & 5000/3000\\
     \label{fig:20dball}
 \end{figure}
 
-\section{结论与讨论}\label{sec dis}
+\section{本章小结}\label{sec dis}
 本文研究了利用神经网络求解椭圆多重特征值问题。我们基于椭圆特征值问题的惩罚变分形式，提出了一种计算椭圆多重特征值的通用形式。我们利用 Deep Ritz 方法求解了该惩罚变分形式。我们建立了估计特征值与真实特征值之间误差的上界，该上界与网络的深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 以及训练样本量 $n$ 有关。通过探讨特征值问题的正则性并适当选择深度 $\mathcal{D}$ 和宽度 $\mathcal{W}$，我们表明该误差界克服了维数灾难。若干模拟结果证明了所提方法的有效性，并支持了我们的理论结果。
 
-\section{附录}\label{app:proofingen}
+\section{本章附录}\label{app:proofingen}
 \subsection{引理 \ref{lemma:staerr:Rad234} 的证明}
 \begin{proof}[引理 \ref{lemma:staerr:Rad234}]\label{pf:lemma:staerr:Rad234}
 
