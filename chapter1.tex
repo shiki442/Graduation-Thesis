@@ -11,20 +11,20 @@
 
 第一类是基于方程强形式的方法，2019年，Raissi等人\cite{raissi2019physics}提出了一种将物理守恒定律作为软约束（Soft constraints）编码至神经网络损失函数中的通用框架。该方法直接基于方程的强形式，实现了一套能够同时处理正问题与反问题的统一架构。在理论层面，Wang等人（2021年）\cite{wang2021understanding}基于神经正切核（NTK）理论，揭示了无限宽PINNs的训练动态退化为线性模型的本质，为其优化机制提供了重要的理论视角。随后，针对复杂几何域和多尺度物理场，研究者们相继提出了cPINNs\cite{jagtap2020conservative}、XPINNs\cite{jagtap2021extended}等区域分解策略，显著提升了PINNs在复杂问题中的表达能力与训练稳定性。
 
-第二类是基于变分原理的深度里兹方法（Deep Ritz Method, DRM）。该方法由鄂维南院士团队于2018年提出\cite{E2018deep}。DRM依托于变分原理，将偏微分方程的求解转化为等价的能量泛函极值问题，并利用神经网络去逼近使泛函最小化的解。由于变分形式通常只涉及较低阶的导数计算，DRM大幅降低了对神经网络平滑性的要求，且在处理高维问题时表现出卓越的性能。2021年，Duan等人进一步分析了DRM在求解椭圆型方程时的逼近误差与统计误差，给出了严格的收敛速率估计。
+第二类是基于变分原理的深度里兹方法（Deep Ritz Method, DRM）。该方法由鄂维南院士团队于2018年提出\cite{Weinan2017The}。DRM依托于变分原理，将偏微分方程的求解转化为等价的能量泛函极值问题，并利用神经网络去逼近使泛函最小化的解。由于变分形式通常只涉及较低阶的导数计算，DRM大幅降低了对神经网络平滑性的要求，且在处理高维问题时表现出卓越的性能。2021年，Duan等人进一步分析了DRM在求解椭圆型方程时的逼近误差与统计误差，给出了严格的收敛速率估计。
 
 第三类是基于方程弱形式的深度伽辽金方法（Deep Galerkin Method, DGM）。Sirignano 和 Spiliopoulos 于 2018 年提出利用神经网络作为试探函数\cite{Justin2018DGM}，通过在时空域内进行无网格随机采样并最小化 PDE 的弱形式（或积分形式）残差来逼近真实解，进一步丰富了无网格求解策略。
 
 随着算法的不断演进，相关理论分析也逐渐完善。源于统计学习理论的思想，神经网络求解偏微分方程的总误差通常被严格分解为三个部分：逼近误差（Approximation Error）、泛化误差（Generalization/Statistical Error）以及优化误差（Optimization Error）。
-在逼近误差方面，早期的万能逼近定理仅提供了存在性证明，缺乏对收敛速率的实际指导意义。2017年，Yarotsky率先证明了可以通过组合有限层的ReLU网络构造出对任意 Sobolev 空间函数的逼近\cite{yarotsky2017error}，并在随后的研究中探讨了网络深度对降低逼近误差的最优性\cite{yarotsky2018optimal}。G{"u}hring等人\cite{guhring2020error}进一步扩展了这一理论，严格证明了深度ReLU网络不仅能逼近函数本身，还能以极高精度逼近其高阶弱导数，这为PINNs和DRM奠定了坚实的理论基石。2021年，沈作伟院士等人在Yarotsky的基础上进行了系统性拓展，针对更广泛的激活函数给出了最优逼近率\cite{lu2021deep}。
+在逼近误差方面，早期的万能逼近定理仅提供了存在性证明，缺乏对收敛速率的实际指导意义。2017年，Yarotsky率先证明了可以通过组合有限层的ReLU网络构造出对任意 Sobolev 空间函数的逼近\cite{yarotsky2017error}，并在随后的研究中探讨了网络深度对降低逼近误差的最优性\cite{yarotsky2018optimal}。Guhring等人\cite{guhring2020error}进一步扩展了这一理论，严格证明了深度ReLU网络不仅能逼近函数本身，还能以极高精度逼近其高阶弱导数，这为PINNs和DRM奠定了坚实的理论基石。2021年，沈作伟院士等人在Yarotsky的基础上进行了系统性拓展，针对更广泛的激活函数给出了最优逼近率\cite{lu2021deep}。
 
 在泛化误差分析方面，Shin等人（2020）\cite{shin2020convergence}严格证明了PINNs在求解线性二阶椭圆与抛物型方程时的收敛性，并首次引入Rademacher复杂度来界定连续物理损失与经验损失之间的泛化鸿沟。Mishra团队（2022）则结合经典PDE理论中的“条件稳定性估计”，给出了更为严格的泛化误差上限。此外，鄂维南院士与鲁剑锋教授等（2021）从谱Barron空间的视角证明了：只要PDE的精确解具备特定的低复杂度，DRM的泛化误差收敛率将完全独立于空间维数 $d$，这为深度学习方法克服维数灾难提供了极具说服力的理论支撑。
 
 综上所述，深度学习在求解经典 PDE 正问题上已形成了较为完善的闭环：算法层面以神经网络替代基函数，以物理约束构建损失泛函，并通过随机梯度下降进行优化；理论层面则在 Sobolev 空间逼近率、泛化误差界以及过参数化训练动力学上取得了自洽的证明。
 
-尽管深度学习方法在标准 PDE 正问题中取得了显著成功，但其能力边界在向更复杂的物理场景拓展时，仍面临着严峻的算法与理论挑战。当前，针对特征值问题、非线性椭圆方程以及复杂反问题的研究尚显不足。具体而言，现有方法在处理上述问题时遭遇了本质困难：首先，在特征值问题中，解的非唯一性与特征函数间的严格正交约束使得常规的无约束损失函数难以收敛，极易陷入平凡解或模式崩溃；其次，对于强非线性椭圆方程，其解空间的复杂性（如多解性、分岔现象）导致神经网络的优化地貌（Loss Landscape）极其崎岖，传统的梯度下降法难以稳定寻优；最后，在反问题（如物性参数反演、源项反演）中，由于问题固有的高度不适定性（Ill-posedness）及观测数据的噪声干扰，现有 PINNs 框架往往面临梯度病态和优化方向冲突的窘境，难以直接迁移应用。
+尽管深度学习方法在标准 PDE 正问题中取得了显著成功，但其能力边界在向更复杂的物理场景拓展时，仍面临着严峻的算法与理论挑战。比如，在特征值问题中，解的非唯一性以及特征函数间的严格正交约束，使得常规的无约束损失函数难以有效收敛，网络极易陷入平凡解或发生模式崩溃；其次，在非线性椭圆方程，其解空间的复杂性（如多解性、分岔现象）导致神经网络的优化地貌（Loss Landscape）极其崎岖，传统的梯度下降法难以稳定寻优；最后，在反问题（如物性参数反演与源项反演）的研究中，由于问题固有的高度不适定性（Ill-posedness）以及观测数据中不可避免的噪声干扰，现有深度学习框架普遍面临梯度病态（Ill-conditioned Gradients）和多目标优化方向冲突等难题。
 
-因此，如何针对上述复杂场景中的正交约束、强非线性及不适定性，构建具有针对性的新型深度学习求解策略，并进一步完善其理论支撑体系，对于拓展科学机器学习（SciML）的研究边界具有至关重要的意义。本文正是立足于这一研究空白，旨在……
+如何克服上述复杂约束、强非线性及不适定性带来的困难，是当前 SciML 领域亟需解决的核心痛点。因此，本文正是立足于这一研究空白，旨在构建具有针对性的新型深度学习求解策略，并系统性地完善其理论支撑体系。这不仅是对现有深度学习求解 PDE 算法的重要补充，更对拓展科学机器学习的能力边界具有至关重要的意义。
 
 \begin{figure}
 \begin{center}
@@ -34,65 +34,75 @@
 \section{本文的主要工作和贡献}
 本文提出了了若干类椭圆型PDE问题的深度学习求解方法。
 
-第二章中，针对高维椭圆算子的多重特征值求解问题，本文提出了一种改进的深度里兹法。本文设计了一种新的包含变分形式、边界惩罚和正交惩罚的损失函数，避免了传统瑞利商方法中的非凸性，证明了该损失函数的极小值点确为原方程的特征函数，给出了详细的误差分解，包括逼近误差、统计误差（利用 Rademacher 复杂度）和累积误差，此外还在10维立方体和10维、20维球体等高维区域上验证了算法的有效性。
+第二章系统研究了利用深度神经网络（深度里兹法）求解高维椭圆型多重特征值问题，文提出了一种基于惩罚变分原理的通用无约束优化模型，通过引入边界惩罚和正交化约束来同步求解多重特征对 。在理论层面，本章将总误差科学地分解为逼近误差、累积误差与统计误差 ，严密推导了由网络深度、宽度及样本量显式表达的误差上界，在数学上证明了该方法具有一定的收敛率，并论证了其克服维数灾难的潜力 。最后，通过在高达20维的复杂几何区域（如10维超立方体和20维单位球体）上开展丰富的数值实验，充分验证了该算法在超高维场景下依然能够保持极高精度的求解能力 。
 
-第三章中，针对带有 Dirichlet 和 Robin 边界条件的半线性椭圆方程（$-\Delta u + f(u) = g$），本文构建了基于变分原理的深度学习求解框架。利用带有 $\mathrm{ReLU}^2$ 激活函数的残差神经网络（ResNet），构建了基于能量泛函的损失函数，并证明了其极小值点的存在性与唯一性。本文还推导了数值解与真实解之间 $H^1$ 范数误差的显式上界，将总误差分解为逼近误差、统计误差和截断误差，并给出了每一项的收敛阶。数值实验表明，该方法能够有效处理高维空间中的非齐次边界问题及非光滑解问题。
+第三章系统研究了利用深度里兹法（DRM）求解高维半线性椭圆偏微分方程。针对非线性方程中存在的优化和收敛难题，本章首先在合理的正则性和次临界增长假设下，严格证明了基于修正能量泛函的极小化问题与原 Robin 及 Dirichlet 边值问题弱解的等价性。随后，建立了一套包含截断界 $\mathcal{B}$ 的误差分解框架，将总误差精确拆解为逼近误差、统计误差和截断误差。严密推导了 $H^1$ 范数下的总误差上界，并证明了在空间维度 $d \ge 3$ 时，该算法求解 Robin 和 Dirichlet 问题的收敛率分别可达 $\mathcal{O}(N^{-\frac{1}{8d}})$ 和 $\mathcal{O}(N^{-\frac{1}{16d-8}})$。最后，通过高维双峰问题、不光滑问题和 Liouville 方程等丰富的数值算例，充分验证了该算法在处理高维复杂非线性特征时的极高精度与鲁棒性。
 
-第四章针对从噪声观测数据中重构椭圆方程未知势函数 $q$ 的反问题，本文提出了一种结合正则化技术的物理信息神经网络方法（Tikhonov-PINNs）。在传统 PINNs 的损失函数中引入了 Tikhonov 正则化项（$H^2$ 范数惩罚），以解决反问题的不适定性。证明了重构解关于噪声水平 $\delta$ 的收敛率（例如 $O(\delta \log(1/\delta))$），并给出了在正性条件下的具体收敛阶。在实验上通过与传统有限元方法（FEM）对比，证明了 Tikhonov-PINNs 在处理不连续势函数和高噪声数据时具有更高的精度和鲁棒性。
+第四章提出了一种基于物理信息神经网络（PINNs）结合 Tikhonov 正则化的高效框架，用于求解椭圆偏微分方程中的反势能问题。针对反问题的严重病态性，本章在损失函数中显式引入 $H^2$ 范数的 Tikhonov 正则化项。理论上，严格证明了该方法的理论稳定性估计，并确立了重构误差关于观测噪声 $\delta$ 的渐近收敛率（最优可达 $\mathcal{O}(\delta^{1/2})$）。最后，通过丰富的数值实验，充分验证了该算法在重构各类未知势函数时的高精度及其对观测噪声的强鲁棒性。
 
 
 \section{预备知识}
-\subsection{PDE问题介绍}
-本文主要考察如下形式的椭圆型方程（Elliptic Equations）：
+\section{预备知识}
+本节将简要回顾与本文研究密切相关的椭圆型偏微分方程（Elliptic Partial Differential Equations）的基础理论与先验估计（A Priori Estimates）。本文主要考察如下形式的椭圆型方程：
 \begin{equation}\label{eq:general_elliptic}
-  -\Delta u(x) + f(u, x) = g(x), \quad x \in \Omega,
+  -\Delta u(x) + f(x, u) = g(x), \quad x \in \Omega,
 \end{equation}
-其中 $\Omega$ 为有界开区域。当非线性项 $f(u, x)$ 关于 $u$ 呈线性依赖，即 $f(u, x) = V(x)u(x)$ 时，方程 \eqref{eq:general_elliptic} 退化为线性椭圆方程，其中 $V(x)$ 被称为势函数（Potential Function）。反之，该方程被称为非线性椭圆方程。
+其中，$\Omega \subset \mathbb{R}^n$ 为具有足够光滑边界的有界开区域。当非线性项 $f(x, u)$ 关于未知函数 $u$ 呈线性依赖（例如 $f(x, u) = V(x)u(x)$）时，方程 \eqref{eq:general_elliptic} 退化为线性薛定谔方程或一般线性椭圆方程，此时 $V(x)$ 通常被称为势函数（Potential Function）。反之，若 $f(x, u)$ 包含 $u$ 的高次幂或其他非线性结构，则该方程为非线性椭圆方程。
 
-特征值问题（Eigenvalue Problem）通常主要关注如下齐次方程形式：
-\begin{equation}\label{eq:eigen1}
-  -\Delta u(x) + V(x)u(x) = \lambda u(x), \quad x \in \Omega,
-\end{equation}
-或者简写为 $\mathcal{L}u = \lambda u$。根据谱理论，仅当 $\lambda$ 取一系列离散实数值时，上述齐次方程存在非平凡解（Non-trivial Solution）。这些特定的 $\lambda$ 值被称为特征值，对应的解 $u(x)$ 构成的特征函数族形成了 $L^2(\Omega)$ 空间的一组正交基。
+为了对解的适定性与正则性进行严密的理论分析，我们首先引入一般二阶线性椭圆算子 $L$ 的散度/非散度形式：
+$$Lu = -\sum_{i,j=1}^n (a^{ij}(x) u_{x_i})_{x_j} + \sum_{i=1}^n b^i(x) u_{x_i} + c(x)u$$
+我们称算子 $L$ 满足\textbf{一致椭圆性（Uniform Ellipticity）}条件，若：存在常数 $\theta > 0$，使得对于任意的 $x \in \Omega$ 和 $\xi \in \mathbb{R}^n$，均有 $\sum_{i,j=1}^n a^{ij}(x) \xi_i \xi_j \ge \theta |\xi|^2$。
 
-此外，本文亦关注如下形式的反问题：
-\begin{equation}\label{eq:inverse1}
-  -\Delta u(x) + V(x) u(x) = g(x), \quad x \in \Omega.
-\end{equation}
-此类问题通常定义为：在已知源项 $g(x)$ 以及解 $u(x)$ 在区域边界或内部某些观测点数据的条件下，反演重构未知势函数 $V(x)$ 的过程。这一过程被称为反势能问题（Inverse Potential Problem）。
+基于上述定义，以下定理系统总结了椭圆方程解在不同函数空间中的正则性与先验估计结果：
 
-\subsection{二阶椭圆PDE的先验估计}
-在本文中，为了对解的性质进行分析，我们将使用一些经典的先验估计结果。以下定理总结了线性和非线性椭圆方程解的正则性和稳定性。
-
-\begin{lemma}[De Giorgi-Nash 估计]
-对于如下形式的散度型方程：
-$$-\sum_{i,j=1}^n \frac{\partial}{\partial x_i} \left( a_{ij}(x) \frac{\partial u}{\partial x_j} \right) = f$$
-其中边界满足外锥条件，系数矩阵 $A(x) = [a_{ij}(x)]$ 满足一致椭圆性条件：即存在常数 $\lambda, \Lambda > 0$ 使得对于所有 $\xi \in \mathbb{R}^n$ 和几乎所有 $x \in \Omega$，有
-$$\lambda |\xi|^2 \leq \sum_{i,j=1}^n a_{ij}(x) \xi_i \xi_j \leq \Lambda |\xi|^2$$
-则只要 $a_{ij}$ 是有界可测的，方程的弱解 $u$ 就是局部 Hölder 连续的。即存在 $\alpha > 0$，使得 $u \in C^{\alpha}$。
+\begin{lemma}[椭圆方程的内部 $L^2$ 估计]\cite{evans2010partial}
+设 $\Omega$ 是 $\mathbb{R}^n$ 中的开集。假设算子 $L$ 满足一致椭圆性条件，且其系数满足 $a^{ij} \in C^1(\Omega)$，$b^i, c \in L^\infty(\Omega)$。
+若 $u \in H^1(\Omega)$ 是方程 $Lu = f$ 在 $\Omega$ 中的弱解，且源项 $f \in L^2(\Omega)$，那么对于任意紧包含于 $\Omega$ 的子区域 $V$（即 $V \subset\subset \Omega$），均有 $u \in H^2(V)$，并且存在一个常数 $C$ 使得如下内部估计成立：
+$$||u||_{H^2(V)} \le C \left( ||f||_{L^2(\Omega)} + ||u||_{L^2(\Omega)} \right)$$
 \end{lemma}
 
-\begin{lemma}[全局$L^p$估计，Calderón-Zygmund估计]\label{lem:lp}
-对于如下形式的散度型方程：
+\begin{lemma}[椭圆方程的全局 $L^2$ 估计]\cite{evans2010partial}
+设 $\Omega \subset \mathbb{R}^n$ 是一个有界开集，且其边界 $\partial\Omega$ 是 $C^2$ 平滑的。假设算子 $L$ 满足一致椭圆性，且系数 $a^{ij} \in C^1(\bar{\Omega})$，$b^i, c \in L^\infty(\Omega)$。
+若 $u \in H^1(\Omega)$ 是如下 Dirichlet 边值问题的弱解：
+$$\begin{cases} 
+Lu = f & \text{在 } \Omega \text{ 内} \\ 
+u = g & \text{在 } \partial\Omega \text{ 上} 
+\end{cases}$$
+其中源项 $f \in L^2(\Omega)$，边界条件 $g \in H^{3/2}(\partial\Omega)$。那么解的全局正则性提升至 $u \in H^2(\Omega)$，并且存在一个仅依赖于 $n$, $\Omega$ 以及算子 $L$ 系数的常数 $C$，使得以下估计成立：
+$$||u||_{H^2(\Omega)} \le C \left( ||f||_{L^2(\Omega)} + ||g||_{H^{3/2}(\partial\Omega)} + ||u||_{L^2(\Omega)} \right)$$
+特别地，如果已知 $u$ 是该边值问题的唯一弱解（例如当 $c \ge 0$ 且无特征值共振时），则可以利用庞加莱不等式等技巧将右侧的 $||u||_{L^2(\Omega)}$ 项吸收。
+\end{lemma}
+
+尽管上述 $L^2$ 估计奠定了弱解存在的理论基础，但其仅局限于 Sobolev 空间内的弱导数范畴。在处理某些问题时，往往需要获取解的逐点连续性等更强的拓扑性质。De Giorgi-Nash 定理正是填补这一缺陷的关键，它在极宽泛的系数假设下赋予了弱解局部 Hölder 连续性：
+\begin{lemma}[De Giorgi-Nash 估计]
+考虑如下形式的齐次散度型方程：
+$$-\sum_{i,j=1}^n \frac{\partial}{\partial x_i} \left( a_{ij}(x) \frac{\partial u}{\partial x_j} \right) = 0$$
+假设区域边界满足外锥条件，系数矩阵 $A(x) = [a_{ij}(x)]$ 满足一致椭圆性条件，即存在常数 $\lambda, \Lambda > 0$ 使得对所有 $\xi \in \mathbb{R}^n$ 和几乎所有 $x \in \Omega$，有 $\lambda |\xi|^2 \leq \sum_{i,j=1}^n a_{ij}(x) \xi_i \xi_j \leq \Lambda |\xi|^2$。
+De Giorgi-Nash 定理表明，即使系数 $a_{ij}$ 仅仅是有界可测的，方程的弱解 $u$ 在内部也是局部 Hölder 连续的。即存在指数 $\alpha \in (0,1)$，使得 $u \in C^{\alpha}_{\text{loc}}(\Omega)$。
+\end{lemma}
+
+进一步地，当区域边界与方程系数具备更好的平滑性时，解的正则性能够得到进一步跃升。Calderón-Zygmund 理论将上述先验估计推广至更高阶的 Sobolev 空间和更一般的 $L^p$ 空间框架中：
+\begin{lemma}[全局 $L^p$ 估计, Calderón-Zygmund 估计]\label{lem:lp}
+对于一般的二阶散度型椭圆方程：
 $$-\sum_{i,j=1}^n \frac{\partial}{\partial x_i} \left( a_{ij}(x) \frac{\partial u}{\partial x_j} \right) = f$$
-设 $k$ 为非负整数，$1 < p < \infty$。若右端项 $f \in W^{k,p}(\Omega)$。系数 $a_{ij}, b_i, c$ 属于 $C^{k,1}(\bar{\Omega})$。区域边界 $\partial \Omega$ 是 $C^{k+2}$ 级的。那么，方程的解 $u \in W^{k+2,p}(\Omega)$，且满足以下先验估计：
+设 $k$ 为非负整数，$1 < p < \infty$。若右端源项 $f \in W^{k,p}(\Omega)$，且系数 $a_{ij}$ 满足 $C^{k,1}(\bar{\Omega})$ 正则性，区域边界 $\partial \Omega$ 为 $C^{k+2}$ 级。那么，该方程的弱解 $u$ 属于 $W^{k+2,p}(\Omega)$，且满足如下 Calderón-Zygmund 型先验估计：
 $$\|u\|_{W^{k+2,p}(\Omega)} \leq C \left( \|f\|_{W^{k,p}(\Omega)} + \|u\|_{L^p(\Omega)} \right)$$
 \end{lemma}
 
+在处理非齐次边界条件或进行全空间泛函分析时（例如在构建神经网络的全局逼近函数时），Sobolev 函数的延拓算子是不可或缺的分析工具：
 \begin{lemma}[Calderón-Stein 延拓定理]\label{lem:extension}
-设 $\Omega \subset \mathbb{R}^n$ 是一个有界 Lipschitz 区域，对于每一个非负整数 $k$ 和每一个 $1 \leq p \leq \infty$，存在一个线性延拓算子 $E$：
-$$E: W^{k,p}(\Omega) \to W^{k,p}(\mathbb{R}^n)$$
-使得对于所有的 $f \in W^{k,p}(\Omega)$，$(Ef)|_\Omega = f \quad \text{a.e. in } \Omega$，存在一个仅依赖于 $k, p, n$ 和区域 $\Omega$ 的常数 $C$，使得：
+设 $\Omega \subset \mathbb{R}^n$ 是一个有界 Lipschitz 区域。对于每一个非负整数 $k$ 和每一个 $1 \leq p \leq \infty$，存在一个有界的线性延拓算子 $E: W^{k,p}(\Omega) \to W^{k,p}(\mathbb{R}^n)$，使得对于所有的 $f \in W^{k,p}(\Omega)$，在 $\Omega$ 上几乎处处有 $(Ef)|_\Omega = f$，且存在一个仅依赖于 $k, p, n$ 和区域 $\Omega$ 几何性质的常数 $C$，使得：
 $$\|Ef\|_{W^{k,p}(\mathbb{R}^n)} \leq C \|f\|_{W^{k,p}(\Omega)}$$
 \end{lemma}
 
-\begin{lemma}[Brezis-Kato定理]\label{lem:Brezis}\cite{brezis1978remarks,willem2012minimax}
-设 $\Omega$ 为 $\mathbb{R}^N$ ($N \ge 3$) 中的一个开集。假设势函数 $a(x)$ 满足 $a \in L_{\text{loc}}^{N/2}(\Omega)$。若 $u \in H_{\text{loc}}^1(\Omega)$ 是如下微分不等式的弱下解：
+最后，在针对半线性及非线性问题的理论分析中，特别是当非线性势函数仅具备较低的局部可积性时，Brezis-Kato 定理在跨越临界指数、提升解的整体可积性方面起到了决定性的作用：
+\begin{lemma}[Brezis-Kato 定理]\label{lem:Brezis}\cite{brezis1978remarks,willem2012minimax}
+设 $\Omega$ 为 $\mathbb{R}^n$ ($n \ge 3$) 中的一个开集。假设势函数 $a(x)$ 满足 $a \in L_{\text{loc}}^{n/2}(\Omega)$。若 $u \in H_{\text{loc}}^1(\Omega)$ 是如下微分不等式的弱下解（Weak Subsolution）：
 $$-\Delta u(x) \le a(x) u(x) \quad \text{in } \Omega$$
+即对于任意的非负测试函数 $\varphi \in C_0^\infty(\Omega)$，均有积分不等式：
+$$\int_{\Omega} \nabla u \cdot \nabla \varphi \, dx \le \int_{\Omega} a(x)u\varphi \, dx$$
+则对于任意有限指数 $q \in [1, +\infty)$，均有 $u \in L_{\text{loc}}^q(\Omega)$。
 \end{lemma}
-即对于任意非负测试函数 $\displaystyle \varphi \in C_0^\infty(\Omega)$，有 $\int_{\Omega} \nabla u \cdot \nabla \varphi \, dx \le \int_{\Omega} a(x)u\varphi \, dx$），
-则对于任意有限指数 $q \in [1, +\infty)$，均有：
-$$u \in L_{\text{loc}}^q(\Omega)$$
 
 \section{符号与定义}
 
@@ -112,8 +122,11 @@ v_{\phi}(x) &= v_{L}(x) = A_{L} v_{L-1} + b_{L},
 
 函数 $\sigma_{\ell}$ 为按分量的激活函数。在本文中主要用到的激活函数包括：
 \begin{itemize}
-  \item 线性整流单元（Rectified Linear Unit, ReLU），定义为 $\sigma(x) = \mathrm{ReLU}(x) = \max\{0, x\}$；
-  \item $k$次幂次整流单元（Rectified Power Unit, RePU）定义为 $\sigma(x) = \mathrm{ReLU}^{k}(x) = \max\{0, x\}^k$，其中 $k \in \mathbb{N}^{+}$。
+  \item 线性整流单元（Rectified Linear Unit, ReLU），定义为：
+  $$\sigma(x) = \mathrm{ReLU}(x) = \max\{0, x\},$$
+  \item $k$次幂次整流单元（Rectified Power Unit, RePU）定义为 
+  $$\sigma(x) = \mathrm{ReLU}^{k}(x) = \max\{0, x\}^k,$$
+  其中 $k \in \mathbb{N}^{+}$。
   \item Tanh函数：定义为 $\sigma(x) = \tanh(x) = \frac{e^{x} - e^{-x}}{e^{x} + e^{-x}}$。
 \end{itemize}
 \end{definition}
@@ -178,22 +191,29 @@ v_{\phi}(x) = A_{out} v_{L}(x) + b_{out},
 其中 $A_{out} \in \mathbb{R}^{1 \times m}, b_{out} \in \mathbb{R}$。
 \end{definition}
 
-方程\eqref{eq:resnet:block}中的项 $v_{\ell-1}$ 被称为跳跃连接。这种结构允许梯度在反向传播过程中无损地流过恒等路径，从而显著增强了深层网络的训练稳定性与表达能力。
+式 \eqref{eq:resnet:block} 中的 $v_{\ell-1}(x)$ 项通常被称为跳跃连接（Skip Connection）或恒等映射。这一架构设计的核心优势在于，它为反向传播过程中的梯度提供了一条无损流通的“短路”路径，有效缓解了深层网络中常见的梯度消失问题，从而显著提升了模型的训练稳定性与拟合复杂函数的表达能力。
+
+在后续的数值实验中，我们主要采用基于 $\mathrm{ReLU}^{2}$ 激活函数的残差神经网络来最小化损失函数。现有文献与实证结果均表明，在求解复杂的偏微分方程时，该架构往往表现出优于标准前馈神经网络（FNN）的精度与收敛速度。然而，需要指出的是，本文前述的部分理论结果（例如定理 \ref{th4.3} 中的误差估计）是在 FNN 的假设框架下推导得出的。这就引出了一个自然的问题：针对 FNN 建立的理论边界是否能够无缝推广至实验中所使用的 ResNet 架构？
+
+只要注意到恒等映射可以被特定激活函数的线性组合精确表示，ResNet 中的任何一个残差块就可以被等价地重构为具有相同深度的 FNN 结构。具体而言，对于 $\mathrm{ReLU}$ 和 $\mathrm{ReLU}^{2}$ 激活函数，我们拥有以下代数恒等式：
+\begin{align}
+x &= \mathrm{ReLU}(x) - \mathrm{ReLU}(-x), \\
+x &= \frac{1}{2}\left[\mathrm{ReLU}^{2}(x+1) + \mathrm{ReLU}^{2}(-x-1) - \mathrm{ReLU}^{2}(x) - \mathrm{ReLU}^{2}(-x) - 1\right]. \label{eq:relu2_identity}
+\end{align}
+通过巧妙利用上述恒等式，式 \eqref{eq:resnet:block} 中的恒等路径 $v_{\ell-1}(x)$ 可以被精确地转化为隐藏层的激活输出与线性偏置的组合（如式 \eqref{eq:relu2_identity} 中的常数项 $-1/2$ 可被直接吸收到下一层的偏置向量 $b$ 中）。因此，通过适当扩大网络每一层的宽度（Width），ResNet 的前向传播过程可以完全等价于一个 FNN。基于这一等价性，前文针对 FNN 所建立的逼近与误差分析理论，只需经过简单的代数推导与常数放缩，即可无损地平移至 ResNet 之中。
 
 \subsection{范数与内积}
-\par 接下来，我们介绍一些常用范数的符号。
+接下来，我们介绍一些常用范数的符号。
 \begin{definition}[范数与内积]
-设 $\Omega \subset \mathbb{R}^d$ 为有界区域。对于定义在 $\Omega$ 上的函数 $u_\in L^2(\Omega)$，其 $L^2$-范数定义为：
+设 $\Omega \subset \mathbb{R}^d$ 为有界区域。对于定义在 $\Omega$ 上的函数 $u\in L^2(\Omega)$，其 $L^2$-范数定义为：
 \begin{equation*}
 \|u\|_{L^2(\Omega)} = \left( \int_{\Omega} |u(x)|^2 \text{dx} \right)^{1/2}.
 \end{equation*}
 为简便起见，若无特殊说明，下文常将 $L^2$-范数简记为 $\|\cdot\|_{L^2}$ 或 $\|\cdot\|$。
 
-对于任意正整数 $m \in \mathbb{N}^+$，Sobolev 空间 $H^m(\Omega)$ 中的 $H^m$-范数借由多重指标 $\alpha$ 定义为所有阶数不超过 $m$ 的弱导数之 $L^2$-范数的平方和的平方根：
-\begin{equation*}
-\|u\|_{H^m(\Omega)} = \left( \sum_{|\alpha| \le m} |D^\alpha u|_{L^2(\Omega)}^2 \right)^{1/2}.
-\end{equation*}
-特别地，常用的 $H^2$-范数具体展开为：
+对于任意正整数 $m \in \mathbb{N}^+$ 与 $1 \le p < \infty$，Sobolev 空间 $W^{m,p}(\Omega)$由所有阶数不超过 $m$ 的弱导数均属于 $L^p(\Omega)$ 的函数组成。借助多重指标 $\alpha$，其 $W^{m,p}$-范数定义为：
+$$\|u\|_{W^{m,p}(\Omega)} = \left( \sum_{|\alpha| \le m} \|D^\alpha u\|_{L^p(\Omega)}^p \right)^{1/p}.$$
+作为 $W^{m,p}$ 范数的特例，当 $p=2$ 时，$W^{m,2}(\Omega)$ 构成一个 Hilbert 空间，习惯上将其记为 $H^m(\Omega)$。
 \begin{equation*}
 \|u\|_{H^2(\Omega)}^2 = \|u\|_{L^2(\Omega)}^2 + \sum_{k=1}^d \|\partial_k u\|_{L^2(\Omega)}^2 + \sum_{k=1}^d \sum_{\ell=1}^d \|\partial_k \partial_\ell u\|_{L^2(\Omega)}^2.
 \end{equation*}

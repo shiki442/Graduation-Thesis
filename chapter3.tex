@@ -68,7 +68,7 @@ J(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial
 $$\|u\|_{H^2(\Omega)} \le C \left( \|g - V(u)\|_{L^2(\Omega)} + \|h\|_{H^{1/2}(\partial \Omega)} + \|u\|_{H^1(\Omega)} \right)$$
 \end{theorem}
 \begin{proof}
-本定理的证明参考了 \cite{2013Roubiek}（第二节）、\cite{Evans2010PartialDE}（第八章） 以及 \cite{brezis2011functional}（第八、九章）中关于椭圆方程经典正则性理论的结论。为保持行文流畅，详细的推导过程参见附录 \ref{pf:th:ch3reg}。
+本定理的证明参考了 \cite{2013Roubiek}（第二节）、\cite{evans2010partial}（第八章） 以及 \cite{brezis2011functional}（第八、九章）中关于椭圆方程经典正则性理论的结论。为保持行文流畅，详细的推导过程参见附录 \ref{pf:th:ch3reg}。
 \end{proof}
 
 
@@ -541,13 +541,13 @@ $$g_1(\mathbf{x}) = 4\pi^2 u_1(\mathbf{x}) + 2\sum_{i=2}^{5} \frac{u_1(\mathbf{x
     \label{fig:loss_curve}
 \end{figure}
 
-为了更直观地考察模型在高维空间域内的局部拟合效果，我们固定后三个空间维度，选取二维切面 $(x_1, x_2, 0.5, 0.5, 0.5)$，绘制了精确解、预测解及其绝对误差的热力图（详见图 \ref{fig:heatmap}）。此外，图 \ref{fig:diagonal} 进一步展示了沿对角线方向上预测解与精确解的分布对比。实验结果表明，本文所提方法能够准确捕捉解的波峰与波谷等复杂的非线性特征，并在全域内保持了较高的拟合精度。
+为了更直观地考察模型在高维空间域内的局部拟合效果，我们固定后三个空间维度，选取二维切面 $(x_1, x_2, 0.5, 0.5, 0.5)$，绘制了精确解、预测解及其绝对误差的热力图（详见图 \ref{fig:heatmapeq1}）。此外，图 \ref{fig:diagonal} 进一步展示了沿对角线方向上预测解与精确解的分布对比。实验结果表明，本文所提方法能够准确捕捉解的波峰与波谷等复杂的非线性特征，并在全域内保持了较高的拟合精度。
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{./figures2/eq1_twopeak_heatmap.png}
     \caption{高维切面上的精确解、预测解与误差分布}
-    \label{fig:heatmap}
+    \label{fig:heatmapeq1}
 \end{figure}
 
 \begin{figure}[htbp]
@@ -658,7 +658,7 @@ Tu& = h_3(x) & \text{on }  & \partial\Omega.\\
 
 \subsection{超参数对数值解精度的影响}
 为了探究模型超参数（如采样点规模、神经网络结构等）对算法收敛性及求解精度的具体影响，我们首先考虑如下带有齐次边界条件的 Dirichlet 边值问题：
-\begin{equation}\label{eq:example1}
+\begin{equation}
 \left\{\begin{aligned}
 -\Delta u + \frac{1}{1+u^2} & = g_4(x) & \text{在 } & \Omega \text{ 中},\\
 Tu& = 0 & \text{在 }  & \partial\Omega \text{ 上}.\\

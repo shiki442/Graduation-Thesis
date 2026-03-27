@@ -246,37 +246,12 @@
 \newcommand\reseachresult{\backmatter\chapter{攻博期间发表的科研成果目录}}
 
 %%% ---- 章节标题设置 ----- %%%%
-\ctexset{
-  % 章节 (chapter) 设置
-  chapter = {
-    nameformat  = {\zihao{-2}\bfseries\raggedright},
-    titleformat = {\zihao{-2}\bfseries\raggedright},
-    number      = {\arabic{chapter}},
-    name        = {,},
-    afterskip   = {30pt},
-    beforeskip  = {20pt}
-  },
-  % 节 (section) 设置
-  section = {
-    format = {\zihao{3}\raggedright}
-  },
-  % 小节 (subsection) 设置
-  subsection = {
-    format = {\zihao{4}\raggedright}
-  },
-  % 子小节 (subsubsection) 设置
-  subsubsection = {
-    format = {\zihao{-4}\kaishu\raggedright}
-  },
-  % 参考文献标题设置
-  bibname = {\large 参考文献}
-}
-% \CTEXsetup[nameformat={\zihao{-2}\bfseries\raggedright},titleformat={\zihao{-2}\bfseries\raggedright},%
-%                  number={\arabic{chapter}},name={,},afterskip={30pt},beforeskip={20pt}]{chapter}
-% \CTEXsetup[format+={\zihao{3}\raggedright}]{section}
-% \CTEXsetup[format+={\zihao{4}\raggedright}]{subsection}
-% \CTEXsetup[format={\zihao{-4}\kaishu\raggedright}]{subsubsection}
-% \CTEXoptions[bibname={\large 参考文献}]
+\CTEXsetup[nameformat={\zihao{-2}\bfseries\raggedright},titleformat={\zihao{-2}\bfseries\raggedright},%
+                 number={\arabic{chapter}},name={,},afterskip={30pt},beforeskip={20pt}]{chapter}
+\CTEXsetup[format+={\zihao{3}\raggedright}]{section}
+\CTEXsetup[format+={\zihao{4}\raggedright}]{subsection}
+\CTEXsetup[format={\zihao{-4}\kaishu\raggedright}]{subsubsection}
+\CTEXoptions[bibname={\large 参考文献}]
 \setcounter{tocdepth}{4}
 \setcounter{secnumdepth}{4}
 \RequirePackage[font=small,textfont=it]{caption}

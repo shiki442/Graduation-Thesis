@@ -21,11 +21,11 @@ $$-\frac{\hbar^2}{2m}\Delta \psi + V\psi = E\psi$$
 然而，当这些物理模型向多粒子系统或复杂高维空间拓展时（例如多电子系统的薛定谔方程\cite{berezin2012schrodinger,li1983schrodinger,fortunato1998eigenvalue}），传统数值解法遭遇了严峻挑战。诸如有限元法（FEM）和有限体积法（FVM）等经典离散方法，深受“维数灾难”（Curse of Dimensionality）的困扰，其计算成本随空间维数呈指数级增长，导致其在高维环境中几乎失效。
 近年来，深度神经网络（DNN）因其强大的高维函数逼近能力，逐渐成为克服维数灾难、求解高维偏微分方程\cite{chen2021friedrichs,Weinan2017The,gu2021selectnet,raissi2019physics,Justin2018DGM,wan2020zang,han2018solving,raissi2017physics,jagtap2021extended}及特征值问题\cite{PhysRevResearc,2019Deep}的新范式。围绕高维特征值问题的深度学习求解，现有研究主要沿着两条主线展开：
 
-第一类方法侧重于利用特定数学结构，或将特征值直接作为网络的可训练参数进行隐式优化。 例如，Han等人\cite{HAN2020109792,HAN2019108929}基于深度BSDE框架提出了类扩散蒙特卡洛（DMC）方法，将高维特征值问题巧妙地转化为偏微分方程半群算子的不动点问题；随后，Li等人\cite{li2022semigroup}引入约束条件发展了神经网络半群方法，在10维椭圆方程中实现了超越DMC的计算效率。针对特定物理场景，Cai等人\cite{cai2023deepmartnet}设计了处理系数不连续界面的神经网络以捕捉物理跳跃条件；Pfau及Hermann等人则分别针对多电子薛定谔方程，设计了严格满足费米-狄拉克（Fermi-Dirac）反对称统计规律的深度网络架构（如PauliNet）。尽管这些方法在特定场景下取得了显著成功，但它们普遍存在一定的局限性：过度依赖问题的特殊构造导致算法通用性不足；而将特征值本身作为参数参与损失函数优化，往往会改变原问题的物理变分结构，极易导致优化地形（Optimization Landscape）高度非凸，带来训练过程的不稳定，也为后续的严谨数学分析带来了巨大阻碍。
+第一类方法侧重于利用特定数学结构，或将特征值直接作为网络的可训练参数进行隐式优化。 例如，Han等人\cite{HAN2020109792,HAN2019108929}基于深度BSDE框架提出了类扩散蒙特卡洛（DMC）方法，将高维特征值问题巧妙地转化为偏微分方程半群算子的不动点问题；随后，Li等人\cite{li2022semigroup}引入约束条件发展了神经网络半群方法，在10维椭圆方程中实现了超越DMC的计算效率。针对特定物理场景，Cai等人\cite{cai2023deepmartnet}设计了处理系数不连续界面的神经网络以捕捉物理跳跃条件；Pfau及Hermann等人则分别针对多电子薛定谔方程，设计了严格满足费米-狄拉克（Fermi-Dirac）反对称统计规律的深度网络架构（如PauliNet）。尽管这些方法在特定场景下取得了显著成功，但它们普遍存在一定的局限性：过度依赖问题的特殊构造导致算法通用性不足；而将特征值本身作为参数参与损失函数优化，往往会改变原问题的物理变分结构，极易导致优化图景高度非凸，带来训练过程的不稳定，也为后续的严谨数学分析带来了巨大阻碍。
 
 第二类方法则回归特征值的数学本源，即基于瑞利商（Rayleigh Quotient）公式进行无监督学习。 瑞利商不仅赋予了特征值清晰的能量最小化物理直觉，也为神经网络提供了一个极其自然的损失函数格式。Ben-Shaul\cite{ben2023deep}率先提出了基于瑞利商的网络训练框架；Zhang等人\cite{zhang2024deep}在此基础上引入正交性约束，确保了生成的特征函数能够自动满足正交性要求；Yoo等人\cite{yoo2025physics}则进一步将该框架拓展至土木与机械工程领域的结构振动计算中。然而，现有基于瑞利商的方法大多局限于1维或2维等低维简单区域的数值实验，在面对高维复杂物理场景（如高维薛定谔方程）时，如何高效实现高维空间中的正交化约束并保证收敛，仍是一个亟待解决的难题。
 
-更为关键的是，当前绝大多数深度神经求解算法严重缺乏系统的理论支撑。与具备完备误差分析体系的传统线性泛函分析方法不同\cite{duan2022convergence,mishra2022estimates,lu2021deepxde}，神经网络求解本质上是一个高度非线性的机器学习过程。大量采样数据的使用引入了传统逼近理论中罕见的统计泛化误差；同时，神经网络的函数空间难以直接纳入经典的索伯列夫（Sobolev）或赫尔德（Hölder）等基于正则性的框架中。尽管Lu等人\cite{lu2021priorieigen}在谱Barron空间（Spectral Barron space）内，针对高维薛定谔问题的两层神经网络给出了先验泛化误差分析，初步论证了神经网络克服维数灾难的潜力，但该空间的严苛定义限制了其在更广泛物理情形下的适用性。此外，现有理论大多局限于系统主特征值（基态）的求解。根据极大极小原理（Min-Max Principle），系统的第 $K$ 个特征值在变分意义上对应于能量泛函的 $K$ 阶鞍点（Saddle point）。这种非全局极小的几何特性，引出了一个极具挑战性的核心问题：如何构造一个既稳定又实用的变分形式，以实现多重特征值（激发态）的同步高精度求解？
+更为关键的是，当前绝大多数深度神经求解算法严重缺乏系统的理论支撑。与具备完备误差分析体系的传统线性泛函分析方法不同\cite{duan2022convergence,mishra2023estimates,lu2021deepxde}，神经网络求解本质上是一个高度非线性的机器学习过程。大量采样数据的使用引入了传统逼近理论中罕见的统计泛化误差；同时，神经网络的函数空间难以直接纳入经典的索伯列夫（Sobolev）或赫尔德（Hölder）等基于正则性的框架中。尽管Lu等人\cite{lu2021priorieigen}在谱Barron空间（Spectral Barron space）内，针对高维薛定谔问题的两层神经网络给出了先验泛化误差分析，初步论证了神经网络克服维数灾难的潜力，但该空间的严苛定义限制了其在更广泛物理情形下的适用性。此外，现有理论大多局限于系统主特征值（基态）的求解。根据极大极小原理（Min-Max Principle），系统的第 $K$ 个特征值在变分意义上对应于能量泛函的 $K$ 阶鞍点（Saddle point）。这种非全局极小的几何特性，引出了一个极具挑战性的核心问题：如何构造一个既稳定又实用的变分形式，以实现多重特征值（激发态）的同步高精度求解？
 
 针对上述算法通用性与理论基础的双重缺失，本文旨在开发一种系统的方法，以求解高维空间中的多重椭圆型特征值（EME）问题。本研究不仅致力于获取高精度的多阶特征值与特征函数，更着重于提供一套独立于空间维数的严密先验误差分析理论。具体而言，本文首先基于椭圆型特征值问题的惩罚变分原理，提出了一种计算多重EME的通用无约束优化公式。随后，我们采用深度里兹方法（Deep Ritz Method, DRM）对该惩罚变分形式进行高效求解。在理论层面，我们建立了一个刻画计算特征值与真实特征值之间误差的严格上界，该界限由前馈神经网络（FNN）的深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 以及训练样本量 $n$ 共同显式表达。通过深入挖掘EME特征函数的内在正则性，并自适应地配置网络容量参数 $\mathcal{D}$ 和 $\mathcal{W}$，我们从理论上严谨地证明了该方法可达到 $O(n^{-1/16})$ 的收敛率。这一结论不仅填补了多重特征值神经网络求解的理论空白，更在数学上严格证明了本方法能够有效规避维数灾难。
 
@@ -620,7 +620,7 @@ W\leq \psi(\frac{1}{16s^{d+1}d}\mathcal{W})\leq\psi(\mathcal{W}),
 记 $\mathcal{N}^{2}=\mathcal{N}(\mathcal{D}+3,(\mathcal{D}+2)\mathcal{W},\{2\},\infty)$，我们有
 \begin{equation*}
 \begin{aligned}
-&\mathbb{E}_{\left\{X_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{1}(u)-\widehat{\mathcal{L}}_{1}(u)\right| \lesssim \frac{|\Omega|}{2}\mathfrak{N}\left(\mathcal{N}^{2}\right),\\
+&\mathbb{E}_{\left\{X_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{1}(u)-\widehat{\mathcal{L}}_{1}(u)\right| \lesssim \frac{|\Omega|}{2}\mathfrak{N}\left(\mathcal{N}^{1,2}\right),\\
 &\mathbb{E}_{\left\{X_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{2}(u)-\widehat{\mathcal{L}}_{2}(u)\right| \lesssim \frac{|\Omega|\|w\|_{\infty}\mathcal{B}}{2}\mathfrak{N}\left(\mathcal{N}^{2}\right),\\
 &\mathbb{E}_{\left\{Y_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{3}(u)-\widehat{\mathcal{L}}_{3}(u)\right| \lesssim \frac{\mu_{1}\|\partial \Omega\|\mathcal{B}}{2} \mathfrak{N}\left(\mathcal{N}^{2}\right),\\
 \end{aligned}
@@ -673,7 +673,7 @@ $$\mathcal{C}(\varepsilon, \mathcal{N}, n) \leq \left(\frac{en\mathcal{B}}{\vare
 \end{lemma}
 证明在附录中给出，参见 \ref{pf:lemma:staerr:pdim}
 
-基于上述引理，不妨记$\mathcal{N}^{1,2}$表示用于逼近梯度$\nabla u$的$ReLU$-$ReLU^2$神经网络函数类。结合式\eqref{eq:N12}中给出的神经网络导数复杂度界，我们可以直接推导出该假设空间的伪维度（Pseudo-dimension）上界为：
+基于上述引理，不妨记$\mathcal{N}^{1,2}$表示用于逼近梯度$\nabla u$的$ReLU$-$ReLU^2$神经网络函数类。结合引理\ref{lem:gradcomplexity}中给出的神经网络导数复杂度界，我们可以直接推导出该假设空间的伪维度（Pseudo-dimension）上界为：
 \begin{equation*}
 \operatorname{Pdim}(\mathcal{N}^{1,2})\lesssim C_2 \mathcal{D}^4\mathcal{W}^2(\mathcal{D}+\log\mathcal{W}).
 \end{equation*}
@@ -831,14 +831,6 @@ $$
 
 \section{数值实验与超参数对解的影响}\label{sec_num} 
 \subsection{实验设置} 为了验证我们理论的有效性与正确性，我们开展了数值实验，以在不同条件下逼近特征值及其对应的特征函数。
-
-我们采用带有 $\mathrm{ReLU}^{2}$ 激活函数的残差神经网络 (ResNet) 来训练损失函数，该网络在许多情况下已被证明优于 FNN。ResNet 与 FNN 的主要区别在于，ResNet 在网络的不同层之间增加了一些捷径连接 (shortcut connections)。
-
-部分读者可能会质疑 ResNet 是否能得出与 FNN 相同的误差分析结果，例如定理 \ref{th4.3} 中所展示的结果。然而值得注意的是，只要考虑到以下事实，ResNet 即可被表示为具有相同层数的 FNN： 
-\begin{equation*} 
-\frac{1}{2}\left[\mathrm{ReLU}^{2}(x+1)+\mathrm{ReLU}^{2}(-x-1)-\mathrm{ReLU}^{2}(x)-\mathrm{ReLU}^{2}(-x)\right] = x, 
-\end{equation*} 
-因此，误差分析可以通过几个简单的推导步骤得出。
 
 在所有实验中，我们均使用标准的 Adam 优化器来训练网络。所有的实现与实验均基于 CentOS 系统下的 Python 3.9.12 和 PyTorch 框架，硬件环境配备 2 颗主频 2.40 GHz 的 Intel(R) Xeon(R) E5-2640 v4 x86\_64 处理器，以及一张 16 GB 显存的 Nvidia Tesla V100 GPU。
 
@@ -1218,7 +1210,7 @@ $$ \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{k, 2}(u)-\widehat{\mathcal{L}
 
 接下来，我们单独处理第一个不等式。由于梯度算子 $\nabla$ 不具备 Lipschitz 连续性，无法直接应用引理 \ref{lemma:staerr:liprad}。为此，我们需要证明 $\nabla u$ 的平方项（即 $|\nabla u|^2$）可由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 混合网络实现。具体而言，受 Baur-Strassen 关于多项式及其偏导数计算复杂度的理论启发 \cite{baur1983complexity}，我们提出如下引理：
 
-\begin{lemma}
+\begin{lemma}\label{lem:gradcomplexity}
 设 $u$ 为由深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 的 $\mathrm{ReLU}^{2}$ 神经网络所实现的函数，则其梯度的平方项 $|\nabla u|^2$ 可由一个深度不超过 $2\mathcal{D}$、宽度不超过 $(2\mathcal{D}+4)\mathcal{W} + 2d$ 的 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 混合网络精确表示。
 \end{lemma}
 

@@ -25,10 +25,10 @@ Ameya~D Jagtap and George~E Karniadakis.
 \newblock Extended physics-informed neural networks (xpinns): A generalized space-time domain decomposition based deep learning framework for nonlinear partial differential equations.
 \newblock In {\em AAAI Spring Symposium: MLPS}, pages 2002--2041, 2021.
 
-\bibitem{E2018deep}
+\bibitem{Weinan2017The}
 Weinan E and Bing Yu.
-\newblock The deep ritz method: A deep learning-based numerical algorithm for solving variational problems.
-\newblock {\em Communications in Mathematics and Statistics}, 6:1--12, 2018.
+\newblock The deep ritz method: a deep learning-based numerical algorithm for solving variational problems.
+\newblock {\em Communications in Mathematics and Statistics}, 6(1):1--12, 2018.
 
 \bibitem{Justin2018DGM}
 Justin Sirignano and Konstantinos Spiliopoulos.
@@ -59,6 +59,11 @@ Jianfeng Lu, Zuowei Shen, Haizhao Yang, and Shijun Zhang.
 Yeonjong Shin, Jerome Darbon, and George~Em Karniadakis.
 \newblock On the convergence of physics informed neural networks for linear second-order elliptic and parabolic type pdes.
 \newblock {\em arXiv preprint arXiv:2004.01806}, 2020.
+
+\bibitem{evans2010partial}
+Lawrence~C. Evans.
+\newblock {\em Partial Differential Equations}, volume~19 of {\em Graduate Studies in Mathematics}.
+\newblock American Mathematical Society (AMS), {Second} edition, 2010.
 
 \bibitem{brezis1978remarks}
 Haiem Brezis and Tosio Kato.
@@ -99,11 +104,6 @@ Vieri~Benci—Donato Fortunato.
 Fan Chen, Jianguo Huang, Chunmei Wang, and Haizhao Yang.
 \newblock Friedrichs learning: Weak solutions of partial differential equations via deep learning.
 \newblock {\em SIAM Journal on Scientific Computing}, 45(3):A1271--A1299, 2023.
-
-\bibitem{Weinan2017The}
-Weinan E and Bing Yu.
-\newblock The deep ritz method: a deep learning-based numerical algorithm for solving variational problems.
-\newblock {\em Communications in Mathematics and Statistics}, 6(1):1--12, 2018.
 
 \bibitem{gu2021selectnet}
 Yiqi Gu, Haizhao Yang, and Chao Zhou.
@@ -175,10 +175,10 @@ Chenguang Duan, Yuling Jiao, Yanming Lai, Dingwei Li, Xiliang Lu, and Jerry~Zhij
 \newblock Convergence rate analysis for deep ritz method.
 \newblock {\em Communications in Computational Physics}, 31(4):1020--1048, 2022.
 
-\bibitem{mishra2022estimates}
+\bibitem{mishra2023estimates}
 Siddhartha Mishra and Roberto Molinaro.
-\newblock Estimates on the generalization error of physics-informed neural networks for approximating a class of inverse problems for pdes.
-\newblock {\em IMA Journal of Numerical Analysis}, 42(2):981--1022, 2022.
+\newblock Estimates on the generalization error of physics-informed neural networks for approximating pdes.
+\newblock {\em IMA Journal of Numerical Analysis}, 43(1):1--43, 2023.
 
 \bibitem{lu2021deepxde}
 Lu~Lu, Xuhui Meng, Zhiping Mao, and George~Em Karniadakis.
@@ -189,11 +189,6 @@ Lu~Lu, Xuhui Meng, Zhiping Mao, and George~Em Karniadakis.
 Jianfeng Lu and Yulong Lu.
 \newblock A priori generalization error analysis of two-layer neural networks for solving high dimensional schr{\"o}dinger eigenvalue problems.
 \newblock {\em Communications of the American Mathematical Society}, 2(01):1--21, 2022.
-
-\bibitem{evans2010partial}
-Lawrence~C. Evans.
-\newblock {\em Partial Differential Equations}, volume~19 of {\em Graduate Studies in Mathematics}.
-\newblock American Mathematical Society (AMS), {Second} edition, 2010.
 
 \bibitem{duan2021analysis}
 Chenguang Duan, Yuling Jiao, Yanming Lai, Xiliang Lu, Qimeng Quan, and Jerry~Zhijian Yang.
@@ -275,11 +270,6 @@ Wei-Xin Qiu, Zhi-Zeng Si, Da-Sheng Mou, Chao-Qing Dai, Ji-Tao Li, and Wei Liu.
 \newblock Data-driven vector degenerate and nondegenerate solitons of coupled nonlocal nonlinear schr{\"o}dinger equation via improved pinn algorithm.
 \newblock {\em Nonlinear Dynamics}, 113(5):4063--4076, 2025.
 
-\bibitem{mishra2023estimates}
-Siddhartha Mishra and Roberto Molinaro.
-\newblock Estimates on the generalization error of physics-informed neural networks for approximating pdes.
-\newblock {\em IMA Journal of Numerical Analysis}, 43(1):1--43, 2023.
-
 \bibitem{wang2022and}
 Sifan Wang, Xinling Yu, and Paris Perdikaris.
 \newblock When and why pinns fail to train: A neural tangent kernel perspective.
@@ -324,11 +314,6 @@ Yuling Jiao, Yanming Lai, and Yang Wang.
 T.~Roubiek.
 \newblock {\em Nonlinear Partial Differential Equations with Applications}.
 \newblock Birkhauser, Basel, 2013.
-
-\bibitem{Evans2010PartialDE}
-Lawrence~C Evans.
-\newblock {\em Partial differential equations}, volume~19, pages 355--360.
-\newblock American Mathematical Society, 2 edition, 2010.
 
 \bibitem{brezis2011functional}
 Haim Brezis and Haim Br{\'e}zis.
@@ -418,11 +403,6 @@ Guofei Pang, Lu~Lu, and George~Em Karniadakis.
 Ling Guo, Hao Wu, Xiaochen Yu, and Tao Zhou.
 \newblock Monte carlo fpinns: Deep learning method for forward and inverse problems involving high dimensional fractional partial differential equations.
 \newblock {\em Computer Methods in Applied Mechanics and Engineering}, 400:115523, 2022.
-
-\bibitem{Mishra2021Estimates}
-Siddhartha Mishra and Roberto Molinaro.
-\newblock {Estimates on the generalization error of physics-informed neural networks for approximating a class of inverse problems for PDEs}.
-\newblock {\em IMA Journal of Numerical Analysis}, 42(2):981--1022, 06 2021.
 
 \bibitem{Bao2020Numerical}
 Gang Bao, Xiaojing Ye, Yaohua Zang, and Haomin Zhou.
