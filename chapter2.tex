@@ -7,7 +7,7 @@
 \begin{equation}
 -\Delta u = \lambda u
 \end{equation}
-此处，特征值 $\lambda = (\omega/c)^2$ 直接关联系统的振动频率，而特征函数 $u$ 则刻画了振动的本征模态（Eigenmode）。
+此处，特征值 $\lambda = (\omega/c)^2$ 直接关联系统的振动频率，而特征函数 $u$ 则刻画了振动的本征模态。
 
 特征值谱不仅决定了系统的动力学行为，更内蕴了定义域 $\Omega$ 的几何拓扑信息。这一联系引出了著名的等谱问题（Isospectral Problem）：即马克·卡克（Mark Kac）提出的“能否通过听鼓声测出鼓面的形状？”。从数学角度看，这意味着特征值的分布与区域几何特征存在深刻对偶。外尔定律（Weyl's Law）精确地量化了这一关系：特征值的渐近增长率由区域的体积决定。对于二维区域 $\Omega$，特征值 $\lambda_n$ 表现出如下谱渐近行为：
 $$\lambda_n \sim \frac{4\pi n}{\text{Area}(\Omega)} \quad (n \to \infty)$$
@@ -15,19 +15,19 @@ $$\lambda_n \sim \frac{4\pi n}{\text{Area}(\Omega)} \quad (n \to \infty)$$
 
 在微观尺度上，椭圆型特征值问题同样构成了量子力学的基石。描述微观粒子运动的定态薛定谔方程：
 $$-\frac{\hbar^2}{2m}\Delta \psi + V\psi = E\psi$$
-本质上即为带有势能项 $V$ 的椭圆型特征值问题。式中，特征值 $E$ 对应系统容许的量子化能级，特征函数 $\psi$ 则描述粒子在空间出现的概率幅。有界区域上椭圆算子谱的离散性，正是量子力学中能量量子化现象的数学根源。此外，在微分几何领域，估计庞加莱常数（Poincaré constant）或斯捷克洛夫常数（Steklov constant）等关键几何量，同样高度依赖于高维特征值问题的求解\cite{johnson2004convergence,courtade2020bounds}。
+本质上即为带有势能项 $V$ 的椭圆型特征值问题。式中，特征值 $E$ 对应系统容许的量子化能级，特征函数 $\psi$ 则描述粒子在空间出现的概率幅。有界区域上椭圆算子谱的离散性，正是量子力学中能量量子化现象的数学根源。此外，在微分几何领域，估计庞加莱常数或斯捷克洛夫常数等关键几何量，同样高度依赖于高维特征值问题的求解\cite{johnson2004convergence,courtade2020bounds}。
 
 
 然而，当这些物理模型向多粒子系统或复杂高维空间拓展时（例如多电子系统的薛定谔方程\cite{berezin2012schrodinger,li1983schrodinger,fortunato1998eigenvalue}），传统数值解法遭遇了严峻挑战。诸如有限元法（FEM）和有限体积法（FVM）等经典离散方法，深受“维数灾难”（Curse of Dimensionality）的困扰，其计算成本随空间维数呈指数级增长，导致其在高维环境中几乎失效。
 近年来，深度神经网络（DNN）因其强大的高维函数逼近能力，逐渐成为克服维数灾难、求解高维偏微分方程\cite{chen2021friedrichs,Weinan2017The,gu2021selectnet,raissi2019physics,Justin2018DGM,wan2020zang,han2018solving,raissi2017physics,jagtap2021extended}及特征值问题\cite{PhysRevResearc,2019Deep}的新范式。围绕高维特征值问题的深度学习求解，现有研究主要沿着两条主线展开：
 
-第一类方法侧重于利用特定数学结构，或将特征值直接作为网络的可训练参数进行隐式优化。 例如，Han等人\cite{HAN2020109792,HAN2019108929}基于深度BSDE框架提出了类扩散蒙特卡洛（DMC）方法，将高维特征值问题巧妙地转化为偏微分方程半群算子的不动点问题；随后，Li等人\cite{li2022semigroup}引入约束条件发展了神经网络半群方法，在10维椭圆方程中实现了超越DMC的计算效率。针对特定物理场景，Cai等人\cite{cai2023deepmartnet}设计了处理系数不连续界面的神经网络以捕捉物理跳跃条件；Pfau及Hermann等人则分别针对多电子薛定谔方程，设计了严格满足费米-狄拉克（Fermi-Dirac）反对称统计规律的深度网络架构（如PauliNet）。尽管这些方法在特定场景下取得了显著成功，但它们普遍存在一定的局限性：过度依赖问题的特殊构造导致算法通用性不足；而将特征值本身作为参数参与损失函数优化，往往会改变原问题的物理变分结构，极易导致优化图景高度非凸，带来训练过程的不稳定，也为后续的严谨数学分析带来了巨大阻碍。
+第一类方法侧重于利用特定数学结构，或将特征值直接作为网络的可训练参数进行隐式优化。 例如，Han等人\cite{HAN2020109792,HAN2019108929}基于深度BSDE框架提出了类扩散蒙特卡洛方法，将高维特征值问题巧妙地转化为偏微分方程半群算子的不动点问题；随后，Li等人\cite{li2022semigroup}引入约束条件发展了神经网络半群方法，在10维椭圆方程中实现了超越DMC的计算效率。针对特定物理场景，Cai等人\cite{cai2023deepmartnet}设计了处理系数不连续界面的神经网络以捕捉物理跳跃条件；Pfau及Hermann等人则分别针对多电子薛定谔方程，设计了严格满足费米-狄拉克反对称统计规律的深度网络架构（如PauliNet）。尽管这些方法在特定场景下取得了显著成功，但它们普遍存在一定的局限性：过度依赖问题的特殊构造导致算法通用性不足；而将特征值本身作为参数参与损失函数优化，往往会改变原问题的物理变分结构，极易导致优化图景高度非凸，带来训练过程的不稳定，也为后续的严谨数学分析带来了巨大阻碍。
 
 第二类方法则回归特征值的数学本源，即基于瑞利商（Rayleigh Quotient）公式进行无监督学习。 瑞利商不仅赋予了特征值清晰的能量最小化物理直觉，也为神经网络提供了一个极其自然的损失函数格式。Ben-Shaul\cite{ben2023deep}率先提出了基于瑞利商的网络训练框架；Zhang等人\cite{zhang2024deep}在此基础上引入正交性约束，确保了生成的特征函数能够自动满足正交性要求；Yoo等人\cite{yoo2025physics}则进一步将该框架拓展至土木与机械工程领域的结构振动计算中。然而，现有基于瑞利商的方法大多局限于1维或2维等低维简单区域的数值实验，在面对高维复杂物理场景（如高维薛定谔方程）时，如何高效实现高维空间中的正交化约束并保证收敛，仍是一个亟待解决的难题。
 
-更为关键的是，当前绝大多数深度神经求解算法严重缺乏系统的理论支撑。与具备完备误差分析体系的传统线性泛函分析方法不同\cite{duan2022convergence,mishra2023estimates,lu2021deepxde}，神经网络求解本质上是一个高度非线性的机器学习过程。大量采样数据的使用引入了传统逼近理论中罕见的统计泛化误差；同时，神经网络的函数空间难以直接纳入经典的索伯列夫（Sobolev）或赫尔德（Hölder）等基于正则性的框架中。尽管Lu等人\cite{lu2021priorieigen}在谱Barron空间（Spectral Barron space）内，针对高维薛定谔问题的两层神经网络给出了先验泛化误差分析，初步论证了神经网络克服维数灾难的潜力，但该空间的严苛定义限制了其在更广泛物理情形下的适用性。此外，现有理论大多局限于系统主特征值（基态）的求解。根据极大极小原理（Min-Max Principle），系统的第 $K$ 个特征值在变分意义上对应于能量泛函的 $K$ 阶鞍点（Saddle point）。这种非全局极小的几何特性，引出了一个极具挑战性的核心问题：如何构造一个既稳定又实用的变分形式，以实现多重特征值（激发态）的同步高精度求解？
+更为关键的是，当前绝大多数深度神经求解算法严重缺乏系统的理论支撑。与具备完备误差分析体系的传统线性泛函分析方法不同\cite{duan2022convergence,mishra2023estimates,lu2021deepxde}，神经网络求解本质上是一个高度非线性的机器学习过程。大量采样数据的使用引入了传统逼近理论中罕见的统计泛化误差；同时，神经网络的函数空间难以直接纳入经典的索伯列夫赫尔德等基于正则性的框架中。尽管Lu等人\cite{lu2021priorieigen}在谱Barron空间（Spectral Barron space）内，针对高维薛定谔问题的两层神经网络给出了先验泛化误差分析，初步论证了神经网络克服维数灾难的潜力，但该空间的严苛定义限制了其在更广泛物理情形下的适用性。此外，现有理论大多局限于系统主特征值（基态）的求解。根据极大极小原理，系统的第 $K$ 个特征值在变分意义上对应于能量泛函的 $K$ 阶鞍点。这种非全局极小的几何特性，引出了一个极具挑战性的核心问题：如何构造一个既稳定又实用的变分形式，以实现多重特征值（激发态）的同步高精度求解？
 
-针对上述算法通用性与理论基础的双重缺失，本文旨在开发一种系统的方法，以求解高维空间中的多重椭圆型特征值（EME）问题。本研究不仅致力于获取高精度的多阶特征值与特征函数，更着重于提供一套独立于空间维数的严密先验误差分析理论。具体而言，本文首先基于椭圆型特征值问题的惩罚变分原理，提出了一种计算多重EME的通用无约束优化公式。随后，我们采用深度里兹方法（Deep Ritz Method, DRM）对该惩罚变分形式进行高效求解。在理论层面，我们建立了一个刻画计算特征值与真实特征值之间误差的严格上界，该界限由前馈神经网络（FNN）的深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 以及训练样本量 $n$ 共同显式表达。通过深入挖掘EME特征函数的内在正则性，并自适应地配置网络容量参数 $\mathcal{D}$ 和 $\mathcal{W}$，我们从理论上严谨地证明了该方法可达到 $O(n^{-1/16})$ 的收敛率。这一结论不仅填补了多重特征值神经网络求解的理论空白，更在数学上严格证明了本方法能够有效规避维数灾难。
+针对上述算法通用性与理论基础的双重缺失，本文旨在开发一种系统的方法，以求解高维空间中的多重椭圆型特征值（Elliptic Multiple Eigenvalue）问题。本研究不仅致力于获取高精度的多阶特征值与特征函数，更着重于提供一套独立于空间维数的严密先验误差分析理论。具体而言，本文首先基于椭圆型特征值问题的惩罚变分原理，提出了一种计算多重EME的通用无约束优化公式。随后，我们采用深度里兹方法对该惩罚变分形式进行高效求解。在理论层面，我们建立了一个刻画计算特征值与真实特征值之间误差的严格上界，该界限由前馈神经网络的深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 以及训练样本量 $n$ 共同显式表达。通过深入挖掘EME特征函数的内在正则性，并自适应地配置网络容量参数 $\mathcal{D}$ 和 $\mathcal{W}$，我们从理论上严谨地证明了该方法可达到 $O(n^{-1/16})$ 的收敛率。这一结论不仅填补了多重特征值神经网络求解的理论空白，更在数学上严格证明了本方法能够有效规避维数灾难。
 
 此外，本文针对所提出的惩罚变分格式与深度里兹求解框架，精心设计了一系列具有代表性的高维数值实验。本文在最高达20维的复杂算例上开展了实验验证。在如此高的空间维度下，传统数值方法早已彻底失效，而本文提出的深度神经求解器所计算出的前几阶特征值的相对误差仍能保持在 $10^{-2}$ 量级，并且能够准确捕捉相应的本征模态特征。这一数值表现不仅彰显了本文方法在处理超高维特征值问题上的强大能力，更为前文所推导的先验误差分析与收敛率理论提供了强有力的实证支撑。
 
@@ -80,34 +80,23 @@ T u(x) &=0 & & \text { on } \partial \Omega,
 \begin{definition}[基础符号与算子]\label{def:notation}
 \quad
 \begin{enumerate}
-    \item {\heiti 内积与范数}：记 $\langle\cdot,\cdot\rangle$ 为 $L^{2}(\Omega)$ 空间的标准内积，$\|\cdot\|$ 为对应的 $L^{2}$ 范数。
-    
-    \item {\heiti 谱投影算子}：基于算子 $\mathcal{L}$ 的特征值分解，定义谱投影算子 $\mathcal{P}_{<k}$ 为：
+    \item \textbf{谱投影算子}：基于算子 $\mathcal{L}$ 的特征值分解，定义谱投影算子 $\mathcal{P}_{<k}$ 为：
     \begin{equation*}
         \mathcal{P}_{<k}u = \sum_{\lambda_{l}<\lambda_{k}} \langle u,\xi_{l} \rangle \xi_{l}.
     \end{equation*}
     即 $\mathcal{P}_{<k}$ 表示将函数 $u$ 投影至由特征值（严格）小于 $\lambda_k$ 的特征向量所生成的子空间。类似地，我们可以定义 $\mathcal{P}_{>k}$, $\mathcal{P}_{=k}$, $\mathcal{P}_{\leq k}$, $\mathcal{P}_{\geq k}$ 以及 $\mathcal{P}_{\neq k}$。
     
-    \item {\heiti 特征值分离度}：定义特征值 $\lambda_i$ 的分离度为：
+    \item \textbf{特征值分离度}：定义特征值 $\lambda_i$ 的分离度为：
     \begin{equation*}
         \delta \lambda_{i} = \min_{j: \lambda_{j}\neq \lambda_{i}} |\lambda_{i}-\lambda_{j}|.
     \end{equation*}
-    
-    \item {\heiti 渐近符号}：在不等式估计中，使用符号 $A \lesssim B$ 表示存在一个与关键参数无关的有界常数 $C$，使得 $A \leq CB$。若常数依赖于特定参数，将特别注明。
-    
-    \item {\heiti 辅助函数}：定义 $\varphi(x) = x\log(x)$ ($x>1$)，并记 $\psi(x)$ 为 $\varphi(x)$ 的反函数。
 \end{enumerate}
 \end{definition}
 
-\begin{remark}
-对于上述定义的函数 $\psi(x)$，易证对于任意 $0<k<1$，成立 $\psi(kx) \geq k\psi(x)$。此外，该函数满足如下渐近性质：
-$$ \forall \alpha>0, \quad \varphi(x) \lesssim x^{1+\alpha}, \quad \psi(x) \gtrsim x^{1-\alpha}. $$
-\end{remark}
-
 关于谱投影算子，基于紧自伴算子的谱理论可知，由于 $\mathcal{P}_{<k}$ 是由特征基底构成的投影，它在 $L^{2}$ 内积和能量内积（即与椭圆算子关联的双线性形式）下均是正交投影。
-需要特别注意的是，由于特征值可能存在重数（Multiplicity），即特征空间的维数可能大于 1，上述定义中不同的索引 $k$ 可能对应相同的特征值。这也是我们在公式 \eqref{eq:eigenvalue_sequence} 中使用非严格不等号 ($\leq$) 的原因。
+需要特别注意的是，由于特征值可能存在重数，即特征空间的维数可能大于 1，上述定义中不同的索引 $k$ 可能对应相同的特征值。这也是我们在公式 \eqref{eq:eigenvalue_sequence} 中使用非严格不等号 ($\leq$) 的原因。
 
-特征值问题的正则性（Regularity）是本文分析的另一个核心要素。足够高的正则性对于避免高维问题中的“维数灾难”（Curse of Dimensionality）至关重要（详见第 \ref{sec_main} 节）。为此，我们提出如下假设：
+特征值问题的正则性是本文分析的另一个核心要素。足够高的正则性对于避免高维问题中的“维数灾难”至关重要（详见第 \ref{sec_main} 节）。为此，我们提出如下假设：
 
 \begin{assumption}[正则性假设]\label{ass:regularity}
 假设区域 $\Omega$ 和势函数 $V$ 满足：
@@ -123,7 +112,7 @@ $$ \forall \alpha>0, \quad \varphi(x) \lesssim x^{1+\alpha}, \quad \psi(x) \gtrs
 
 \section{模型构建}
 \subsection{特征值与瑞利商}\label{sec_model}
-针对前文公式 \eqref{eq:eigendiriproblem} 定义的椭圆型特征值问题，其变分形式自然对应于瑞利商（Rayleigh Quotient）的极值问题。为此，我们首先定义如下的双线性能量泛函：
+针对前文公式 \eqref{eq:eigendiriproblem} 定义的椭圆型特征值问题，其变分形式自然对应于瑞利商的极值问题。为此，我们首先定义如下的双线性能量泛函：
 
 \begin{equation*}
 a(u,v)\triangleq\langle \nabla u,\nabla v\rangle+\int_{\Omega}w uv \text{d}x, u\in H_{0}^{1}(\Omega).
@@ -149,7 +138,7 @@ R(u) = \frac{a(u,u)}{\langle u, u \rangle}
 \begin{itemize}
 \item 第一个困难在于如何确保神经网络近似解满足 Dirichlet 零边界条件。从函数空间的角度审视，标准神经网络生成的函数空间 $\mathcal{N}$ 通常仅满足 $\mathcal{N} \subset H^{1}(\Omega)$，而非 $\mathcal{N} \subset H^{1}_{0}(\Omega)$。
 虽然部分现有工作（如 \cite{lu2021priorieigen}）尝试通过构造距离函数或特殊网络结构来“硬约束”边界条件，但这类方法往往局限于规则区域，难以推广至复杂几何形状，且增加了理论分析的难度。
-针对一般区域的 PDE 问题，边界惩罚法（Boundary Penalty Method）提供了一种更为灵活的“软约束”策略 \cite{duan2021analysis, Mller2021ErrorEF}。其核心思想是引入如下修正的双线性形式：
+针对一般区域的 PDE 问题，边界惩罚法提供了一种更为灵活的“软约束”策略 \cite{duan2021analysis, Mller2021ErrorEF}。其核心思想是引入如下修正的双线性形式：
 \begin{equation}\label{eq:penalty_bilinear}
 a^{\mu_1}(u,v) = a(u,v) + \mu_1\int_{\partial \Omega}uv \text{d}s,
   \end{equation}
@@ -163,9 +152,9 @@ a^{\mu_1}(u,v) = a(u,v) + \mu_1\int_{\partial \Omega}uv \text{d}s,
 本文将严格证明：当 $\mu_1 \to +\infty$ 时，上述 Robin 问题的特征对将收敛于原 Dirichlet 问题的特征对。因此，本文提出的框架天然适用于一般的 Robin 特征值问题。为叙述简便，后文在不引起混淆的情况下将不再刻意区分两者。
 
 \item 第二个困难源于瑞利商泛函本身的几何性质。瑞利商具有尺度不变性（零次齐次性），即对于任意非零常数 $c$，有 $R(c u) = R(u)$。这意味着优化目标在特征函数的径向方向上是常数，导致解空间呈现出流形结构而非单一极小值点，极大地削弱了梯度的导向性。
-更为严重的是，这种非凸性导致优化过程在原点附近极不稳定。当近似解的模长趋于零（$\|v\| \to 0$）时，瑞利商的梯度计算将出现奇异性，导致优化问题变得病态（Ill-posed）。为克服这一平凡解风险，必须在损失函数中引入适当的正则化项或稳定项（Stabilizer）\cite{Weinan2017The}，以约束解的模长并维持数值稳定性。
+更为严重的是，这种非凸性导致优化过程在原点附近极不稳定。当近似解的模长趋于零（$\|v\| \to 0$）时，瑞利商的梯度计算将出现奇异性，导致优化问题变得病态。为克服这一平凡解风险，必须在损失函数中引入适当的正则化项或稳定项\cite{Weinan2017The}，以约束解的模长并维持数值稳定性。
 
-\item 求解高阶特征值（$k > 1$）面临着额外的正交性难题。根据变分原理（Min-Max Principle），能量泛函的无约束最小化总是倾向于收敛至基态（最小特征值 $\lambda_1$）。为了捕获第 $k$ 个激发态，必须强制当前的近似解与前 $k-1$ 个已求得的特征函数保持正交。
+\item 求解高阶特征值（$k > 1$）面临着额外的正交性难题。根据变分原理，能量泛函的无约束最小化总是倾向于收敛至基态（最小特征值 $\lambda_1$）。为了捕获第 $k$ 个激发态，必须强制当前的近似解与前 $k-1$ 个已求得的特征函数保持正交。
 在深度学习框架下，这种正交性通常通过在损失函数中添加罚项来实现。然而，这不仅引入了额外的超参数，还使得优化图景变得更加崎岖，增加了陷入局部极小值或发生模式塌缩的风险。
 \end{itemize}
 
@@ -390,7 +379,7 @@ $$\delta^{2} \mathcal{L}_{k}(\xi_k;\delta u)=\frac{1}{2}(\lambda_{k}-\lambda_{l_
 \end{proof}
 
 \subsection{数值算法实现}
-在众多基于神经网络求解偏微分方程（PDE）的数值策略中，鄂维南等人提出的深度 Ritz方法（Deep Ritz Method, DRM）\cite{Weinan2017The} 建立了一套基于变分原理的求解框架。该方法在执行上可概括为以下四个关键步骤：
+在众多基于神经网络求解偏微分方程（PDE）的数值策略中，鄂维南等人提出的 Deep Ritz 方法\cite{Weinan2017The} 建立了一套基于变分原理的求解框架。该方法在执行上可概括为以下四个关键步骤：
 \begin{enumerate}
     \item 将原PDE特征值问题转化为等价的变分问题，即能量泛函最小化问题；
     \item 利用参数化的深度神经网络构造合适的试探函数空间以逼近真实解；
@@ -398,7 +387,7 @@ $$\delta^{2} \mathcal{L}_{k}(\xi_k;\delta u)=\frac{1}{2}(\lambda_{k}-\lambda_{l_
     \item 采用随机梯度下降类算法求解离散后的非凸优化问题。
 \end{enumerate}
 
-下面将 Deep Ritz Method (DRM) 应用于求解上述变分极小化问题\eqref{eq:conloss}。令假设空间为 $\mathcal{N}^{1,2}=\mathcal{N}(\mathcal{D},\mathcal{W},\{2\},m)$。针对第 $k$ 个特征函数，定义其连续损失函数为：
+下面将 Deep Ritz 法应用于求解上述变分极小化问题\eqref{eq:conloss}。令假设空间为 $\mathcal{N}^{1,2}=\mathcal{N}(\mathcal{D},\mathcal{W},\{2\},m)$。针对第 $k$ 个特征函数，定义其连续损失函数为：
 \begin{equation}\label{eq:conlossphi}
 \mathcal{L}_{\phi k}(v)=\frac{1}{2} a^{\mu_{1}}(v, v)+\frac{\mu_{2}}{4}\left[Q(v)^{2}+2 \sum_{i<k}\left\langle v, \frac{\xi_{\phi i}}{\left|\xi_{\phi i}\right|}\right\rangle^{2}\right],
 \end{equation}
@@ -541,7 +530,9 @@ $$J_{orth} = \frac{\mu_{2}}{2}\sum_{l=1}^{j-1}\left[\frac{|\Omega|}{N}\sum_{i=1}
 
 我们的分析主要依赖于椭圆方程的正则性理论、Stein 延拓定理 \cite{fefferman_2005} 以及 Hon 等人 \cite{hon2021simultaneous,yarotsky2017error} 提出的神经网络逼近理论。\cite{hon2021simultaneous} 中的逼近定理如下所述：
 \begin{lemma}[连续函数的神经网络逼近]\label{th:apperr}
-假设 $\tilde{\xi}_{k} \in C^{s}\left([0,1]^{d}\right)$，其中 $s\in \mathbb{N}^{+}$，且对于任意满足 $|\alpha| \leq s$ 的 $\alpha \in \mathbb{N}^{d}$，有 $\left\|\partial^{\alpha} \tilde{\xi}_k\right\|_{\mathcal{D}^{\infty}\left([0,1]^{d}\right)}<1$。对于任意满足 $\left(D-2-\log _{2} W\right) W \geq s$ 的 $W,D \in  \mathbb{N}^{+}$，存在一个宽度为 $\mathcal{W}=16 s^{d+1} d(W+2) \log _{2}(8 W)$ 且深度为 $\mathcal{D} = 27 s^{2}(D+2) \log _{2}(4 D)$ 的 $u_{\phi}\in\mathcal{N}^{2}$，使得
+假设 $\tilde{\xi}_{k} \in C^{s}\left([0,1]^{d}\right)$，其中 $s\in \mathbb{N}^{+}$，且对于任意满足 $|\alpha| \leq s$ 的 $\alpha \in \mathbb{N}^{d}$，有 $\left\|\partial^{\alpha} \tilde{\xi}_k\right\|_{\mathcal{D}^{\infty}\left([0,1]^{d}\right)}<1$。对于任意满足 
+$$\left(D-2-\log _{2} W\right) W \geq s$$
+的 $W,D \in  \mathbb{N}^{+}$，存在一个宽度为 $\mathcal{W}=16 s^{d+1} d(W+2) \log _{2}(8 W)$ 且深度为 $\mathcal{D} = 27 s^{2}(D+2) \log _{2}(4 D)$ 的 $u_{\phi}\in\mathcal{N}^{2}$，使得
 \begin{equation*}
 |u_{\phi}-\tilde{\xi}_{k}|_{H^{1}\left([0,1]^{d}\right)} \leq 85(s+1)^{d} 8^{s} D^{-2(s-1) / d} W^{-2(s-1) / d}.
 \end{equation*}
@@ -591,7 +582,7 @@ W\leq \psi(\frac{1}{16s^{d+1}d}\mathcal{W})\leq\psi(\mathcal{W}),
 \mathcal{E}_{sta}=2 \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{k}(u)-\widehat{\mathcal{L}}_{k}(u)\right|+2 \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{\phi k}(u)-\widehat{\mathcal{L}}_{\phi k}(u)\right|.
 \end{equation*}
 
-如前节所述，由于所有特征函数均具备 Holder 连续性，其必然是本质有界的（essentially bounded）。基于此，本节假设所有相关函数在 $L^{\infty}(\Omega)$ 空间内一致有界，且上界为 $\mathcal{B}$。鉴于 $\mathcal{L}_{k}$ 与 $\mathcal{L}_{\phi k}$ 具有相同的推导逻辑，下文将着重针对 $\mathcal{L}_{k}$ 的误差进行界定
+如前节所述，由于所有特征函数均具备 Holder 连续性，其必然是本质有界的。基于此，本节假设所有相关函数在 $L^{\infty}(\Omega)$ 空间内一致有界，且上界为 $\mathcal{B}$。鉴于 $\mathcal{L}_{k}$ 与 $\mathcal{L}_{\phi k}$ 具有相同的推导逻辑，下文将着重针对 $\mathcal{L}_{k}$ 的误差进行界定
 
 首先，利用三角不等式，我们将统计误差分解为五个子项以便分别进行处理：
 \begin{equation}\label{lemma:staerr:dec}
@@ -609,9 +600,9 @@ W\leq \psi(\frac{1}{16s^{d+1}d}\mathcal{W})\leq\psi(\mathcal{W}),
 \end{aligned}    
 \end{equation}
 
-统一记 $\mu$ 为 $\Omega$ 或 $\partial \Omega$ 上的均匀分布。给定 $n$ 个来自 $\mu$ 的独立同分布样本 $\mathbf{Z}_{n}=\{Z_{i}\}_{i=1}^{n}$（其中 $Z_i$ 代表 $X_i$ 或 $Y_i$，且 $n$ 对应 $N$ 或 $M$），我们将引入拉德马赫复杂度（Rademacher Complexity）来量化神经网络假设空间 $\mathcal{N}$ 在给定经验样本 $\mathbf{Z}_{n}$ 上的容量（Capacity）。
+统一记 $\mu$ 为 $\Omega$ 或 $\partial \Omega$ 上的均匀分布。给定 $n$ 个来自 $\mu$ 的独立同分布样本 $\mathbf{Z}_{n}=\{Z_{i}\}_{i=1}^{n}$（其中 $Z_i$ 代表 $X_i$ 或 $Y_i$，且 $n$ 对应 $N$ 或 $M$），我们将用Rademacher 复杂度来量化神经网络假设空间 $\mathcal{N}$ 在给定经验样本 $\mathbf{Z}_{n}$ 上的容量。
 
-界定统计误差的整体逻辑框架如下：1.定义容量指标：在定义 \ref{def:staerr:radcom} 至 \ref{def:staerr:pdim} 中，依次给出拉德马赫复杂度 $\mathfrak{R}$、覆盖数（Covering Number）$\mathcal{C}_{\infty}$ 以及伪维数（Pseudo-dimension, Pdim）的严谨数学定义。2.误差项分解控制：利用拉德马赫复杂度，通过引理 \ref{lemma:staerr:Rad234} 对上述各分解项的泛化间隙进行约束。3.复杂度链式传递：引理 \ref{lemma:staerr:Rad_cover} 建立起通过覆盖数积分控制拉德马赫复杂度的桥梁；随后，引理 \ref{lemma:staerr:cover_Pdim} 进一步证明覆盖数可由伪维数所控制。4.网络结构关联：引理 \ref{lemma:staerr:pdim} 显式给出了具有特定深度与宽度的神经网络的伪维数阶数。最终，定理 \ref{thm:staerr:finalthm} 将上述所有理论组件整合，推导出总体统计误差的显式上界。
+界定统计误差的整体逻辑框架如下：1.定义容量指标：在定义 \ref{def:staerr:radcom} 至 \ref{def:staerr:pdim} 中，依次了给出Rademacher复杂度 $\mathfrak{R}$、覆盖数$\mathcal{C}_{\infty}$ 以及伪维数（Pdim）的严谨数学定义。2.误差项分解控制：利用Rademacher复杂度，通过引理 \ref{lemma:staerr:Rad234} 对上述各分解项的泛化间隙进行约束。3.复杂度链式传递：引理 \ref{lemma:staerr:Rad_cover} 建立起通过覆盖数积分控制Rademacher复杂度的桥梁；随后，引理 \ref{lemma:staerr:cover_Pdim} 进一步证明覆盖数可由伪维数所控制。4.网络结构关联：引理 \ref{lemma:staerr:pdim} 显式给出了具有特定深度与宽度的神经网络的伪维数阶数。最终，定理 \ref{thm:staerr:finalthm} 将上述所有理论组件整合，推导出总体统计误差的显式上界。
 
 为保证正文逻辑的流畅性与可读性，本节先陈述核心的引理与定理，所有相关结论的详细证明均收录于附录 \ref{app:proofingen} 中。
 
@@ -636,14 +627,14 @@ W\leq \psi(\frac{1}{16s^{d+1}d}\mathcal{W})\leq\psi(\mathcal{W}),
 \end{lemma}
 证明详见附录。
 
-为了利用定义 \ref{def:staerr:pdim} 中定义的覆盖数 (covering numbers) 来界定 Rademacher 复杂度，我们参考 Dudley 的经典结果。
+为了利用定义 \ref{def:staerr:pdim} 中定义的覆盖数来界定 Rademacher 复杂度，我们参考 Dudley 的经典结果。
 
 \begin{lemma}[Dudley 熵公式 \cite{dudley}]\label{lemma:staerr:Rad_cover}
 假设 $0\in \mathcal{N}$，且函数族 $\mathcal{N}$ 一致有界。则该函数族的经验 Rademacher 复杂度满足如下 Dudley 积分界：
 $$\mathfrak{R}(\mathcal{N}) \leq  \inf_{0<\delta<\mathcal{B}}\left(4 \delta+\frac{12}{\sqrt{n}} \int_{\delta}^{\mathcal{B}} \sqrt{\log (2\mathcal{C}\left( \varepsilon, \mathcal{N}, n\right))}\mathrm{d}\varepsilon\right).$$
 \end{lemma} 该证明在附录的证明 \ref{pf:lemma:staerr:Rad_cover} 中给出。
 
-随后的引理揭示了覆盖数与伪维数 (pseudo-dimension) 之间的相互关系。为了寻求分段多项式函数的 Pdim 的上界，我们参考了 \cite{bartlett2019nearly} 中提出的结论，这些结论适用于我们公式中定义的函数类。
+随后的引理揭示了覆盖数与伪维数 (Pdim) 之间的相互关系。为了寻求分段多项式函数的伪维数的上界，我们参考了 \cite{bartlett2019nearly} 中提出的结论，这些结论适用于我们公式中定义的函数类。
 
 \begin{lemma}\label{lemma:staerr:cover_Pdim}
 设 $\mathcal{N}$ 为定义在输入空间 $X$ 上，且值域在有界区间 $[0, \mathcal{B}]$ 内的实值函数族。对于任意 $\varepsilon>0$，其经验覆盖数满足：
@@ -673,7 +664,7 @@ $$\mathcal{C}(\varepsilon, \mathcal{N}, n) \leq \left(\frac{en\mathcal{B}}{\vare
 \end{lemma}
 证明在附录中给出，参见 \ref{pf:lemma:staerr:pdim}
 
-基于上述引理，不妨记$\mathcal{N}^{1,2}$表示用于逼近梯度$\nabla u$的$ReLU$-$ReLU^2$神经网络函数类。结合引理\ref{lem:gradcomplexity}中给出的神经网络导数复杂度界，我们可以直接推导出该假设空间的伪维度（Pseudo-dimension）上界为：
+基于上述引理，不妨记$\mathcal{N}^{1,2}$表示用于逼近梯度$\nabla u$的$ReLU$-$ReLU^2$神经网络函数类。结合引理\ref{lem:gradcomplexity}中给出的神经网络导数复杂度界，我们可以直接推导出该假设空间的伪维度上界为：
 \begin{equation*}
 \operatorname{Pdim}(\mathcal{N}^{1,2})\lesssim C_2 \mathcal{D}^4\mathcal{W}^2(\mathcal{D}+\log\mathcal{W}).
 \end{equation*}
@@ -683,11 +674,11 @@ $$\mathcal{C}(\varepsilon, \mathcal{N}, n) \leq \left(\frac{en\mathcal{B}}{\vare
 \begin{theorem}\label{thm:staerr:finalthm}
 设 $\mathcal{D}$ 和 $\mathcal{W}$ 分别表示神经网络假设空间 $\mathcal{N}$ 的深度和宽度参数，$\mathcal{B}$ 为特征函数系 $\{\xi_{l}\}_{l=1}^{k}$ 及权重函数 $w$ 的 $L^{\infty}$ 一致界。则统计误差满足如下上界：
 \begin{equation*}
-\mathcal{E}_{\text {sta }}\lesssim C(\Omega,\mathcal{B})(\mu_{1}+\mu_{2})\frac{\mathcal{D}^{2}\mathcal{W}\sqrt{\mathcal{D}+\log\mathcal{W}}}{\sqrt{\psi(n)}}.
+\mathcal{E}_{\text {sta }}\lesssim C(\Omega,\mathcal{B})(\mu_{1}+\mu_{2})\mathcal{D}^{2}\mathcal{W}\sqrt{\mathcal{D}+\log\mathcal{W}}\sqrt{\frac{\log n}{n}}.
 \end{equation*}
 \end{theorem}
 
-\begin{proof}{定理 \ref{thm:staerr:finalthm} 的证明}
+\begin{proof}[定理 \ref{thm:staerr:finalthm} 的证明]
 综合引理 \ref{lemma:staerr:Rad234} 至引理 \ref{lemma:staerr:pdim} 的结果，我们可以对经验损失与期望损失的绝对误差进行一致界定
 $$\begin{aligned}
 \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{k}(u)-\widehat{\mathcal{L}}_{k}(u)\right| \leq\;& \frac{|\Omega|}{2}\mathfrak{N}\left(\mathcal{N}^{1,2}\right) +
@@ -713,8 +704,9 @@ $$\begin{aligned}
 \end{proof}
 
 
-\subsection{总误差估计}\label{subsec_main}\begin{theorem}{}\label{mainthm}
+\subsection{总误差估计}\label{subsec_main}
 基于前文的理论准备，本节将给出本文的主要误差分析结果。
+\begin{theorem}{总误差估计}\label{mainthm}
 假设 \ref{ass:regularity} 成立，且惩罚参数满足 $\mu_{2}>2\lambda_{k}$。对于 式\eqref{eq:xi_hat} 中定义的近似特征函数 $\widehat{\xi}_{\phi k}$，其特征空间投影误差满足：
 \begin{equation*}
 \mathbb{E} \|\mathcal{P}_{\neq k}\widehat{\xi}_{\phi k}\|\lesssim \upsilon^{1/4},
@@ -725,13 +717,11 @@ $$\begin{aligned}
 \end{equation*}
 其中，综合误差项 $\upsilon$ 的上界为：
 \begin{equation*}
-\begin{array}{rcl}
-\upsilon&\lesssim& C(k,\mu_{2},m,d,\mathcal{N}^{2},n,\Omega,w)\left(
+\upsilon\lesssim C(k,\mu_{2},m,d,n,\Omega,V)\left(
 \psi(\mathcal{D})^{\frac{4-2m}{d}}\psi(\mathcal{W})^{\frac{4-2m}{d}}
 +
-\mu_{1}\frac{\mathcal{D}^2 \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}}}{\sqrt{\psi(n)}}
+\mu_{1}\mathcal{D}^2 \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}}\sqrt{\frac{\log n}{n}}
 \right).
-\end{array}
 \end{equation*}
 \end{theorem}
 为了证明上述主定理，我们引入了误差分解技术，将损失函数的总误差拆解为：逼近误差、统计误差以及多特征值求解过程中特有的累积误差。为表述简明，下文记 $\mathcal{E}_{\text{app}}^{(i)}$ 与 $\mathcal{E}_{\text{sta}}^{(i)}$ 分别为求解第 $i$ 个特征函数时产生的逼近误差与统计误差。我们首先通过以下引理给出累积误差的递归估计。
@@ -776,8 +766,8 @@ $$\mathcal{L}_{k}(\widehat{\xi}_{\phi k})-\mathcal{L}_{k}(\xi_{k})\geq \frac{\de
 $$
 \begin{aligned}
 \mathcal{L}_{k}(\widehat{\xi}_{\phi k})-\mathcal{L}_{k}(\xi_{k}) \lesssim\;& C(k,\mu_{2},m,d)\psi(\mathcal{D})^{-2(m-2) / d} \psi(\mathcal{W})^{-2(m-2) / d}\\
-&+ C(\mathcal{N}^{2},\Omega,w,\mu_{2})\mu_{1}\frac{\mathcal{D}^2 \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}}}{\sqrt{\psi(n)}}\\
-&+C(k,\mu_{2},m,d,\mathcal{N}^{2},\Omega,w)\sqrt{\mathcal{E}_{\text{app}}+\mathcal{E}_{\text{sta}}}. 
+&+ C(\Omega,V,\mu_{2})\mu_{1}\mathcal{D}^2 \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}}\sqrt{\frac{\log n}{n}}\\
+&+C(k,\mu_{2},m,d,\Omega,V)\sqrt{\mathcal{E}_{\text{app}}+\mathcal{E}_{\text{sta}}}. 
 \end{aligned}
 $$
 
@@ -809,31 +799,37 @@ $$
 \end{proof}
 
 通过对神经网络的结构参数（如宽度、深度）进行适当的选择，我们可以推导出估计误差关于样本量 $n$ 的定量收敛速率。下述推论是定理 \ref{mainthm} 的直接推论。
-\begin{corollary}{}
+\begin{corollary}
 在与定理 \ref{mainthm} 相同的假设条件下，若我们取网络深度、宽度以及惩罚参数满足：
 \begin{equation*}
-\mathcal{D}=O(1),\quad\mathcal{W}=O(n^{t_{1}}),\quad \mu_{1}=O(n^{t_{2}}),
+\mathcal{D}=\mathcal{O}(1),\quad\mathcal{W}=\widetilde{\mathcal{O}}(n^{w}),\quad \mu_{1}=\widetilde{\mathcal{O}}(n^{\beta}),
 \end{equation*}
-其中 $t_{1}=\frac{d}{2d+4m-8}<\frac{1}{4}+\frac{1}{d-4}$ 且 $t_{2}=\frac{m-2}{4d+8m-16}>\frac{1}{16}-\frac{1}{4(d-4)}$，那么对于任意给定的 $\tau>0$，特征函数的误差估计满足：
+并记 $\alpha=\frac{m-2}{d}$。假设定理 \ref{mainthm} 中误差上界的三项具有一致的衰减速率 $\widetilde{\mathcal{O}}(n^{-r})$，可推导出如下参数关系：
+$$-\beta=-\alpha w=\frac{1}{2}\beta+\frac{1}{2}w-\frac{1}{4}$$
+求解该方程组，可得统一的衰减指数：
+$$r = \frac{\alpha}{6\alpha + 2} = \frac{m-2}{2(3m+d-6)}$$
+进一步地，若定义综合误差项 $\delta=\widetilde{\mathcal{O}}\left(n^{-r}\right) = \widetilde{\mathcal{O}}\left(n^{-\frac{\alpha}{6\alpha + 2}}\right)$，则特征函数的估计误差在期望意义下满足：
 \begin{equation*}
-\mathbb{E} |\mathcal{P}_{\neq k}\widehat{\xi}_{\phi k}|\lesssim C(k,\mu_{2},m,d,\mathcal{N}^{2},\Omega,w)n^{\tau-\frac{m-2}{4d+8m-16}},
+\mathbb{E} |\mathcal{P}_{\neq k}\widehat{\xi}_{\phi k}|\lesssim C(k,\mu_{2},m,d,\Omega,V)\delta^{1/2},
 \end{equation*}
-相应的特征值误差满足：
+且相应的特征值估计误差满足：
 \begin{equation*}
-\mathbb{E}\left|\lambda_{k}-\frac{a^{\mu_{1}}(\widehat{\xi}_{\phi k},\widehat{\xi}_{\phi k})}{|\widehat{\xi}_{\phi k}|^{2}}\right|\lesssim C(k,\mu_{2},m,d,\mathcal{N}^{2},\Omega,w)n^{\tau-\frac{m-2}{4d+8m-16}}.
+\mathbb{E}\left|\lambda_{k}-\frac{a^{\mu_{1}}(\widehat{\xi}_{\phi k},\widehat{\xi}_{\phi k})}{|\widehat{\xi}_{\phi k}|^{2}}\right|\lesssim C(k,\mu_{2},m,d,\Omega,V)\delta.
 \end{equation*}
+特别地，考虑到在适当的边界条件下，目标特征函数通常具备较高的正则性（甚至满足完全光滑条件）。当平滑度参数 $m \to \infty$ 时，相应的指标 $\alpha \to \infty$，上述渐近衰减指数 $r$ 将极限趋近于 $\frac{1}{6}$。这意味着随着特征函数光滑性的提升，综合误差 $\delta$ 的收敛速率将渐近趋近于 $\widetilde{\mathcal{O}}(n^{-1/6})$。
 \end{corollary}
 
 \begin{remark}
-从上述推论可以看出，空间维数 $d$ 仅存在于误差上界的常数项中，而并未出现在样本量 $n$ 的收敛阶（即指数项）的分母主导项中。这意味着，与有限元方法（FEM）等网格依赖型传统数值方法相比，本方法的计算复杂度不会随空间维数呈指数级爆炸，从而在一定程度上克服了“维数灾难”（Curse of Dimensionality）。然而需要审慎指出的是，上界中的常数项 $C(k,\dots)$ 仍可能对维数 $d$ 存在指数级依赖；在极高维情形下，该常数的膨胀仍可能对算法的实际收敛表现产生实质性影响。
+从上述推论可以看出，空间维数 $d$ 仅存在于误差上界的常数项中，而并未出现在样本量 $n$ 的收敛阶（即指数项）的分母主导项中。这意味着，与有限元方法（FEM）等网格依赖型传统数值方法相比，本方法的计算复杂度不会随空间维数呈指数级爆炸，从而在一定程度上克服了“维数灾难”。然而需要审慎指出的是，在极高维情形下，上界中的常数项 $C(k,\dots)$的膨胀仍可能对算法的实际收敛表现产生实质性影响。
 \end{remark}
 
 
 \section{数值实验与超参数对解的影响}\label{sec_num} 
-\subsection{实验设置} 为了验证我们理论的有效性与正确性，我们开展了数值实验，以在不同条件下逼近特征值及其对应的特征函数。
+为了验证我们理论的有效性与正确性，我们开展了数值实验，以在不同条件下逼近特征值及其对应的特征函数。
 
 在所有实验中，我们均使用标准的 Adam 优化器来训练网络。所有的实现与实验均基于 CentOS 系统下的 Python 3.9.12 和 PyTorch 框架，硬件环境配备 2 颗主频 2.40 GHz 的 Intel(R) Xeon(R) E5-2640 v4 x86\_64 处理器，以及一张 16 GB 显存的 Nvidia Tesla V100 GPU。
 
+\subsection{二维特征值问题和超参数的影响分析} 
 在本节中，我们考虑以下特征值问题。为了便于获取精确解，我们考虑一个变量分离形式的函数 $w$：
 \begin{equation}\label{eq:example1}
 \left\{\begin{aligned}
@@ -852,11 +848,11 @@ T u &=0 & & \text { on } \partial \Omega,
     \label{fig:lambda1}
 \end{figure}
 
-首先，我们选取不同的 $\varepsilon_1$ 值并使用 Deep Ritz 方法进行求解。所得结果展示于图 \ref{fig:lambda1}。定理 \ref{mainthm} 指出，随着 $\varepsilon_1$ 的增加，计算得到的特征值将趋近于真实值，实验结果验证了这一观察结论。
+首先，我们选取不同的 $\mu_1$ 值并使用 Deep Ritz 方法进行求解。所得结果展示于图 \ref{fig:lambda1}。定理 \ref{mainthm} 指出，随着 $\mu_1$ 的增加，计算得到的特征值将趋近于真实值，实验结果验证了这一观察结论。
 
-接下来，我们将讨论 $\varepsilon_2$ 对解的影响。我们选取了满足以下条件的 $\varepsilon_2$ 值：小于 $2\lambda_1$，略大于 $2\lambda_1$ 但小于 $2\lambda_2$ 和 $2\lambda_3$，略大于 $2\lambda_2$ 和 $2\lambda_3$，以及显著大于 $2\lambda_2$ 和 $2\lambda_3$。相关结果呈现于图 \ref{fig:lambda2}。
+接下来，我们将讨论 $\mu_2$ 对解的影响。我们选取了满足以下条件的 $\mu_2$ 值：小于 $2\lambda_1$，略大于 $2\lambda_1$ 但小于 $2\lambda_2$ 和 $2\lambda_3$，略大于 $2\lambda_2$ 和 $2\lambda_3$，以及显著大于 $2\lambda_2$ 和 $2\lambda_3$。相关结果呈现于图 \ref{fig:lambda2}。
 
-根据定理 \ref{mainthm}，当 $\varepsilon_2$ 大于 $2\lambda_k$ 时，第 $k$ 个特征值是可以被计算出来的。实验结果也验证了这一论述。当 $\varepsilon_2=10<2\lambda_1$ 时，算法无法计算出任何特征值。当 $2\lambda_1<\varepsilon_2=62<2\lambda_2$ 时，第一个特征值能够被较好地计算出来，但无法收敛至第二个特征值。当 $\varepsilon_2>2\lambda_2$ 时，所有对应的特征值均可被准确计算。
+根据定理 \ref{mainthm}，当 $\mu_2$ 大于 $2\lambda_k$ 时，第 $k$ 个特征值是可以被计算出来的。实验结果也验证了这一论述。当 $\mu_2=10<2\lambda_1$ 时，算法无法计算出任何特征值。当 $2\lambda_1<\mu_2=62<2\lambda_2$ 时，第一个特征值能够被较好地计算出来，但无法收敛至第二个特征值。当 $\mu_2>2\lambda_2$ 时，所有对应的特征值均可被准确计算。
 
 \begin{figure}[htbp]
     \centering
@@ -865,7 +861,7 @@ T u &=0 & & \text { on } \partial \Omega,
     \label{fig:lambda2}
 \end{figure}
 
-值得注意的是，当 $\varepsilon_2=62$ 时，第三个特征值似乎已被正确计算，这可能令人费解。为了阐明这一点，我们需要借助近似特征函数的热力图，如图 \ref{fig:heatmap} 所示。众所周知，在二维情形下，第二和第三个特征值在数值上相等，但对应于两个正交的特征函数。通过特征函数的热力图可以观察到，在计算第二个特征值时，由于 $\varepsilon_2$ 取值较小，解退化为了第一个特征函数。然而，在计算第三个特征值时，损失函数包含了两个与第一个特征值相关的正交项。因此，这等价于使用 $2\varepsilon_2$ 计算第二个特征值。这一观察结果与我们的理论分析保持一致。
+值得注意的是，当 $\mu_2=62$ 时，第三个特征值似乎已被正确计算，这可能令人费解。为了阐明这一点，我们需要借助近似特征函数的热力图，如图 \ref{fig:heatmap} 所示。众所周知，在二维情形下，第二和第三个特征值在数值上相等，但对应于两个正交的特征函数。通过特征函数的热力图可以观察到，在计算第二个特征值时，由于 $\mu_2$ 取值较小，解退化为了第一个特征函数。然而，在计算第三个特征值时，损失函数包含了两个与第一个特征值相关的正交项。因此，这等价于使用 $2\mu_2$ 计算第二个特征值。这一观察结果与我们的理论分析保持一致。
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.8\textwidth]{figures1/EigFig2023/heat-map-reference.png}
@@ -902,7 +898,7 @@ T u &=0 & & \text { on } \partial \Omega,
 \end{figure}
 
 \subsection{立方体区域上的拉普拉斯特征值问题}\label{sec:10dcube}
-在本节及下一节中，我们在 Eq.~\eqref{eq:conloss} 中选取了不同的函数 $w(x)$，包括常用的函数，如指数函数 $(w(x)=\exp(-\pi x))$ 和平方函数 $(w(x)=x^2)$。此外，我们探索了不同的区域，包括 10 维立方体和 10 维球体。在这些区域上，依赖于空间离散化的传统数值算法（如有限元法和有限差分法）一直无法提供令人满意的结果。实验的参数设置如下：
+在本节及下一节中，我们在式\eqref{eq:conloss} 中选取了不同的函数 $w(x)$，包括常用的函数，如指数函数 $(w(x)=\exp(-\pi x))$ 和平方函数 $(w(x)=x^2)$。此外，我们探索了不同的区域，包括 10 维立方体和 10 维球体。在这些区域上，依赖于空间离散化的传统数值算法（如有限元法和有限差分法）一直无法提供令人满意的结果。实验的参数设置如下：
 
 \begin{table}[htbp]
 \centering
@@ -913,7 +909,7 @@ T u &=0 & & \text { on } \partial \Omega,
 区域 & $[0,1]^{10}$ &  $[0,1]^{10}$ & $\mathbb{R}^{10}$ 中的单位球 \\
 学习率 & 0.001& 0.001& 0.001\\
 训练轮数 (Epoch)& 100000& 100000& 50000\\
-$\varepsilon_1/\varepsilon_2$& 2000/1000&  2000/500& 2000/600\\
+$\mu_1/\mu_2$& 2000/1000&  2000/500& 2000/600\\
 宽度/深度
 & 150/4 & 150/4 & 60/4 \\
 样本量 ($\Omega$)& 200000& 200000& 200000\\
@@ -1119,7 +1115,7 @@ V(x)=\left\{
 学习率 & 0.001\\
 第 1 个特征值的训练轮数 & 100000\\
 第 2、3 个特征值的训练轮数 & 200000\\
-$\varepsilon_1/\varepsilon_2$ & 5000/3000\\
+$\mu_1/\mu_2$ & 5000/3000\\
 宽度/深度 & 120/4\\
 样本数量 ($B_{20}(0,0.5)$) & 50000\\
 样本数量 ($B_{20}(0,1)/B_{20}(0,0.5)$) & 500000\\

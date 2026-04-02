@@ -16,11 +16,11 @@ $$-\Delta u = e^u \quad \text{in } \mathbb{R}^n, \quad n \ge 3$$
 该方程的指数非线性项带来了极其剧烈的非线性增长特性，使其在高维空间下的理论分析和高效数值求解一直是计算数学领域的经典挑战。
 \end{itemize}
 
-近年来，物理信息神经网络（PINNs）和深度里兹方法（Deep Ritz Method, DRM）的提出为高维 PDE 的求解开辟了新路径。研究者们相继开发了多种变体以提升其求解非线性 PDE 的精度和效率。例如，梯度增强 PINNs \cite{lawal2022physics} 通过动态调整各个损失函数分量的梯度来加速优化过程，有效防止了某一项的局部噪声主导整体的优化方向；自适应加权策略 \cite{wight2020solving,jiao2024gaussian} 依据残差信息对采样点分布进行针对性优化，在提升计算精度的同时降低了解的不确定性；此外，针对特定物理约束的模型架构优化 \cite{qiu2025data}，通过引入硬约束结构和先验信息，显著提升了网络在特定方程上的表现。然而，尽管这些基于深度学习的数值算法在实验层面取得了长足进展，其严密的收敛性理论发展却相对滞后。
+近年来，物理信息神经网络（PINNs）和深度里兹方法的提出为高维 PDE 的求解开辟了新路径。研究者们相继开发了多种变体以提升其求解非线性 PDE 的精度和效率。例如，梯度增强 PINNs \cite{lawal2022physics} 通过动态调整各个损失函数分量的梯度来加速优化过程，有效防止了某一项的局部噪声主导整体的优化方向；自适应加权策略 \cite{wight2020solving,jiao2024gaussian} 依据残差信息对采样点分布进行针对性优化，在提升计算精度的同时降低了解的不确定性；此外，针对特定物理约束的模型架构优化 \cite{qiu2025data}，通过引入硬约束结构和先验信息，显著提升了网络在特定方程上的表现。然而，尽管这些基于深度学习的数值算法在实验层面取得了长足进展，其严密的收敛性理论发展却相对滞后。
 
 神经网络理论研究的核心难点在于，非线性激活函数引入了极其复杂的非凸优化空间，而 PDE 本身的非线性特性又使得解的性质更加难以捉摸。非线性 PDE 的解往往正则性较差，甚至存在多解或无解的情形，这直接导致了神经网络在训练过程中的极度不稳定性。正如引言所述，深度学习求解 PDE 的总误差通常可分解为逼近误差（Approximation Error）、泛化误差（也称统计误差，Statistical Error）以及优化误差（Optimization Error）\cite{mishra2023estimates}。受限于当前优化理论的瓶颈，本文将重点聚焦于前两项误差的严格理论分析。
 
-在误差理论的现有研究中，针对 PINNs 方法的分析率先取得突破。2022年，Perdikaris 团队 \cite{wang2022and} 首次将神经正切核（NTK）理论引入 PINNs 的分析框架，揭示了不同损失分量在收敛速率上的内在差异，并据此提出了基于 NTK 特征值的自适应梯度下降算法。尽管 NTK 理论证明了充分宽的过参数化神经网络能够以近似线性的方式逼近 PDE 的解，但在处理非线性 PDE 时仍面临巨大挑战 \cite{bonfanti2024challenges}。随后，针对特定非线性 PDE 的 PINNs 误差边界被逐步建立：Zhang 等人（2024）\cite{zhang2024priori} 证明了在两层 tanh 网络架构下，Allen-Cahn 与 Cahn-Hilliard 方程的解场逼近误差可由训练损失和配置点数量有效控制；De Ryck 等人（2023）\cite{de2024error} 建立了求解不可压 Navier-Stokes 方程的误差估计；黄云清等人（2023）\cite{qian2023physics} 则针对波动方程、非线性 Klein-Gordon 方程等建立了误差分析并改进了损失函数。然而，上述理论分析高度依赖于 PINNs 所采用的强形式残差损失，并不适用于以变分形式为基础的 Deep Ritz 方法；同时，这些成果多局限于特定形式的非线性方程，难以推广至更一般的半线性 PDE 框架。
+在误差理论的现有研究中，针对 PINNs 方法的分析率先取得突破。2022年，Perdikaris团队 \cite{wang2022and} 首次将神经正切核（Neural Tangent Kernel, NTK）理论引入 PINNs 的分析框架，揭示了不同损失分量在收敛速率上的内在差异，并据此提出了基于 NTK 特征值的自适应梯度下降算法。尽管 NTK 理论证明了充分宽的过参数化神经网络能够以近似线性的方式逼近 PDE 的解，但在处理非线性 PDE 时仍面临巨大挑战 \cite{bonfanti2024challenges}。随后，针对特定非线性 PDE 的 PINNs 误差边界被逐步建立：Zhang 等人（2024）\cite{zhang2024priori} 证明了在两层 tanh 网络架构下，Allen-Cahn 与 Cahn-Hilliard 方程的解场逼近误差可由训练损失和配置点数量有效控制；De Ryck 等人（2023）\cite{de2024error} 建立了求解不可压 Navier-Stokes 方程的误差估计；黄云清等人（2023）\cite{qian2023physics} 则针对波动方程、非线性 Klein-Gordon 方程等建立了误差分析并改进了损失函数。然而，上述理论分析高度依赖于 PINNs 所采用的强形式残差损失，并不适用于以变分形式为基础的 Deep Ritz 方法；同时，这些成果多局限于特定形式的非线性方程，难以推广至更一般的半线性 PDE 框架。
 
 另一方面，关于 Deep Ritz 方法（DRM）的理论基础也在不断完善，但主要集中在纯线性或低阶方程域。Duan 等人（2022）\cite{duan2022convergence} 率先针对 DRM 求解线性椭圆 PDE 建立了完整的误差分析框架。随后，Jiao 等人（2024）\cite{jiao2024error} 首次推导了 DRM 求解二阶椭圆方程的非渐近收敛率，明确了在 $H^1$ 范数下如何根据样本量设定网络深度和宽度以达到期望的收敛速度。2025年，Ding 等人 \cite{ding2025convergence} 在过参数化假设下证明了收敛率可由网络权重范数控制；同年，Jiao 等人 \cite{jiao2025error} 进一步完善了基于三层双曲正切网络的 DRM 误差分析体系，并探讨了投影梯度下降算法的收敛表现。不可忽视的是，尽管这些工作极大地夯实了 DRM 的理论基石，但它们均未涉及非线性 PDE 这一核心难点，无法直接为求解半线性椭圆方程提供理论支撑。
 
@@ -54,6 +54,7 @@ $$|V(s)| \le C(1 + |s|^p)$$
 % $w+\frac{1}{\mu}\frac{\partial w}{\partial n}=h$ 在 $\partial \Omega$ 上成立。
 \end{enumerate}
 \end{assumption}
+
 值得强调的是，假设\ref{ass:f}(d)的增长性条件实际上保证了$V(s)\in L^{\infty}(\Omega)$。而假设 \ref{ass:f}(d) 中对 $V(u)$ 的限制主要是为了确保能量泛函的严格凸性。若仅考察弱解的存在性，该条件可被适当弱化。
 
 基于变分法（Variational Methods），我们可以将方程 \eqref{eq:maineq} 的强形式转化为能量泛函的极小化问题。定义能量泛函 $J: H^1(\Omega) \to \mathbb{R}$ 如下：
@@ -132,7 +133,9 @@ $$\|e^{\mu}\|_{H^{1}}^2\leq C \|V(u^{D}) - V(u^{\mu})\|^2_{H^{-1}}\leq C(\Omega,
 \end{equation}
 推导的最后一步利用了函数 $V$ 的单调性：$\left(V(u^{D})-V(u^{\mu})\right)\left(u^{D}-u^{\mu}\right) \geq 0$。
 
-然后考虑边界项的控制，记$E(u)=\frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \int_{\Omega} W(u) \, dx - \int_{\Omega} g\, dx$，由于 $u^{\mu}$ 为泛函 $J^{\mu}$ 全局极小值点，利用在边界上有 $u^{D}=h$，将精确解 $u^{D}$ 代入$J^{\mu}(u)$可得：
+然后考虑边界项的控制，记
+$$E(u)=\frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \int_{\Omega} W(u) \, dx - \int_{\Omega} g\, dx$$
+由于 $u^{\mu}$ 为泛函 $J^{\mu}$ 全局极小值点，利用在边界上有 $u^{D}=h$，将精确解 $u^{D}$ 代入$J^{\mu}(u)$可得：
 $$J^{\mu}(u^{\mu})=E(u^{\mu}) + \frac{\mu}{2}\int_{\partial \Omega} (u^{\mu} - h)^2 \, dS - \frac{\mu}{2}\int_{\partial \Omega} h^2 \, dS \leq E(u^{D})- \frac{\mu}{2}\int_{\partial \Omega} h^2 \, dS$$
 由于前面已经证明了序列 $\{u^{\mu}\}$ 在 $H^1(\Omega)$ 中是一致有界的，内部能量泛函 $E(u^{\mu})$ 必然存在一个不依赖于 $\mu$ 的下界，因此可以推导出：
 \begin{equation}\label{eq:bdcontrol}
@@ -237,7 +240,7 @@ u_{\text{nn}}= \underset{u \in \mathcal{N}^{2}}{\operatorname{argmin}}\,J^{\mu}(
 \subsection{误差分解}
 首先，我们介绍一个关于截断误差的简单引理：
 \begin{lemma}\label{lemma:truerr}
-设 $1\leq q<p<\infty$。若 $u\in L^{p}(\Omega)$ 且定义截断函数 $u_{K}=u  \mathbb{1}_{\{|u|<K\}}$，则存在常数 $C(u)>0$，使得：
+设 $1\leq q<p<\infty$。若 $u\in L^{p}(\Omega)$ 且定义截断函数 $u_{K}=u 1_{\{|u|<K\}}$，则存在常数 $C(u)>0$，使得：
 \begin{equation*}
 \|u-u_{K}\|_{L^{q}} \leq C(u)\frac{1}{K^{p/q-1}}.
 \end{equation*}
@@ -373,7 +376,7 @@ J_{5}^{\mu}(u)&=-\mu |\partial \Omega|\mathop{\mathbb{E}}_{Y\sim U(\partial\Omeg
 
 引理 \ref{lemma:staerr:ch3Rad234} 的证明思路与引理 \ref{lemma:staerr:Rad234} 基本一致。在此，我们仅重点说明与特征值问题有所区别的两项—— $J_{2}^{\mu}$ 和 $J_{5}^{\mu}$。由于这两项对应的 Lipschitz 常数分别为 $\|V\|_{\infty}$ 和 $\|h\|_{\infty}$，运用相同的技巧即可得出上述不等式。
 
-基于相似的逻辑，我们可以进一步界定目标函数类的伪维度（Pseudo-dimension）：
+基于相似的逻辑，我们可以进一步界定目标函数类的伪维度（Pdim）
 \begin{equation}\label{eq:ch3pdim}
 \begin{aligned}
 \operatorname{Pdim}(\mathcal{N}^{2})\leq C_{1} \mathcal{D}^2\mathcal{W}^2(\mathcal{D}+\log\mathcal{W}),\\
@@ -480,7 +483,7 @@ r = \frac{q}{2(dq + 2d + 2q)}.
 \end{proof}
 
 \begin{corollary}\label{cor:cordiri}
-在定理 \ref{mainthm:diri} 的假设下，为了平衡各项误差以获得最优收敛率，我们对网络参数、惩罚参数 $\mu$ 与样本量 $n$ 作如下渐近设定（使用符号 $\widetilde{\mathcal{O}}$ 隐藏对数项）：
+在定理 \ref{mainthm:diri} 的假设下，为了平衡各项误差以获得最优收敛率，我们对网络参数、惩罚参数 $\mu$ 与样本量 $n$ 作如下渐近设定：
 $$ \mathcal{D} = \mathcal{O}(1), \quad \mathcal{W} = \mathcal{O}(n^w), \quad \mathcal{B} = \mathcal{O}(n^b), \quad K = \mathcal{O}(n^k), \quad \mu = \mathcal{O}(n^m). $$
 通过令 $\delta$ 上界中的各项（惩罚误差、逼近误差、算子截断误差以及统计误差）关于 $n$ 具有相同的代数衰减速率 $n^{-r} \ (r>0)$，可推导出如下参数关系：
 $$ m = r, \quad w = 2dr, \quad b = \frac{2d}{q}r, \quad k = b+r. $$
@@ -511,11 +514,13 @@ r = \frac{q}{4(dq + 2d + q)}.
 \section{数值实验}\label{sec:num}
 正如引言所述，受制于“维数灾难”，传统基于网格的偏微分方程（PDE）数值解法在处理高维问题时往往面临巨大挑战。前文的理论推导已严格证明了 Deep Ritz 方法具有与维数无关的收敛性。为了进一步验证该理论结果在高维情形下的实际有效性，本节开展了一系列数值实验。
 
-本节的数值算例重点考察模型对半线性椭圆方程解的逼近能力，具体涵盖了齐次与非齐次边界条件等多种情形。
+本节的数值算例重点考察模型对半线性椭圆方程解的逼近能力，具体涵盖了齐次与非齐次边界条件等多种情形。此外，实验不仅测试了多种类型的非线性项，还设计了部分放宽算法初始假设的拓展算例，旨在深入探索该数值算法的适用边界与泛化能力。
 
 在求解框架上，我们构建了残差神经网络来参数化方程的解。在模型优化阶段，采用 Adam 优化算法，并辅以逐步衰减的学习率策略，以最小化损失函数~\eqref{eq:ch3conloss}。
 
 所有数值实验的程序实现均基于 CentOS 操作系统，编程环境为 Python 3.9.12 与 PyTorch 深度学习框架。硬件配置方面，计算节点配备了两颗主频为 2.40 GHz 的 Intel(R) Xeon(R) E5-2640 v4 处理器，以及一块拥有 16 GB 显存的 Nvidia Tesla V100 GPU。
+
+为保证研究的透明度与结果的可重复性，并便于后来的研究者参考学习，本章涉及的所有程序源代码及相应问题的超参数配置文件均已开源（链接：\url{https://github.com/shiki442/DeepRitz_NonlinearPDE}）。
 
 \subsection{高维双峰问题}
 本节考虑一个具有复杂解结构的五维非线性椭圆型方程，旨在考察模型处理高维复杂特征的能力。在此类高维设定下，传统的基于网格的数值方法（如有限元法）往往因“维数灾难”而难以直接应用。本文考虑的具体边值问题如下：
@@ -560,7 +565,7 @@ $$g_1(\mathbf{x}) = 4\pi^2 u_1(\mathbf{x}) + 2\sum_{i=2}^{5} \frac{u_1(\mathbf{x
 综上所述，针对五维双峰问题，本文采用的深度学习求解框架展现出了优异的数值表现。通过合理的超参数配置，模型不仅在有限的迭代步数内实现了稳定收敛，而且在面对高维空间中多变的局部特征时，依然展现出极强的表达与泛化能力。
 
 \subsection{不光滑问题}
-为了进一步验证本文提出的深度学习求解框架在面对低正则性（低光滑度）解时的拟合能力与鲁棒性，本节将考察如下带有三角函数非线性项的偏微分方程边值问题：
+为了进一步验证本文提出的深度学习求解框架在面对低正则性解时的拟合能力与鲁棒性，本节将考察如下带有三角函数非线性项的偏微分方程边值问题：
 \begin{equation}\label{eq:eq2}
 \left\{\begin{aligned}
 -\Delta u + 2\text{sin}(\frac{\pi}{2}u) & = g_2(x) & \text{in } & \Omega,\\
@@ -645,30 +650,50 @@ Tu& = h_3(x) & \text{on }  & \partial\Omega.\\
 
 该数值算例表明，假设 \ref{ass:f} 仅为 Deep Ritz 方法收敛的一个充分条件。对于自身具备良好正则性的边值问题，假设 \ref{ass:f}(c)(d) 中的条件可被放宽至仅需满足单调性。这一结论在理论与实践上均进一步拓展了本文所提方法的适用范围。
 
-% \subsection{Yamabe方程}
-% \begin{equation}\label{eq:eq4}
-% \left\{\begin{aligned}
-% \Delta u + u^{\frac{d+2}{d-2}} & = 0 & \text{in } & \Omega,\\
-% Tu& = h_4(x) & \text{on }  & \partial\Omega.\\
-% \end{aligned}\right.
-% \end{equation}
+\subsection{Yamabe方程}
+Yamabe 方程起源于黎曼几何中的共形形变问题，旨在寻找与给定黎曼度量共形且具有常数量曲率的新度量。在偏微分方程理论中，它是研究半线性椭圆方程的一个经典模型。本文考察如下带有 Dirichlet 边界条件的 Yamabe 方程：
+\begin{equation}\label{eq:eq4}
+\left\{\begin{aligned}
+\Delta u + u^{\frac{d+2}{d-2}} & = 0 & \text{in } & \Omega,\\
+Tu& = h_4(x) & \text{on }  & \partial\Omega.\\
+\end{aligned}\right.
+\end{equation}
 
-% $u_4 = \left(\frac{\sqrt{d(d-2)}}{1 + |x-x_0|^2} \right)^{\frac{d}{2}-1}$
+其中，计算区域设定为 $d$ 维单位超立方体 $\Omega=[0,1]^d$。该方程的解空间结构异常复杂，其核心难点在于非线性项的指数 $p = \frac{d+2}{d-2}$ 恰好对应于临界 Sobolev 指数。在这种临界状态下，方程的解的存在性异常脆弱，解的性质也及其复杂。
 
+为了构造数值实验的测试算例，我们采用著名的 Talenti 泡作为该方程的精确解，其解析表达式为：
+$$u_4 = \left(\frac{\sqrt{d(d-2)}}{1 + |x-x_0|^2} \right)^{\frac{d}{2}-1}$$
+方程中的边界条件 $h_4(x)$ 即由该精确解在边界 $\partial\Omega$ 上的迹给定。Talenti 泡的中心取为$x_0=0.3$。选取此类具有临界非线性特征且解结构复杂的方程进行测试，旨在充分验证本文所提方法在处理高维强非线性问题时的鲁棒性与泛化能力。
+
+在具体的数值实验中，我们考虑三维情形（即 $d=3$）。在网络训练的数据准备阶段，我们在区域内部 $\Omega$ 和边界 $\partial\Omega$ 分别随机采样了 1,500,000 和 500,000 个配置点。模型优化采用学习率为 0.002 的优化算法，共计训练 2,000 个迭代步。训练过程中的损失函数下降轨迹与验证误差演化如图 \ref{fig:loss_curveeq4} 所示。
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{./figures2/eq4_loss_val_error_curves.png}
+\caption{Yamabe方程的训练损失与验证误差曲线}
+\label{fig:loss_curveeq4}
+\end{figure}
+
+借助热力图\ref{fig:heatmapeq4}，我们直观地评估模型的数值求解精度，并对比在特定截面上的精确解、神经网络预测解，以及两者之间的绝对误差分布。
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{./figures2/eq4_yamabe_heatmap.png}
+\caption{精确解、预测解与误差分布}
+\label{fig:heatmapeq4}
+\end{figure}
 
 \subsection{超参数对数值解精度的影响}
 为了探究模型超参数（如采样点规模、神经网络结构等）对算法收敛性及求解精度的具体影响，我们首先考虑如下带有齐次边界条件的 Dirichlet 边值问题：
 \begin{equation}
 \left\{\begin{aligned}
--\Delta u + \frac{1}{1+u^2} & = g_4(x) & \text{在 } & \Omega \text{ 中},\\
+-\Delta u + \frac{1}{1+u^2} & = g_5(x) & \text{在 } & \Omega \text{ 中},\\
 Tu& = 0 & \text{在 }  & \partial\Omega \text{ 上}.\\
 \end{aligned}\right.
 \end{equation}
-其中，空间域设为 $\Omega=[0,1]^{2}$，方程右端的源项 $g_4(x)$ 的解析表达式为：
+其中，空间域设为 $\Omega=[0,1]^{2}$，方程右端的源项 $g_5(x)$ 的解析表达式为：
 \begin{equation*}
-g_4(x)=8\sum_{\stackrel{1\leq i\leq d}{i\neq j}}\prod_{j=1}^{d}x_{j}(1-x_{j})+\frac{1}{1+\left(\prod_{i=1}^{d}4x_{i}(1-x_{i})\right)^2},
+g_5(x)=8\sum_{\stackrel{1\leq i\leq d}{i\neq j}}\prod_{j=1}^{d}x_{j}(1-x_{j})+\frac{1}{1+\left(\prod_{i=1}^{d}4x_{i}(1-x_{i})\right)^2},
 \end{equation*}
-这里，方程的非线性项 $S(u) = \frac{1}{1+u^2}$ 属于 $L^{\infty}(\Omega)$，且满足 Lipschitz 连续条件与有界性，从而符合前文所述的假设 \ref{ass:f}。该问题的精确解构造为 $u_4(x)=\prod_{i=1}^{d}4x_{i}(1-x_{i})$
+这里，方程的非线性项 $S(u) = \frac{1}{1+u^2}$ 属于 $L^{\infty}(\Omega)$，且满足 Lipschitz 连续条件与有界性，从而符合前文所述的假设 \ref{ass:f}。该问题的精确解构造为 $u_5(x)=\prod_{i=1}^{d}4x_{i}(1-x_{i})$
 
 为了保证实验变量的单一性并验证算法的鲁棒性，本节的所有数值实验均采用一致的基础训练配置：使用 Adam 优化器，设置初始学习率为 $5.0\times 10^{-4}$，共进行 5000 步迭代优化，并将边界惩罚参数 $\lambda$ 设定为 4000。
 
