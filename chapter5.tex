@@ -1,15 +1,560 @@
-\chapter{总结与展望}
-本文立足于科学计算与机器学习的交叉前沿，以复杂的偏微分系统为研究对象，系统深入地探讨了基于深度神经网络的建模与计算方法。针对传统网格类数值方法在高维空间中面临的“维数灾难”，以及现有深度学习求解器在处理复杂物理约束和高度病态问题时存在的理论空白，本文秉持“算法设计适配复杂物理场景、理论分析提供严密定量保障、数值实验验证实际泛化能力”的研究主线，取得了一系列具有理论价值和应用前景的创新性成果。全文的主要工作总结如下：
+\chapter{PINNs求解反势能问题}
+在前一章中，我们详细探讨了利用DRM求解正向的椭圆型多特征值问题。本章将视点转向一类在实际工程中较为重要的任务——反问题：即在已知部分边界或内部测量数据的前提下，反向推演系统方程中的未知物理参数。具体而言，我们将提出并分析一种基于 PINNs 结合 Tikhonov 正则化的高效求解框架，用于重构椭圆方程中的未知势函数。
+\section{问题背景与预备知识}
+\subsection{反势能问题概述}
+偏微分方程的反问题旨在通过系统边界或内部有限的可观测状态，反推决定系统内在物理性质的参数空间分布。带有未知势函数的椭圆型方程广泛存在于各类科学模型中，如复杂介质内部异常结构的无损探测、肿瘤热疗定位以及光学相干断层扫描等。然而，上述物理过程的反演在数学本质上均面临着较高的”不适定性”。由于正向算子往往具有紧致性，其求逆过程会使观测端较小的噪声扰动在反演端被放大，从而引发重构势函数 $V(x)$ 的振荡甚至物理失真。
+
+近年来，以 PINNs 为代表的纯无网格深度学习算法，通过同时用神经网络拟合状态解与未知势场，并利用蒙特卡洛积分优化经验风险损失，在复杂变系数反演任务中展现出了较好的灵活性与实验表现。然而，现有的纯数据驱动反演框架大多缺乏对解空间的严格先验约束，传统的正则化理论难以直接平移，针对这一问题，本章提出了一种基于高阶 Tikhonov 正则化（$H^2$ 正则化）泛函的纯神经网络反势能问题求解算法。在算法层面实现了有效的无网格反演，并且证明了该神经网络格式的理论稳定性估计，并确立了重构误差关于观测噪声的渐近收敛率。配合数值实验，本文工作验证了理论分析的合理性，
+
+\subsection{数学描述与问题假设}
+基于上述物理背景，我们将该反问题抽象为如下数学模型。我们考虑如下带有 Neumann 边界条件的椭圆型边值问题：
+\begin{equation}\label{eq:pde:potential}
+\left\{
+\begin{aligned}
+-\nabla\cdot(\alpha\nabla u(x))+V(x)u(x)&=g(x), \quad \text{在}~\Omega~\text{中},\\
+\alpha\frac{\partial u(x)}{\partial n}&=h(x), \quad \text{在}~\partial\Omega~\text{上},
+\end{aligned}
+\right.
+\end{equation}
+其中，$\Omega \subset \mathbb{R}^{d}$ 是给定的求解区域，$\alpha$ 为传导系数，$g$ 为内部源项，$h$ 为边界通量，$\partial_{\nu}$ 表示沿单位外法向量的导数。
+给定一个确定的势函数 $V \in \mathcal{K}$，根据经典的椭圆偏微分方程理论 \cite{evans2010partial}，方程 \eqref{eq:pde:potential} 存在唯一的弱解 $u_V\in H^{1}(\Omega)$。基于此，我们可以良定义一个从参数空间到状态空间的非线性正演算子：
+$$\mathcal{F}: V \mapsto u_V$$
+为确保偏微分方程的适定性（Well-posedness）以及后续反问题理论分析的严密性，我们对计算区域和已知函数提出如下基本假设：
+
+\begin{assumption}[正则性与有界性假设]\label{ass:tikpinn}
+假设区域 $\Omega$ 和方程参数满足如下条件：
+\begin{enumerate}
+\item[(a)] 区域 $\Omega\subset\mathbb{R}^{d}$ ($d\geq1$) 为具有足够光滑边界 $\partial\Omega$ 的有界连通区域。传导系数 $\alpha\in C^{1}(\bar{\Omega})$，且满足一致椭圆条件：即存在常数 $\alpha_0>0$，使得对所有 $x\in\bar{\Omega}$ 均有 $\alpha(x)\geq\alpha_0$ 成立。
+\item[(b)] 源密度函数满足 $g\in L^{2}(\Omega)$，边界通量函数满足 $h\in L^{2}(\partial\Omega)$。
+\item[(c)] 真实的势函数 $V$ 属于如下有界容许集（Admissible Set）：
+\begin{equation}\label{eq:box}
+\mathcal{K}=\{V\in L^{\infty}(\Omega):0\leq\underline{V}\leq V(x)\leq\overline{V}<\infty,~\text{a.e. } x\in\Omega\},
+\end{equation}
+其中常数 $\underline{V}$ 和 $\overline{V}$ 分别代表容许势函数 $V(x)$ 的先验全局下界和上界。
+\end{enumerate}
+\end{assumption}
+
+在反问题的设定下，我们的目标是利用状态变量 $u$ 的观测数据来重构真实的势函数 $V^\dagger \in \mathcal{K}$。在现实物理实验中，传感器采集的数据不可避免地会受到噪声污染。在整篇文章中，我们假设含噪测量数据服从如下标准的高斯加性噪声模型：
+\begin{equation}\label{eq:measurement}
+\left\{
+\begin{array}{rcll}
+u^{\delta}(x)&=&\mathcal{F}(V^{\dagger})(x)+\varepsilon_{\mathcal{I}}(x),\quad &\varepsilon_{\mathcal{I}}(x)\sim N(0,\delta^{2}),\quad x\in\Omega, \\ 
+Tu^{\delta}(x)&=&T\mathcal{F}(V^{\dagger})(x)+\varepsilon_{\mathcal{B}}(x),\quad &\varepsilon_{\mathcal{B}}(x)\sim N(0,\delta^{2}),\quad x\in\partial\Omega,
+\end{array}
+\right.
+\end{equation}
+其中，$\delta > 0$ 表示噪声水平（Noise Level），$T$ 是经典的边界迹算子。基于上述统计模型，在 $L^2$ 范数意义下，含噪数据与真实状态之间满足如下确定性误差估计：
+
+\begin{equation}\label{eq:delta}
+\|u^{\delta}-\mathcal{F}(V^{\dagger})\|_{L^{2}(\Omega)}=|\Omega|^{1/2}\delta, \quad \|Tu^{\delta}-T\mathcal{F}(V^{\dagger})\|_{L^{2}(\partial\Omega)}=|\partial\Omega|^{1/2}\delta.
+\end{equation}
+
+\section{模型构建}\label{sec:tikpinns}
+\subsection{优化目标及其稳定性估计}
+基于前述的数学模型，反问题的核心在于寻找一个势函数 $V$，使得其对应的系统正向响应 $u_V = \mathcal{F}(V)$ 尽可能逼近实际的测量数据。为此，我们首先定义如下的数据失配项或测量误差泛函：
+\begin{equation}\label{eq:data_mismatch}
+\begin{aligned}
+    \mathcal{M}(V) &= \|u^{\delta}-u_V\|_{L^{2}(\Omega)}^{2}+\|Tu^{\delta}-Tu_V\|_{L^{2}(\partial\Omega)}^{2} \\
+    &= \|u^{\delta}-\mathcal{F}(V)\|_{L^{2}(\Omega)}^{2}+\|Tu^{\delta}-T\mathcal{F}(V)\|_{L^{2}(\partial\Omega)}^{2}
+\end{aligned}
+\end{equation}
+给定公式 \eqref{eq:measurement} 中的观测数据，求解反问题等价于在满足控制方程 \eqref{eq:pde:potential} 的硬约束下，极小化上述测量误差 $\mathcal{M}(V)$。
+
+\begin{remark}\label{remark:ill_posedness}
+然而，从算子理论的视角来看，给定右端项 $f \in L^2(\Omega)$，由经典的椭圆正则性理论可知，系统的弱解不仅存在且满足 $u \in H^2(\Omega)$。进一步，根据 Rellich-Kondrachov 定理，对于具有光滑边界的有界区域 $\Omega$，索伯列夫空间 $H^2(\Omega)$ 到观测空间 $L^2(\Omega)$ 的嵌入是紧的。因此，从参数空间到观测空间的正演算子 $\mathcal{F}: V \mapsto u$ 本质上是一个紧算子，紧算子的核心特征在于其具有明显的”积分平滑效应”，即势函数 $V$ 中的高频微扰在正向映射过程中会被衰减。根据泛函分析理论，无限维空间中紧算子的逆算子必然是无界的，这意味着该反问题是不适定的（Ill-posed）。在实际观测中，数据 $u^\delta$ 必然包含噪声（如高频扰动）。由于逆过程会对高频分量产生放大作用，若直接进行无约束或纯残差驱动的拟合，较小的测量误差也会引发较大的”噪声放大”，导致重构的势函数产生非物理的振荡。   
+\end{remark}
+
+为了克服这一不稳定性，我们在目标泛函中引入经典的 Tikhonov 正则化项，不仅是为了平滑神经网络的损失曲面，更是恢复反问题适定性的数学要求。通过对势函数的一阶导数（梯度）和二阶导数（曲率）施加惩罚，正则化项显式地压制了高频震荡，迫使算法在容许空间 $\mathcal{K}$ 中寻找与观测数据相容且具备物理光滑性的解。将其转化为如下的偏微分方程约束优化控制问题：
+
+\begin{align*}
+&\min_{V,u}\quad\mathcal{J}_{\lambda}(V,u)=\|z^{\delta}-u\|_{L^{2}(\Omega)}^{2}+\|Tz^{\delta}-Tu\|_{L^{2}(\partial\Omega)}^{2}+\lambda\|V\|_{H^{2}(\Omega)}^{2}, \\
+&\subto\quad Eq.\eqref{eq:pde:potential}~\text{and}~Eq.\eqref{eq:box}.
+\end{align*}
+
+其中，正则化参数 $\lambda > 0$ 用于平衡数据拟合度与解的光滑性。
+
+传统的伴随方法求解此类约束优化问题往往需要反复进行正向和伴随方程的网格离散与迭代求解，计算成本较高且对复杂几何区域适应性有限。在此，我们引入PINNs的”软约束”思想，通过将偏微分方程及其边界条件作为惩罚项加入到目标函数中，从而将上述带有 PDE 约束的优化问题转化为无约束优化问题：
+\begin{equation}\label{eq:pinns:loss}
+\min_{V,u} \{ \mathcal{L}_{\lambda}(V,u) = \mathcal{M}(u)+\mathcal{I}(V,u)+\mathcal{B}(u) +\mathcal{R}(V)\},
+\end{equation}
+其中，内部 PDE 残差惩罚项 $\mathcal{I}(V,u)$ 和边界条件残差惩罚项 $\mathcal{B}(u)$ 分别定义为：
+\begin{equation*}
+\mathcal{I}(V,u)=\|\nabla\cdot(\alpha\nabla u)-Vu+f\|_{L^{2}(\Omega)}^{2}, \quad \text{且} \quad
+\mathcal{B}(V,u)=\|\alpha\frac{\partial u}{\partial n}-g\|_{L^{2}(\partial\Omega)}^{2}.
+\end{equation*}
+与标准 PINNs 框架直接利用纯数据驱动加物理残差进行优化不同，我们在损失函数 \eqref{eq:pinns:loss} 中显式保留了 Tikhonov 正则化项 $\lambda\|V\|_{H^{2}(\Omega)}^{2}$。这一微小但关键的调整构成了本文 Tikhonov-PINNs 方法的核心。正如我们在后续理论分析中所将证明的，该正则化项能够有效抑制测量噪声的放大，而且是建立重构势函数 $V$ 收敛性理论（即稳定性估计）的重要前提。
+
+基于前文（注记 \ref{remark:ill_posedness}）关于正则化必要性的探讨，本节将建立重构势函数 $V$ 的收敛性理论。这一理论在反问题文献中通常被称为稳定性估计。它从数学上保证了：当我们的神经网络将损失函数优化到足够小，且测量噪声趋于零时，重构出的解能够收敛于真实解。
+
+为了推导这一结果，我们需要对真实的势函数 $V^\dagger$ 和对应的真实状态变量 $u^\dagger$ 施加如下的正则性假设：
+
+\begin{assumption}\label{ass:potential:Vdaggerreg}
+令 $s \in \mathbb{N}_+$，我们假设真实的势函数满足 
+$$V^\dagger \in W^{2,\infty}(\Omega) \cap H^{s+3}(\Omega) \cap \mathcal{K}$$
+且对应的真实状态变量满足 
+$$u^\dagger \in W^{2,\infty}(\Omega) \cap H^{s+3}(\Omega)$$。
+\end{assumption}
+
+\begin{theorem}[稳定性估计]\label{th:potential:stability}
+在方程 \eqref{eq:pde:potential} 和测量数据模型 \eqref{eq:measurement} 的设定下，令 $(V^{\dagger},u^{\dagger})$ 为满足原偏微分方程的真实物理状态对。若假设 \ref{ass:potential:Vdaggerreg} 成立，假设我们不仅在区域内部获得了带噪测量 $u^\delta$，在边界上也获得了带噪测量 $g^\delta$（或边界迹 $Tu^\delta$），且满足 $\|u^\dagger - u^\delta\|_{L^2(\Omega)} + \|Tu^\dagger - Tu^\delta\|_{L^2(\partial\Omega)} \leq \delta$。则对于优化过程中任意一对满足 $V\in H^{2}(\Omega)$ 和 $u \in H^1(\Omega)$ 的参数对 $(V,u)$，如下误差估计成立：
+\begin{equation*}
+\|(V-V^{\dagger})u^{\dagger}\|_{L^{2}(\Omega)} \leq C\left(1+\lambda^{-1/4}\mathcal{L}_{\lambda}^{1/4}(V,u)\right)\left(\mathcal{L}_{\lambda}^{1/4}(V,u)+\delta^{1/2}\right),
+\end{equation*}
+其中 $C$ 是一个严格依赖于区域维数 $d$、区域形状 $\Omega$、传导系数 $\alpha$、容许集上界 $\overline{V}$，以及真实解范数 $\|V^{\dagger}\|_{W^{2,\infty}(\Omega)}$ 和 $\|u^{\dagger}\|_{W^{2,\infty}(\Omega)}$ 的正常数。
+\end{theorem}
+
+\begin{proof}
+对于任意的测试函数 $\psi\in H^{2}(\Omega)$，考察误差项在 $L^2$ 内积下的弱形式：
+\begin{align*}
+&((V^{\dagger}-V)u^{\dagger},\psi)_{L^{2}(\Omega)} \\
+&=(-\nabla\cdot(\alpha\nabla u^{\dagger})_{L^{2}(\Omega)}+V^{\dagger}u^{\dagger},\psi)_{L^{2}(\Omega)}-(-\nabla\cdot(\alpha\nabla u^{\dagger})+Vu^{\dagger},\psi)_{L^{2}(\Omega)} \\
+&=(f+\nabla\cdot(\alpha\nabla u)-Vu,\psi)_{L^{2}(\Omega)}-(V(u^{\dagger}-u),\psi)_{L^{2}(\Omega)}+(\nabla\cdot(\alpha\nabla(u^{\dagger}-u)),\psi)_{L^{2}(\Omega)} \\
+\end{align*}
+这里我们使用了真实解满足 $-\nabla\cdot(\alpha\nabla u^{\dagger}) + V^{\dagger}u^{\dagger} = f$ 这一事实。对最后一项应用格林公式，将其展开为：
+\begin{align*}
+(\nabla\cdot(\alpha\nabla(u^{\dagger}-u)),\psi)_{L^{2}(\Omega)} &= (u^{\dagger}-u,\nabla\cdot(\alpha\nabla\psi))_{L^{2}(\Omega)} \\
+&\quad + \langle T(u-u^{\dagger}),\alpha\partial_{\nu}\psi \rangle_{L^{2}(\partial\Omega)} - \langle \alpha\frac{\partial u}{\partial n}-g,T\psi \rangle_{L^{2}(\partial\Omega)}.
+\end{align*}
+将上式代入原内积等式，并应用柯西-施瓦茨不等式以及迹定理 \cite[Section 5.5, Theorem 1]{evans2010partial}，我们可得如下放缩：
+\begin{align*}
+&|((V-V^{\dagger})u^{\dagger},\psi)_{L^{2}(\Omega)}| \\
+&\leq C\Big\{ \|f+\nabla\cdot(\alpha\nabla u)-Vu\|_{L^{2}(\Omega)} + \|V\|_{L^{\infty}(\Omega)}\|u-u^{\dagger}\|_{L^{2}(\Omega)} + \|u-u^{\dagger}\|_{L^{2}(\Omega)} \\
+&\quad+ \|T(u-u^{\dagger})\|_{L^{2}(\partial\Omega)} + \|\alpha\frac{\partial u}{\partial n}-g\|_{L^{2}(\partial\Omega)} \Big\} (\|\alpha\|_{C^{1}(\bar{\Omega})}\vee 1) \|\psi\|_{H^{2}(\Omega)}.
+\end{align*}
+利用测量模型 \eqref{eq:measurement} 中的三角不等式，例如 $\|u-u^{\dagger}\|_{L^{2}(\Omega)} \leq \|u-u^{\delta}\|_{L^{2}(\Omega)} + \|u^{\delta}-u^{\dagger}\|_{L^{2}(\Omega)} \leq \|u-u^{\delta}\|_{L^{2}(\Omega)} + \delta$，可将上式进一步化简为：
+\begin{align*}
+&|((V-V^{\dagger})u^{\dagger},\psi)_{L^{2}(\Omega)}| \\
+&\leq C\Big\{ \|f+\nabla\cdot(\alpha\nabla u)-Vu\|_{L^{2}(\Omega)} + \|\alpha\frac{\partial u}{\partial n}-g\|_{L^{2}(\partial\Omega)} + \|V\|_{L^{\infty}(\Omega)}\|u^{\delta}-u\|_{L^{2}(\Omega)} \\
+&\quad+ \|Tu^{\delta}-Tu\|_{L^{2}(\partial\Omega)} + (\|V\|_{L^{\infty}(\Omega)}+1)\delta \Big\} (\|\alpha\|_{C^{1}(\bar{\Omega})}\vee 1) \|\psi\|_{H^{2}(\Omega)},
+\end{align*}
+其中 $C$ 是一个仅依赖于 $\Omega$ 的常数。根据对偶空间范数的定义 $\|v\|_{(H^2)^*} = \sup_{\|\psi\|_{H^2}=1} (v,\psi)$，并应用算术-几何均值不等式，我们将各项与损失函数 $\mathcal{L}_{\lambda}$ 中的成分对应，可得：
+\begin{equation}
+\|(V-V^{\dagger})u^{\dagger}\|_{(H^{2}(\Omega))^{*}} \leq 2C(\|V\|_{L^{\infty}(\Omega)}+1)(\|\alpha\|_{C^{1}(\bar{\Omega})}\vee 1)\Big\{ \mathcal{L}_{\lambda}^{1/2}(V,u)+\delta \Big\}.
+\end{equation}
+最后，利用标准的 Sobolev 空间插值不等式，以及假设 \ref{ass:potential:Vdaggerreg} 中真实解的正则性，我们有：
+\begin{align*}
+\|(V-V^{\dagger})u^{\dagger}\|_{L^{2}(\Omega)} &\leq \|(V-V^{\dagger})u^{\dagger}\|_{H^{2}(\Omega)}^{1/2} \|(V-V^{\dagger})u^{\dagger}\|_{(H^{2}(\Omega))^{*}}^{1/2} \\
+&\lesssim \|V^{\dagger}\|_{W^{2,\infty}(\Omega)}^{1/2} \|u^{\dagger}\|_{W^{2,\infty}(\Omega)}^{1/2} \left(1+\|V\|_{H^{2}(\Omega)}^{1/2}\right) \|(V-V^{\dagger})u^{\dagger}\|_{(H^{2}(\Omega))^{*}}^{1/2}.
+\end{align*}
+注意到，根据损失函数方程 \eqref{eq:pinns:loss} 的定义，Tikhonov 正则化项天然提供了先验界限 $\lambda\|V\|_{H^{2}(\Omega)}^{2} \leq \mathcal{L}_{\lambda}(V,u)$，即 $\|V\|_{H^{2}(\Omega)} \leq \lambda^{-1/2}\mathcal{L}_{\lambda}^{1/2}(V,u)$。将其代入上式，可最终推导出：
+\begin{equation*}
+\|(V-V^{\dagger})u^{\dagger}\|_{L^{2}(\Omega)} \leq C\left(1+\lambda^{-1/4}\mathcal{L}_{\lambda}^{1/4}(V,u)\right)\left(\mathcal{L}_{\lambda}^{1/4}(V,u)+\delta^{1/2}\right).
+\end{equation*}
+证明完毕。
+\end{proof}
+
+\subsection{数值算法实现}
+与前文DRM利用变分原理求解正问题的思路类似，基于PINNs求解反问题同样需要将连续的偏微分方程约束优化问题转化为离散的经验损失函数极小化问题。具体而言，该 Tikhonov-PINNs 方法在执行上可概括为以下四个关键步骤：
+
 \begin{itemize}
-    \item 在高维椭圆型多重特征值问题方面（第二章）： 针对现有无约束损失函数易陷入模式崩溃的难题，本文提出了一种基于惩罚变分原理的深度里兹求解框架。通过引入软边界惩罚与正交化约束，实现了多重激发态的同步高精度求解。在理论上，本文建立了完备的误差分解体系（逼近误差、累积误差与统计误差），并严密推导了由网络结构与样本量显式表达的误差上界，在数学上证明了该算法具有克服维数灾难的潜力。
-    \item 在高维半线性椭圆偏微分方程方面（第三章）： 面对强非线性特征导致优化的困难，本文在次临界与临界增长假设下，构造了基于修正能量泛函的极小化算法。本文创新性地建立了一套包含截断界的误差分解框架，推导了 $H^1$ 范数下的总误差上界，并明确给出了算法在求解 Robin 和 Dirichlet 问题时的渐近收敛率。针对多种类型的非线性PDE问题的数值实验，充分验证了该算法处理高维复杂非线性特征时的卓越精度与鲁棒性。
-    \item 在椭圆偏微分方程反势能问题方面（第四章）： 针对反问题固有的严重病态性及“半收敛”现象，本文提出了一种融合 PINNs 与 Tikhonov 正则化（$H^2$ 范数惩罚）的重构框架。本文严格确立了该神经网络格式的条件稳定性估计，并推导了重构误差关于观测噪声 $\delta$ 的渐近收敛率。肿瘤热疗及污染物扩散等反演实验表明，该方法在保持较高精度的同时，对观测噪声展现出了较强的鲁棒性。
+    \item 构造双重参数化的深度神经网络，分别作为未知状态变量和未知势函数的试探空间；
+    \item 收集内部与边界的含噪观测数据，并结合控制方程和边界条件构建复合连续损失函数；
+    \item 利用蒙特卡洛积分对观测区域和偏微分方程残差进行离散化估算；
+    \item 采用随机梯度下降类算法与自动微分技术求解该高度非线性的非凸优化问题。
 \end{itemize}
 
-尽管本文在基于神经网络求解复杂偏微分系统方面取得了一定的理论与算法突破，但受限于深度学习优化理论的复杂性以及 PDE 本身的物理特性，本领域仍有诸多广阔且极具挑战性的方向亟待探索。基于本文的研究基础，未来的工作可从以下几个维度展开：
-\begin{itemize}
-    \item 高阶特征值算法的拓展与优化：本文提出的基于正交惩罚的变分算法在求解前几阶特征值时表现优异。然而，当目标特征值的阶数 $k$ 进一步增大时，正交约束项的数量将线性增加，这不仅会导致损失函数的优化变得及其困难，还可能引发显著的累积误差放大效应。未来的研究可以考虑引入不完全正交化策略、子空间迭代思想或基于复流形优化的神经网络结构，以进一步提升算法对极高阶特征值（甚至是连续谱带）的适用性与计算稳定性。
-    \item 弱化非线性偏微分方程的理论假设，本文在第三章对半线性 PDE 的理论分析建立在 Sobolev 次临界/临界增长以及势函数单调性等假设之上，这主要为了保证能量泛函的严格凸性与弱解的唯一性。在未来的工作中，可以将算法与理论拓展至更为放宽的非线性场景中。
-    \item 探索多源正则化机制在反演网络中的应用：在第四章的 Tikhonov-PINNs 框架中，本文主要采用了 $H^2$ 范数进行正则化，这对于平滑势函数表现出了良好的理论性质。未来可以探讨在 PINNs 损失中引入全变差正则化、稀疏 $L^1$ 正则化等正则化项。如何为这些非光滑正则化项建立严密的误差分析与稳定性界限，将是一个极具理论价值的课题。
-    \item 面向稀疏/局部观测数据的反演算法研究：本文当前的反问题理论分析与数值实验均建立在对全区域 $\Omega$ 内状态变量 $u$ 进行全场观测的强假设之上。然而，在真实的工程应用中，通常只能获取有限的局部内部传感器数据或纯边界测量数据。未来亟需将本文的算法框架推广至局部观测场景。在理论层面，这要求结合偏微分方程的性质来建立新的条件稳定性界；在算法层面，则需要设计更高效的采样策略或注意力机制，以克服因观测数据稀疏带来的更为严重的不适定性。
-\end{itemize}
+针对前文定义的连续损失函数 $\mathcal{L}_{\lambda}(V,u)$，我们引入两个独立的深度神经网络 $u_{\theta} \in \mathcal{N}_{u}$ 和 $V_{\phi} \in \mathcal{N}_{V}$ 分别逼近状态变量 $u$ 和势函数 $V$，其中 $\theta$ 和 $\phi$ 代表网络的权重和偏置参数。为保证 Tikhonov 正则化项中 $\|V\|_{H^2(\Omega)}^2$ 的可微性以及偏微分方程二阶残差的计算，网络通常选择具有二阶或更高阶连续导数的激活函数（如 $\tanh$ 或 $\mathrm{SiLU}$）。
+
+记 $U(\Omega)$ 和 $U(\partial\Omega)$ 分别为区域 $\Omega$ 及其边界 $\partial\Omega$ 上的均匀分布。通过引入独立同分布的配点样本集 $\{X_{i}\}_{i=1}^{N_f}\sim U(\Omega)$ 和 $\{Y_{j}\}_{j=1}^{M_b}\sim U(\partial\Omega)$ 用于计算物理残差。同时，我们收集实际的观测数据点集 $\{X_{k}^{d}\}_{k=1}^{N_d} \subset \Omega$ 和 $\{Y_{l}^{d}\}_{l=1}^{M_d} \subset \partial\Omega$。
+
+此时，对于参数对 $(\phi, \theta)$，离散经验损失函数 $\widehat{\mathcal{L}}_{\lambda}(\phi, \theta)$ 可表示为以下四部分之和：
+
+\begin{equation}\label{eq:empirical:loss}
+\widehat{\mathcal{L}}_{\lambda}(\phi, \theta) = \widehat{\mathcal{M}}(\theta) + \widehat{\mathcal{I}}(\phi, \theta) + \widehat{\mathcal{B}}(\theta) + \widehat{\mathcal{R}}(\phi) 
+\end{equation}
+
+其中，数据失配项基于实际观测数据点进行离散：
+$$\widehat{\mathcal{M}}(\theta) = \frac{|\Omega|}{N_d}\sum_{k=1}^{N_d}|u^{\delta}(X_{k}^{d}) - u_{\theta}(X_{k}^{d})|^2 + \frac{|\partial\Omega|}{M_d}\sum_{l=1}^{M_d}|Tu^{\delta}(Y_{l}^{d}) - Tu_{\theta}(Y_{l}^{d})|^2$$
+
+内部 PDE 残差惩罚项通过在区域 $\Omega$ 内采样的配点进行蒙特卡洛计算：
+$$\widehat{\mathcal{I}}(\phi, \theta) = \frac{|\Omega|}{N_f}\sum_{i=1}^{N_f} \left| \nabla \cdot (\alpha(X_{i}) \nabla u_{\theta}(X_{i})) - V_{\phi}(X_{i})u_{\theta}(X_{i}) + f(X_{i}) \right|^2$$
+
+Neumann 边界条件残差项在边界 $\partial\Omega$ 上的配点进行离散：
+$$\widehat{\mathcal{B}}(\theta) = \frac{|\partial\Omega|}{M_b}\sum_{j=1}^{M_b} \left| \alpha(Y_{j})\frac{\partial u_{\theta}}{\partial n}(Y_{j}) - g(Y_{j}) \right|^2$$
+最后，Tikhonov 正则化项同样利用区域内配点对 $V_\phi$ 的 $H^2$ 范数进行估计。注意到 $\|V\|_{H^2(\Omega)}^2$ 的等价范数包含了函数本身及其一阶、二阶导数，其离散形式为：
+$$\widehat{\mathcal{R}}(\phi) = \lambda \frac{|\Omega|}{N_f}\sum_{i=1}^{N_f} \left( |V_{\phi}(X_{i})|^2 + |\nabla V_{\phi}(X_{i})|^2 + \sum_{p,q=1}^{d} \left| \frac{\partial^2 V_{\phi}}{\partial x_p \partial x_q}(X_{i}) \right|^2 \right)$$
+
+在上述表达式中，网络输出关于空间坐标的各阶导数（如 $\nabla u_{\theta}$, $\nabla V_{\phi}$, $\frac{\partial^2 V_{\phi}}{\partial x_p \partial x_q}$ 等）均可通过深度学习框架中的自动微分机制精确计算，这直接避免了传统伴随方法中有限差分离散所带来的截断误差与网格依赖性。
+
+随后数值解被定义为在某些神经网络类 $\mathcal{N}_V\times\mathcal{N}_u$ 上最小化 Eq.\eqref{eq:empirical:loss}
+\begin{equation}\label{eq:erm}
+(\hat{V},\hat{u})\in\argmin_{(V,u)\in\mathcal{N}_V\times\mathcal{N}_u}\what{\mathcal{L}}_{\lambda}(V,u).
+\end{equation}
+在统计学术语中，Eq.\eqref{eq:erm} 被视为经验风险最小化，这等价于参数空间上的一个优化问题
+\begin{equation*}
+(\phi,\theta)\in\argmin_{(\phi,\theta)\in\Theta_{V}\times\Theta_{u}}\what{\mathcal{L}}_{\lambda}(V(\phi),u(\theta)).
+\end{equation*}
+详细的重构过程如算法 \ref{alg:TikPINNs} 所示。
+\par\noindent
+\begin{minipage}{\textwidth}
+\renewcommand*\footnoterule{}
+\renewcommand{\thempfootnote}{\fnsymbol{mpfootnote}}
+\begin{algorithm}[H]
+\caption{Tikhonov-PINNs}
+\label{alg:TikPINNs}
+\begin{algorithmic}[1]
+\Require 配点数据集 $\{X_{i}\}_{i=1}^{N_f},$ $\{Y_{j}\}_{j=1}^{M_b}$。观测数据点集 $\{X_{k}^{d}\}_{k=1}^{N_d},$ $\{Y_{l}^{d}\}_{l=1}^{M_d}$。
+\State 构建由 $(\phi,\theta)$ 参数化的神经网络 $(V(\phi),u(\theta))$。
+\State 初始化参数 $(\phi,\theta)$。
+\State \textcolor{white!30!black}{\texttt{\# 预训练阶段：仅用 measurement 误差训练 $u$ 网络以获得较好的初始值。}}
+\For {$k=1:\texttt{pretrain epochs}$}
+\State {计算测量误差损失 $\what{\calM}(u(\theta)) $}
+\State {反向传播 $g_{\theta}=\nabla_{\theta}\what{\calM}(\theta)$。}
+\State {更新 $\theta$：$\theta\leftarrow\operatorname{SGD}\big\{\theta,g_{\theta},\tau\big\}$。}
+\EndFor
+\State \textcolor{white!30!black}{\texttt{\# Tikhonov-PINNs 联合训练阶段。}}
+\For {$k=1:\texttt{epochs}$}
+\State {计算经验 Tikhonov-PINNs 损失$$\what{\mathcal{L}}_{\lambda}(V(\phi),u(\theta))=\what{\mathcal{M}}(u(\theta))+\what{\mathcal{I}}(V(\phi),u(\theta))+\what{\mathcal{B}}(u(\theta))+\what{\calR}_{\lambda}(V(\phi))$$}
+\State {反向传播 $(g_{\phi},g_{\theta})=\nabla\what{\mathcal{L}}_{\lambda}(V(\phi),u(\theta))$。}
+\State {通过 SGD 类算法更新 $(\phi,\theta)$：$(\phi,\theta)\leftarrow\operatorname{SGD}\big\{(\phi,\theta),(g_{\phi},g_{\theta}),\tau\big\}$。}
+\EndFor
+\Ensure {$(\hat{V},\hat{u})\leftarrow(V(\phi),u(\theta))$.}
+\end{algorithmic}
+\end{algorithm}
+\end{minipage}
+\begin{remark}
+通过选择合适的激活函数，可以确保 $\mathcal{N}_V\subseteq H^{2}(\Omega)$。因此，Eqs.\eqref{eq:pinns:loss}\eqref{eq:empirical:loss} 中的 $H^{2}$-范数惩罚项是良定的，并且在理论上是合理的。
+\end{remark}
+
+
+\section{误差分析}\label{sec:error:excessrisk}
+在本节中，我们将对反势能问题的超额风险进行严格的误差分析。首先，对于任意一对函数 $(V,u)$，我们定义其无正则化目标泛函（即数据拟合与物理约束项）为 $\mathcal{L}_0(V,u)$：
+\begin{equation*}
+\mathcal{L}(V,u)=\|z^{\delta}-u\|_{L^{2}(\Omega)}^{2}+\|Tz^{\delta}-Tu\|_{L^{2}(\partial\Omega)}^{2}+\mathcal{I}(V,u)+\mathcal{B}(u).
+\end{equation*}
+则完整正则化损失泛函$\mathcal{L}_{\lambda}(V,u) = \mathcal{L}_0(V,u) + \lambda \mathcal{R}(V)$
+在实际的数值计算中，由于算法的非凸性或提前停止等因素，我们求得的近似解 $(V,u)$ 往往无法达到全局最优。为此，我们定义超额风险 $\mathcal{E}_{\lambda}(V,u)$ 为当前近似解的损失函数与真实解 $(V^{\dagger},u^{\dagger})$ 的理论损失之间的差值：
+$$\mathcal{E}_{\lambda}(V,u)=\mathcal{L}_{\lambda}(V,u)-\mathcal{L}_{\lambda}(V^{\dagger},u^{\dagger}).$$
+根据真实解 $(V^{\dagger},u^{\dagger})$ 满足方程的物理性质以及观测数据 $z^\delta$ 的噪声水平定义 \eqref{eq:delta}，存在一个常数与噪声水平无关的常数 $C_0 > 0$，使得$\mathcal{L}_0(V^{\dagger},u^{\dagger})\leq C_0 \delta^{2}.$
+
+结合超额风险的定义与上述噪声界限，我们可以对任意训练得到的解 $(V,u)$ 的正则化损失 $\mathcal{L}_{\lambda}(V,u)$ 进行如下放缩：
+$$\begin{aligned} 
+\mathcal{L}_{\lambda}(V,u) &= \mathcal{E}_{\lambda}(V,u) + \mathcal{L}_{\lambda}(V^{\dagger},u^{\dagger}) \\
+&= \mathcal{E}_{\lambda}(V,u) + \mathcal{L}_0(V^{\dagger},u^{\dagger}) + \lambda \mathcal{R}(V^{\dagger}) \\
+&\leq \mathcal{E}_{\lambda}(V,u) + C_0 \delta^{2} + \lambda \mathcal{R}(V^{\dagger}). 
+\end{aligned}$$
+假设真实解的正则化项有界， 不妨记$\mathcal{R}(V^{\dagger}) \leq M$，并假设数值优化算法能够将超额风险控制在 $\mathcal{O}(\varepsilon)$ 的精度内，令$C_1 = \max\{1, C_0, M\}$，则损失泛函的整体上界可统一表示为：
+$$\mathcal{L}_{\lambda}(V,u) \leq C_2 (\delta^2 + \lambda + \varepsilon),$$
+
+根据前文建立的条件稳定性估计（定理 \ref{th:potential:stability}），势能参数与真实参数之间的误差受控于损失泛函的值。将上述损失函数上界代入稳定性估计式中，可得：
+$$\|(V-V^{\dagger})u^{\dagger}\|_{L^{2}(\Omega)} \leq C'\left(1+\lambda^{-1/4}(\delta^2+\lambda+\varepsilon)^{1/4}\right)\left((\delta^2+\lambda+\varepsilon)^{1/4}+\delta^{1/2}\right).$$
+其中 $C'$ 为依赖于区域 $\Omega$ 和边界条件的常数。
+
+为了获得最优的收敛速率，我们设定正则化参数与优化精度满足 $\lambda=\mathcal{O}(\delta^2)$ 且 $\varepsilon=\mathcal{O}(\delta^2)$，则上述误差项之和满足 $\delta^2+\lambda+\varepsilon = \mathcal{O}(\delta^2)$。将其代入误差估计式的第一项括号中进行渐进分析，有：
+$$\lambda^{-1/4}(\delta^2+\lambda+\varepsilon)^{1/4} = \left(\mathcal{O}(\delta^2)\right)^{-1/4}\left(\mathcal{O}(\delta^2)\right)^{1/4} = \mathcal{O}(1).$$
+我们最终推导出势能参数与真实解之间的误差估计为：
+$$ \begin{aligned}
+\|(V-V^{\dagger})u^{\dagger}\|_{L^{2}(\Omega)} &\leq C' \left( 1 + \mathcal{O}(1) \right) \left( \mathcal{O}(\delta^{1/2}) + \delta^{1/2} \right) \\
+&\leq C'' \delta^{1/2} = \mathcal{O}(\delta^{1/2}).\\
+\end{aligned} $$
+
+至此，我们证明了在适当的正则化策略和优化精度下，反势能问题的重构解随着噪声水平 $\delta \to 0$ 能够以 $\mathcal{O}(\delta^{1/2})$ 的速率收敛。然而，该误差受到状态解 $u^\dagger$ 的加权影响。为了脱离权函数获得势能 $V$ 的绝对误差界，我们需要引入如下引理中的正性条件假设。
+
+\begin{lemma}\label{lem:positivity}\cite{jin2024stochastic}
+假设 $V_1, V_2 \in H^1(\Omega)$ 且 $f \in L^2(\Omega)$，并满足 $\| \nabla V_1 \|_{L^2(\Omega)}, \| \nabla V_2 \|_{L^2(\Omega)} \leq c_V$。设 $u(V_1)$ 和 $u(V_2)$ 为问题 (1.1) 对应的弱解。则存在一个依赖于 $c_V$ 的常数 $C$，使得：
+$$\|(V_1 - V_2)u(V_1)\|_{L^2(\Omega)} \leq C\|u(V_1) - u(V_2)\|_{H^1(\Omega)}^{1/2}$$
+此外，如果存在 $\beta \geq 0$，使得在 $\Omega$ 中几乎处处（a.e.）满足：
+$$u(V_1)(x) \geq C \text{dist}(x, \partial\Omega)^\beta \quad (2.1)$$
+那么存在依赖于 $c_V$ 的常数 $C$，使得以下估计成立：
+$$\|V_1 - V_2\|_{L^2(\Omega)} \leq C\|u(V_1) - u(V_2)\|_{H^1(\Omega)}^{\frac{1}{2(1+2\beta)}}$$
+\end{lemma}
+\begin{proof}
+令误差 $e_V = \hat{V} - V^{\dagger}$。由于 $\hat{V}$ 与 $V^{\dagger}$ 均属于有界的容许参数集，存在常数 $M_V > 0$ 使得 $\|e_V\|_{L^\infty(\Omega)} \leq M_V$。
+为了利用正性条件 $u^{\dagger}(x) \geq \zeta \text{ dist}(x,\partial\Omega)^{\beta}$，我们引入一个依赖于待定参数 $\rho > 0$ 的区域划分。定义边界层区域为 $\Omega_\rho = \{x \in \Omega \mid \text{dist}(x, \partial\Omega) \leq \rho\}$，则其补集为内部区域 $\Omega \setminus \Omega_\rho$。
+我们将 $e_V$ 的 $L^2$ 范数平方拆分为两部分进行估计：
+$$\|e_V\|_{L^2(\Omega)}^2 = \int_{\Omega_\rho} |e_V|^2 dx + \int_{\Omega \setminus \Omega_\rho} |e_V|^2 dx.$$
+\begin{enumerate}
+\item 在边界层区域 $\Omega_\rho$ 内，利用 $e_V$ 的有界性，且假设区域 $\Omega$ 具有 Lipschitz 连续边界，故存在常数 $c_0 > 0$ 使得 $|\Omega_\rho| \leq c_0 \rho$。因此：
+$$\int_{\Omega_\rho} |e_V|^2 dx \leq M_V^2 |\Omega_\rho| \leq M_V^2 c_0 \rho = C_3 \rho.$$
+\item 在内部区域 $\Omega \setminus \Omega_\rho$ 内，由于 $\text{dist}(x, \partial\Omega) > \rho$，由正性条件可知 $u^{\dagger}(x) > \zeta \rho^\beta$。因此可以将其转化为加权误差：
+$$ \begin{aligned}
+\int_{\Omega \setminus \Omega_\rho} \|e_V\|^2 dx &\leq \frac{1}{\zeta^2 \rho^{2\beta}} \int_{\Omega \setminus \Omega_\rho} |e_V|^2 |u^{\dagger}|^2 dx \\
+&\leq \frac{1}{\zeta^2 \rho^{2\beta}} |e_V u^{\dagger}|_{L^2(\Omega)}^2 \\
+&\leq \frac{C^2 \delta}{\zeta^2 \rho^{2\beta}} = C_4 \frac{\delta}{\rho^{2\beta}}.
+\end{aligned} $$
+\end{enumerate}
+综合上述两部分，我们得到整体误差的控制不等式：
+$$\|e_V\|_{L^2(\Omega)}^2 \leq C_3 \rho + C_4 \frac{\delta}{\rho^{2\beta}}.$$
+需要平衡 $\rho$ 和 $\delta / \rho^{2\beta}$ 这两项，取$ \rho = \delta^{\frac{1}{1+2\beta}}$令它们同阶，代回误差控制不等式中，可得：
+$$\|e_V\|_{L^2(\Omega)}^2 \leq (C_3 + C_4) \delta^{\frac{1}{1+2\beta}}.$$
+两边同时开平方，令 $C' = \sqrt{C_3 + C_4}$，最终得出：
+$$\|e_V\|_{L^2(\Omega)} \leq C' \delta^{\frac{1}{2(1+2\beta)}}.$$
+引理证毕。
+\end{proof}
+
+结合上述超额风险的推导与引理 \ref{lem:positivity}，我们可以建立本章的核心收敛率定理：
+\begin{theorem}[Tikhonov-PINNs 的收敛率] \label{thm:ConvergenceRate}
+在模型\eqref{eq:pde:potential} 和 \eqref{eq:measurement} 下。令 $\delta \in (0,1)$ 为噪声水平。假定假设 \ref{ass:potential:Vdaggerreg} 成立，如果我们选择 $\varepsilon = O(\delta^2)$, $\lambda = O(\delta^2)$
+
+$$\left\lVert (\hat{V}-V^{\dagger})u^{\dagger} \right\rVert_{L^{2}(\Omega)} \leq C \cdot \delta^{1/2}.$$
+此外，如果存在某个 $\beta \geq 0$ 和 $\zeta > 0$ 使得 $u^{\dagger}(x) \geq \zeta \text{ dist}(x,\partial\Omega)^{\beta}$ 在 $\Omega$ 中几乎处处成立，则
+$$\left\lVert \hat{V}-V^{\dagger} \right\rVert_{L^{2}(\Omega)} \leq C' \cdot \delta^{\frac{1}{2(1 + 2\beta)}} .$$
+这里 $C,C'$ 是依赖于 $d$, $\Omega$, $s$, $B_{\alpha}$, $B_{f}$, $B_{g}$, $\overline{V}$, $V^{\dagger}$, $u^{\dagger}$ 的正常数，且 $C'$ 还依赖于 $\zeta$。
+\end{theorem}
+
+\begin{remark}[正性条件]
+正性条件 $u^{\dagger}(x) \geq \zeta \text{ dist}(x,\partial\Omega)^{\beta}$ 量化了解 $u^{\dagger}$ 当 $x$ 靠近边界（即 $\text{dist}(x,\partial\Omega) \to 0^{+}$）时趋于零的衰减率。这种基于区域划分的证明技巧不仅在理论上移除了势能估计中的退化权重，也揭示了边界处状态解的衰减速度（$\beta$ 越大，衰减越快）是如何影响反问题参数重构的整体收敛速率的。
+\end{remark}
+
+\section{数值实验}\label{sec:numerical}
+在本节中，我们提供了几个例子来说明 Tikhonov-PINNs 的效率。首先，我们概述数值设置如下。
+
+\subsection{一维光滑势问题}
+在训练 Tikhonov-PINNs 时，我们分别采用两个神经网络来逼近未知解 $u$ 和势函数 $V$。每个网络都是具有 $tanh$ 激活函数和每两层之间存在残差连接的 DNN。对于所有算例，我们进行了多次运行以确保结果的可靠性，并且为每种情况提供了详细的训练设置。
+
+在接下来的小节中，我们将本文提出的方法与传统的基于有限元的方法进行了比较。具体而言，我们使用了开源库 \textbf{dolfin-adjoint} \cite{mitusch2019dolfin}，该库基于 \textbf{FEniCS} \cite{alnaes2015fenics,grossmann2024can} 构建，专为求解反问题和最优控制问题而设计。该库获得了 2015 年威尔金森数值软件奖，并在科学界获得了较广泛的认可和采用。
+
+所有数值实验均在武汉大学超算集群上进行，使用 Python 3.12.3 实现。该超算系统配备了 128GB ECC 2400MHz DDR4 内存、Intel Xeon E5-2640v4 2.4GHz CPU 和 NVIDIA Tesla V100 16GB GPU。
+
+我们已在 GitHub 上发布了所有训练代码，网址为 \url{https://github.com/shiki442/Tikhonov-PINNs}。该仓库包含完整的数据生成、训练和评估流程，以及每个算例的参考配置文件，以便于读者复现和进一步探索。
+
+
+
+\subsection{光滑势问题}
+
+在本小节中，我们利用光滑算例进行定量分析。为了最小化优化误差的影响，我们使用充足的样本数量将网络训练了足够长的时间。
+
+\subsubsection*{一维问题}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures3/ex0_q.eps}
+    \includegraphics[width=\textwidth]{figures3/ex0_u.eps}
+    \caption{例 \ref{example:1d} 的精确解、Tikhonov-PINN 解和绝对误差。第一行对应势函数 $V$，第二行对应解 $u$。从左到右，结果是在不同的噪声水平下获得的。}
+    \label{fig:ex0_q_u}
+\end{figure}
+
+在本小节中，我们使用一个一维例子来验证 Tikhonov-PINNs 的收敛率，并研究超参数对重构误差的影响。
+\begin{example}\label{example:1d}
+令 $\Omega=(0,1)$ 且 $\alpha\equiv 1$，定义精确势函数为 $V^{\dagger}(x)=\exp(x)$，对应的解为 $u^{\dagger}(x) = 1+\sin(\pi x)$。源项 $f$ 和边界条件 $g$ 由模型方程 Eq.\eqref{eq:pde:potential} 确定。
+\end{example}
+
+$V$ 和 $u$ 的精确解与 Tikhonov-PINNs 解如图 \ref{fig:ex0_q_u} 所示。在本例中，我们设置 $\lambda=10^{-7}$，采样 50,000 个内部点，并将边界点设为 \{0, 1\}。优化使用 Adam 优化器进行，学习率为 $10^{-4}$，迭代次数为 10,000 次。我们采用一个具有 $tanh$ 激活函数且宽度为 64 的两层神经网络来逼近 $V$ 和 $u$，并在架构中每两个相邻隐藏层之间应用残差连接。除非另有说明，本小节中的所有一维算例均使用与本例相同的默认参数设置。
+
+\subsubsection*{收敛率}
+在定理 \ref{thm:ConvergenceRate} 中，我们建立了 $V$ 和 $u$ 关于噪声水平 $\delta$ 的收敛率。为了验证这一结果，我们计算了不同噪声水平下 $V$ 和 $u$ 的相对误差，结果如图 \ref{fig:ex0:noise} 所示。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.49\textwidth]{figures3/ex0_noise_q.eps}
+    \includegraphics[width=0.49\textwidth]{figures3/ex0_noise_u.eps}
+    \caption{不同正则化参数下噪声水平对解误差的影响。左图显示了 $V$ 的结果，其中 $\lambda=$$10^{-7}$, $10^{-8}$, $10^{-9}$ 和 0 对应的对数回归曲线的斜率分别为 0.708、0.748、0.760 和 0.743，平均斜率为 0.744。右图显示了 $u$ 的结果，其中对应的斜率分别为 1.22、1.08、1.25 和 1.26，平均斜率为 1.21。}
+    \label{fig:ex0:noise}
+\end{figure}
+
+由于目标势函数具有正下界，该算例满足 $\beta = 0$ 的正性条件。根据定理~\ref{thm:ConvergenceRate}，$V$ 和 $u$ 的收敛率可以任意接近 $O(\delta^{0.5})$ 和 $O(\delta)$。这一点在图 \ref{fig:ex0:noise} 中得到了检验，其中 $u$ 和 $V$ 的数值收敛率与理论收敛率非常一致。平均而言，在不同的 $\lambda$ 值下，我们观察到 $u$ 的经验收敛率为 $O(\delta^{1.21})$，$V$ 的经验收敛率为 $O(\delta^{0.74})$，这实际上快于理论收敛率，表明我们的理论界可能不是最优的。
+
+\subsubsection*{正则化的影响}
+在本小节中，我们要研究不同正则化在求解算例 \ref{example:1d} 时的影响。如表 \ref{tab:regularization} 所示，当训练样本量相对较小（表 1 中的第一个子表）时，与 $L^2$ 正则化或原始 PINNs 相比，$H^2$ 正则化显著降低了 $V$ 的相对误差，尤其是当正则化系数 $\lambda$ 相对较大时。第二个子表表明，随着更多训练样本的可用，这种改进变得不那么明显。这是符合预期的，因为适当的正则化和增加数据量都有助于防止过拟合并提高精度。尽管如此，在两种情况下，当 $\lambda$ 选择得当时，$H^2$ 正则化都能产生最小的重构误差。这些结果表明了 $H^2$ 正则化在求解此类反势问题时的有效性。
+
+\begin{table}[hbtp]
+\centering
+\footnotesize
+\caption{算例 \ref{example:1d} 中不同正则化下 $\hat{V}$ 的相对 $L^{2}$ 误差。}
+\begin{tabular}{lrrrrr}
+\hline
+\multirow{2}[0]{*}{$\text{err}(V_{\text{pinn}})$} & \multicolumn{5}{c}{正则化参数 $\lambda$} \\
+\cline{2-6}
+& \multicolumn{1}{l}{$1.0\times 10^{-3}$} & 
+\multicolumn{1}{l}{$1.0\times 10^{-4}$} &
+\multicolumn{1}{l}{$1.0\times 10^{-5}$} &
+\multicolumn{1}{l}{$1.0\times 10^{-6}$} & 
+\multicolumn{1}{l}{$1.0\times 10^{-7}$} \\
+   \hline
+$H^2$ 正则化 & $5.44\times 10^{-2}$ & $\textbf{5.26}\times \textbf{10}^{-2}$ & $8.27\times 10^{-2}$ & $8.99\times 10^{-2}$ & $9.07\times 10^{-2}$ \\
+$L^2$ 正则化 & $9.35\times 10^{-2}$ & $9.11\times 10^{-2}$ & $9.08\times 10^{-2}$ & $9.08\times 10^{-2}$ & $9.08\times 10^{-2}$ \\
+无正则化 & $9.08\times 10^{-2}$ & $9.08\times 10^{-2}$ & $9.08\times 10^{-2}$ & $9.08\times 10^{-2}$ & $9.08\times 10^{-2}$  \\
+\hline
+&       &       &       &       & \\
+\hline
+\multirow{2}[0]{*}{$\text{err}(V_{\text{pinn}})$} & \multicolumn{5}{c}{正则化参数 $\lambda$} \\
+\cline{2-6}
+& \multicolumn{1}{l}{$1.0\times 10^{-3}$} & 
+\multicolumn{1}{l}{$1.0\times 10^{-4}$} &
+\multicolumn{1}{l}{$1.0\times 10^{-5}$} &
+\multicolumn{1}{l}{$1.0\times 10^{-6}$} & 
+\multicolumn{1}{l}{$1.0\times 10^{-7}$} \\
+\hline
+$H^2$ 正则化 & $8.96\times 10^{-2}$ & $3.14\times 10^{-2}$ & $\textbf{2.94}\times \textbf{10}^{-2}$ & $3.03\times 10^{-2}$ & $3.04\times 10^{-2}$  \\
+$L^2$ 正则化 & $3.80\times 10^{-2}$ & $3.10\times 10^{-2}$ & $3.05\times 10^{-2}$ & $3.04\times 10^{-2}$ & $3.04\times 10^{-2}$ \\
+无正则化 & $3.04\times 10^{-1}$ & $3.04\times 10^{-2}$ & $3.04\times 10^{-2}$ & $3.04\times 10^{-2}$ & $3.04\times 10^{-2}$ \\
+\hline
+
+\end{tabular}
+\label{tab:regularization}
+\end{table}
+
+\subsubsection*{其他超参数的影响}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.48\textwidth]{figures3/ex0_nsample.eps}
+    \includegraphics[width=0.48\textwidth]{figures3/ex0_width.eps}
+    \caption{样本大小和网络宽度对算法精度的影响。我们进行了多次运行，并展示了相应的置信区间。特别地，由于网络深度是固定的，非零参数的数量 $R_{\calQ}$ 与网络宽度近似成正比。}
+    \label{fig:ex0:width}
+\end{figure}
+
+我们研究了神经网络复杂度和样本复杂度对模型性能的影响。根据定理 \ref{thm:ConvergenceRate}，要实现更低的重构误差，需要增加样本大小和网络规模。我们通过以下实验验证了这种单调关系。在图~\ref{fig:ex0:width} 左侧，我们固定网络架构并改变样本大小以考察其影响。在图~\ref{fig:ex0:width} 右侧，我们保持两层的网络深度，同时调整网络宽度，从而按比例缩放神经元总数 $R_\mathbf{\calQ}$。对每个设置都进行了多次运行，图中显示的结果表明，误差随着样本大小和参数数量的增加而减小。
+
+\subsection{污染物扩散问题}
+接下来，我们考虑一个二维平滑的污染物扩散算例。其中，$u^{\dagger}$ 表示污染物的浓度分布，待反演的参数 $V^{\dagger}$ 代表地层中不同区域对污染物的自然降解能力。
+
+\begin{example}\label{example:ex03}
+令计算区域为 $\Omega=(0,1)^{2}$，且扩散系数 $\alpha\equiv 1$。假设在坐标 $(0.8, 0.2)$ 处存在一个反应源，我们考虑反演如下形式的势函数：
+\begin{equation*}
+V^{\dagger}(x_{1},x_{2})=1+2\exp\left(-5\big((x_{1}-0.8)^2+(x_{2}-0.2)^2\big)\right),
+\end{equation*}
+且设定精确解 $u^{\dagger}$ 为：
+\[
+u^{\dagger}(x_{1},x_{2})=1+\sin(\pi x_{1})\sin(\pi x_{2}).
+\]
+\end{example}
+
+在本实验中，$q$ 神经网络包含 4 个宽度为 128 的隐藏层，$u$ 神经网络包含 5 个宽度为 64 的隐藏层。我们在区域内部及边界上共随机采样 100,000 个配置点，并采用 Adam 优化器（初始学习率设为 $2\times 10^{-4}$）对模型进行 50,000 次迭代训练。
+
+为进行对比，我们同样采用有限元方法求解了该反演问题。在 FEM 的实现中，我们使用了基于一阶拉格朗日基函数的有限元空间，并利用 L-BFGS 算法对解进行了 50 次迭代优化。为确保比较的公平性，计算区域 $[0,1]^2$ 被均匀离散化为 $320\times 320=102,400$ 个网格节点，该离散自由度与 Tikhonov-PINNs 方法中使用的总样本数（100,000 个配置点）基本相当。
+
+\begin{figure}[htbp]
+    \centering
+    % 第一个子图：Tikhonov-PINNs 方法
+    \begin{subfigure}[b]{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures3/ex03_heatmap_nn.png}
+        \caption{Tikhonov-PINNs 方法结果}
+        \label{fig:ex03_nn}
+    \end{subfigure}
+    \vspace{0.5cm} % 增加子图之间的垂直间距以提升美观度
+    
+    % 第二个子图：有限元方法 (FEM)
+    \begin{subfigure}[b]{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures3/ex03_heatmap_fem.png}
+        \caption{有限元方法 (FEM) 结果}
+        \label{fig:ex03_fem}
+    \end{subfigure}
+    
+    % 总标题：包含详细描述
+    \caption{两种方法重构结果的对比：(a) Tikhonov-PINNs 与 (b) FEM。最左侧列展示了算例 \ref{example:ex03} 中势函数 $V^{\dagger}$（上）和浓度分布解 $u^{\dagger}$（下）的真实情况；右侧列展示了在不同噪声水平 $\delta$ 下，采用最优正则化参数 $\lambda$ 重构的势函数 $\hat{V}$ 与解 $\hat{u}$。}
+    \label{fig:ex03}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{不同噪声水平 $\delta$ 下 Tikhonov-PINNs 与 FEM 方法重构误差的定量比较}
+\begin{tabular}{lrrrr}
+\toprule
+\multirow{2}[0]{*}{$\text{err}(V)$} & \multicolumn{4}{c}{噪声水平 $\delta$} \\
+\cmidrule{2-5}
+& \multicolumn{1}{c}{$0$} & 
+\multicolumn{1}{c}{$1\%$} &
+\multicolumn{1}{c}{$10\%$} &
+\multicolumn{1}{c}{$50\%$} \\
+\midrule
+PINNs方法 & $1.65\times 10^{-2}$ & $1.76\times 10^{-2}$ & $6.89\times 10^{-2}$ & $3.45\times 10^{-1}$  \\
+FEM方法 & $2.17\times 10^{-2}$ & $3.42\times 10^{-2}$ & $5.46\times 10^{-2}$ & $1.46\times 10^{-1}$ \\
+\bottomrule
+&       &       &       &       \\
+\midrule
+\multirow{2}[0]{*}{$\text{err}(u)$} & \multicolumn{4}{c}{噪声水平 $\delta$} \\
+\cmidrule{2-5}
+& \multicolumn{1}{c}{$0$} & 
+\multicolumn{1}{c}{$1\%$} &
+\multicolumn{1}{c}{$10\%$} &
+\multicolumn{1}{c}{$50\%$} \\
+\midrule
+PINNs解 & $1.72\times 10^{-4}$ & $2.29\times 10^{-4}$ & $2.59\times 10^{-3}$ & $1.13\times 10^{-2}$  \\
+FEM解 & $7.26\times 10^{-5}$ & $2.68\times 10^{-4}$ & $1.44\times 10^{-3}$ & $6.97\times 10^{-3}$  \\
+\bottomrule
+\end{tabular}
+\label{tab:ex03}
+\end{table}
+
+数值重构结果如图 \ref{fig:ex03} 所示。在各项实验中，正则化参数 $\lambda$ 均被调整至较优取值。为了进一步量化评估噪声水平 $\delta$ 对模型性能的影响，表 \ref{tab:ex03} 详细列出了不同噪声条件下两种方法的相对误差对比。结果表明，在低噪声环境下，FEM 与 Tikhonov-PINNs 均能较好地重构势函数 $V$ 和解 $u$。同时可以观察到，随着观测数据中噪声水平的增加，重构 $V$ 的误差呈现出逐渐扩大的趋势，这一现象与我们前述的理论分析结论较为吻合。
+值得注意的是，在部分条件下，若 $\lambda$ 选取适当，FEM 能够取得比 Tikhonov-PINNs 更低的相对 $L^2$ 误差。这表明传统 FEM 在处理此类光滑问题时具有一定优势。然而，FEM 的实际表现依赖于迭代初值的选取以及早停机制的设计（详细分析见第 \ref{sec:semi_converge} 节）。此外，相较于标准 FEM，Tikhonov-PINNs 在处理非光滑介质或复杂条件下的反演问题时，展现出较好的性能与鲁棒性，我们将在后续章节中对此展开讨论。
+
+\subsection{肿瘤热疗问题}
+在生物传热学中，人体组织的稳态温度场通常由热传导方程（如 Pennes 生物传热方程）描述，其中 $u(x) = T(x)$ 表示空间温度场分布。在此物理模型中，反演目标 $V(x)$ 直接对应于未知的血流灌注率分布，而 $f(x)$ 则包含了外部热源和背景温度的综合影响。由于肿瘤组织内部血管生成异常，其局部的血流灌注率 $\omega_b(x)$ 通常显著高于周围的正常组织。因此，通过数学反问题的方法反演势函数 $V(x)$，可以实现对肿瘤病灶区域的定位与定量分析，这在临床无创热疗规划中具有指导意义。
+
+\begin{example}\label{example:ex05}
+令$\Omega=(0,1)^{2}$，且热扩散系数 $\alpha\equiv 1$。假设在坐标 $(0.4, 0.4)$ 处存在一个核心半径为 $0.15$ 的肿瘤灶。考虑到肿瘤通常具有相对清晰的生理边界，且其内部血流灌注率明显高于正常组织，我们构造一个具有局部非光滑特性的势函数来模拟这一肿瘤热疗场景。具体而言，考虑对如下分段势函数 $V^{\dagger}(x_{1},x_{2})$：
+$$V^{\dagger}(x_{1},x_{2}) =
+\begin{cases}
+5, & r < 0.15 \\
+5 - 80(r - 0.15), & 0.15 \le r \le 0.2 \\
+1, & r > 0.2
+\end{cases}$$
+其中 $r = \sqrt{(x_1-0.4)^2+(x_2-0.4)^2}$ 表示距肿瘤中心的径向距离。该势函数在 $r \in [0.15, 0.2]$ 区域内模拟了肿瘤边缘到正常组织的过渡带。同时，设定精确的稳态温度场解 $u^{\dagger}$ 为：
+\[
+u^{\dagger}(x_{1},x_{2})=1+\sin(\pi x_{1})\sin(\pi x_{2}).
+\]
+\end{example}
+
+\begin{figure}[htbp]
+    \centering
+    % 第一个子图：Tikhonov-PINNs 方法（假设文件名暗示这是神经网络方法）
+    \begin{subfigure}[b]{\textwidth}
+        \centering
+        % 插入图片
+        \includegraphics[width=0.7\textwidth]{figures3/ex05_heatmap_nn.png}
+        % 简短的子标题
+        \caption{Tikhonov-PINNs 方法结果}
+        \label{fig:ex05_nn}
+    \end{subfigure}
+    \hfill % 填充中间空白，让图片分别对齐左右
+    % 第二个子图：有限元方法 (FEM)
+    \begin{subfigure}[b]{\textwidth}
+        \centering
+        % 插入图片
+        \includegraphics[width=0.7\textwidth]{figures3/ex05_heatmap_fem.png}
+        % 简短的子标题
+        \caption{有限元方法 (FEM) 结果}
+        \label{fig:ex05_fem}
+    \end{subfigure}
+    
+    % 总标题：包含详细描述
+    \caption{两种方法重构结果的比较：(a) Tikhonov-PINNs 和 (b) 有限元方法 (FEM)。
+    左侧小图展示了例 \ref{example:ex05} 中势函数 $V^{\dagger}$（上）和解 $u^{\dagger}$（下）的真值；
+    右侧图展示了在不同噪声水平 $\delta$ 下，使用最优正则化参数 $\lambda$ 重构的势 $\hat{V}$ 和解 $\hat{u}$。}
+    \label{fig:ex05}
+\end{figure}
+
+图 \ref{fig:ex05} 展示了在1\%噪声和10\%噪声下，Tikhonov-PINNs 方法与传统有限元方法对势函数 $\hat{V}$ 和温度场 $\hat{u}$ 的重构结果对比。由于 $V^{\dagger}$ 在肿瘤边界处呈现非光滑的过渡特性，这给反问题的求解带来了挑战。从对比结果可以看出，FEM 在处理此类非光滑突变时存在困难，虽然对温度场的求解比较准确，但未能有效捕捉 $V(x)$ 的局部信息；而 Tikhonov-PINNs 借助神经网络的表达能力，配合正则化参数 $\lambda$ 的约束，能够较好地捕捉到肿瘤的高灌注边界，展现出对局部突变的函数拟合能力与对噪声的鲁棒性。
+
+\begin{figure}[htbp]
+   \centering
+   \setlength{\abovecaptionskip}{10pt}
+   \includegraphics[width=\textwidth]{figures3/ex05_training_curves.png}
+   \caption{Tikhonov-PINNs 方法求解例\ref{example:ex05}的训练损失曲线。图中展示了总损失、$u$的相对$L^2$误差及$q$的相对$L^2$误差随迭代步数的收敛过程。}
+   \label{fig:ex05_training_curves}
+\end{figure}
+图 \ref{fig:ex05_training_curves} 进一步给出了 Tikhonov-PINNs 方法在训练过程中的损失函数收敛曲线。
+
+
+\subsection{PINNs方法对半收敛现象的缓解}\label{sec:semi_converge}
+半收敛现象是不适定反问题求解过程中普遍存在的一个核心挑战 \cite{engl1996regularization}。具体表现为：在迭代优化的初始阶段，数值解会逐渐逼近真实解；然而随着迭代步数的增加，观测数据中的噪声会被逐渐放大，导致解偏离真实解，在误差曲线上表现为先降后升的趋势。
+
+为了直观展示本文方法在缓解半收敛现象方面的优势，我们考察如下带有不连续势函数的测试算例：
+\begin{example}\label{ex:semi_converge}
+设计算区域 $\Omega=(0,1)^2$ 且参数 $\alpha \equiv 1$。定义真实的势函数 $V^{\dagger}$ 如下（其中 $r$ 为空间点距$(0.6,0.4)$的径向距离）：
+$$V^{\dagger}(x_{1},x_{2}) =
+\begin{cases}
+0.75, & \exp(-25r^2) > 0.75 \\
+\exp(-25r^2), & 0.25 \le \exp(-25r^2) \le 0.75 \\
+0.25, & \exp(-25r^2) < 0.25
+\end{cases}$$ 
+\end{example}
+
+我们分别采用传统有限元方法（FEM）与本文提出的 Tikhonov-PINNs 方法对上述问题进行求解，重构误差随迭代次数的演化曲线如图 \ref{fig:err_q} 所示。观察可知，对于该不连续问题，传统 FEM 方法的误差在初期下降后出现了明显的反弹上升，且随着噪声水平的提高，半收敛现象更加明显。这种现象降低了重构的鲁棒性，迫使求解过程需要依赖较精准的早停策略才能获得较好的解，限制了其在实际应用中的潜力。相比之下，Tikhonov-PINNs 方法较好地克服了这一问题。本方法的误差曲线呈现出平滑且单调的下降趋势，未观测到明显的误差反弹。这种对噪声的内在鲁棒性允许算法进行更深度的迭代，从而收敛至较高精度的重构结果。
+
+进一步地，我们对两种方法的计算开销进行了对比分析。在求解算例 \ref{ex:semi_converge} 的单步迭代中，Tikhonov-PINNs 的平均耗时约为 1.91 秒，略低于 FEM 的 2.04 秒。如图 \ref{fig:err_q} 所示，在执行 120 次迭代后（总耗时约 229.2 秒），Tikhonov-PINNs 在配置约 $10^6$ 个采样点的情况下，成功达到了 $\mathcal{O}(10^{-2})$ 量级的重构精度。作为对照，FEM 经过相同的 120 次迭代（总耗时约 244.8 秒）后，其重构精度仅停留在 $\mathcal{O}(10^{-1})$ 量级。上述结果表明，Tikhonov-PINNs 在处理具有不连续特征的复杂反问题时表现出较好的性能。
+
+\begin{figure}[htbp]
+   \centering
+   \setlength{\abovecaptionskip}{10pt}
+   \includegraphics[width=\textwidth]{figures3/err_q.eps}
+   \caption{算例~\ref{example:nonsmooth} 中重构势函数 $V$ 的相对 $L^{2}$ 误差随迭代次数变化的曲线。左列显示了有限元方法获得的结果，而右列显示了 Tikhonov-PINNs 获得的结果。}
+   \label{fig:err_q}
+\end{figure}
+
+\section{本章小结}
+本章针对带有未知势函数的椭圆型反问题，提出了一种结合 Tikhonov 正则化的PINNs求解框架。在理论层面，本章推导了该神经网络格式的条件稳定性估计，并确立了重构误差关于观测噪声的渐近收敛率。数值实验结果验证了理论分析的合理性。相较于传统有限元方法，Tikhonov-PINNs 展现出两个特点：一是具备较强的特征拟合能力，能够较好地重构包含局部突变的非光滑势函数；二是表现出较好的噪声鲁棒性，缓解了不适定问题迭代求解中常见的”半收敛”现象，从而实现了较稳定、较高精度的参数反演。

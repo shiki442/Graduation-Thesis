@@ -1,8 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xelatex -interaction=nonstopmode PhdTemplate.tex)",
-      "Bash(findstr /C:\"Error\" /C:\"! \" /C:\"LaTeX Warning\")"
+      "Bash(xelatex -interaction=nonstopmode PhdTemplate.tex)"
     ]
   }
 }

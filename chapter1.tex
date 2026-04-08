@@ -1,302 +1,178 @@
 \chapter{绪论}
 
 \section{深度学习求解偏微分方程方法概述}
-偏微分方程是计算数学研究的核心问题，在物理学、工程学等多个领域具有广泛应用。传统的数值求解算法，例如有限差分法、有限元方法、有限体积法和谱方法等，往往依赖于基函数或网格划分来进行计算 。近年来，深度神经网络在科学计算领域取得了革命性进展，为偏微分方程的数值解提供了新的思路。2018年以来，随着物理信息神经网络（Physics-Informed Neural Networks, PINNs）和深度里兹法等方法的提出，深度神经网络在求解偏微分方程（Partial Differential Equations, PDEs）方面取得了显著进展。相比于传统的数值方法，如有限元法、有限差分法等，PINNs等新兴方法展示出了独特的优势。
+偏微分方程是计算数学研究的核心问题，在物理学、工程学等多个领域具有广泛应用。传统的数值求解算法，例如有限差分法、有限元方法、有限体积法和谱方法等，往往依赖于基函数或网格划分来进行计算 。近年来，深度神经网络在科学计算领域取得了重要进展，为偏微分方程的数值解提供了新的思路。2018年以来，随着物理信息神经网络（Physics-Informed Neural Networks, PINNs）和深度里兹法（Deep Ritz Method, DRM）等方法的提出，深度神经网络在求解偏微分方程（Partial Differential Equations, PDEs）方面取得了重要进展。相比于传统的数值方法，如有限元法、有限差分法等，PINNs等新兴方法展示出了独特的优势。
 
 这些新方法的提出，逐渐引起了学术界和工业界的广泛关注。人们开始意识到，深度神经网络能够克服传统数值方法在处理复杂边界条件、多尺度问题以及高维问题时所面临的一些瓶颈和挑战。具体而言，DNNs在逼近复杂函数、处理非线性关系和适应高维空间上表现得尤为出色，这为传统科学计算领域带来了新的思路和工具。
 
 
 \section{研究现状与相关工作}\label{sec-compile}
-基于深度学习求解偏微分方程的探索最早可追溯至1998年，Lagaris等人\cite{lagaris1998artificial}首次提出了利用神经网络参数化PDE解的早期构想，为该领域奠定了思想萌芽。近年来，基于偏微分方程的三种基本数学表达形式（强形式、变分形式和弱形式），深度学习求解方法沿着三条主要路径取得了突破性进展：
 
-第一类是基于方程强形式的方法，2019年，Raissi等人\cite{raissi2019physics}提出了一种将物理守恒定律作为软约束编码至神经网络损失函数中的通用框架。该方法直接基于方程的强形式，实现了一套能够同时处理正问题与反问题的统一架构。在理论层面，Wang等人（2021年）\cite{wang2021understanding}基于神经正切核（NTK）理论，揭示了无限宽PINNs的训练动态退化为线性模型的本质，为其优化机制提供了重要的理论视角。随后，针对复杂几何域和多尺度物理场，研究者们相继提出了cPINNs\cite{jagtap2020conservative}、XPINNs\cite{jagtap2021extended}等区域分解策略，显著提升了PINNs在复杂问题中的表达能力与训练稳定性。
+基于深度学习求解 PDE 的探索最早可追溯至 1998 年，Lagaris 等人 \cite{lagaris1998artificial} 首次提出了利用神经网络参数化 PDE 解的构想，为该领域奠定了思想萌芽。近年来，随着计算能力的提升与算法的演进，深度学习求解方法沿着三条主要物理信息融合路径取得了重要进展：第一类是基于方程强形式残差的方法，以 Raissi 等人（2019）\cite{raissi2019physics} 提出的物理信息神经网络（Physics Informed Neural Networks, PINNs）为代表，其将物理守恒定律作为软约束纳入损失函数，并衍生出 cPINNs \cite{jagtap2020conservative} 和 XPINNs \cite{jagtap2021extended} 等区域分解策略以应对复杂几何域；第二类是基于变分原理的DRM，由 E 等人于2018年提出 \cite{Weinan2017The}，该方法通过最小化等价的能量泛函来逼近真实解，降低了对网络平滑性的要求；第三类是基于方程弱形式的深度伽辽金方法（DGM），由 Sirignano 和 Spiliopoulos（2018）提出 \cite{Justin2018DGM}，通过在时空域内进行无网格随机采样并最小化弱形式残差，进一步丰富了求解策略。
 
-第二类是基于变分原理的深度里兹方法（Deep Ritz Method, DRM）。该方法由鄂维南院士团队于2018年提出\cite{Weinan2017The}。DRM依托于变分原理，将偏微分方程的求解转化为等价的能量泛函极值问题，并利用神经网络去逼近使泛函最小化的解。由于变分形式通常只涉及较低阶的导数计算，DRM大幅降低了对神经网络平滑性的要求，且在处理高维问题时表现出卓越的性能。2021年，Duan等人进一步分析了DRM在求解椭圆型方程时的逼近误差与统计误差，给出了严格的收敛速率估计。
+伴随算法框架的日趋成熟，深度学习求解 PDE 的数学理论体系也逐步确立。源于统计学习理论的核心思想，神经网络求解 PDE 的总误差通常被分解为三个部分：逼近误差（Approximation Error）、泛化误差（也称统计误差，Statistical Error）以及优化误差（Optimization Error）\cite{mishra2023estimates}。在逼近误差方面，早期的万能逼近定理仅提供了存在性证明。随后，Yarotsky \cite{yarotsky2017error,yarotsky2018optimal} 率先证明了深度 ReLU 网络对 Sobolev 空间函数的最优逼近性；Guhring 等人 \cite{guhring2020error} 进一步论证了深层网络对高阶弱导数的高精度逼近，为 PINNs 和 DRM 奠定了坚实的理论基石；2021 年，Shen 等 \cite{lu2021deep} 将其系统性拓展至更广泛的激活函数，给出了更严格的逼近率估计。
 
-第三类是基于方程弱形式的深度伽辽金方法（Deep Galerkin Method, DGM）。Sirignano 和 Spiliopoulos 于 2018 年提出利用神经网络作为试探函数\cite{Justin2018DGM}，通过在时空域内进行无网格随机采样并最小化 PDE 的弱形式（或积分形式）残差来逼近真实解，进一步丰富了无网格求解策略。
+在泛化误差与收敛性分析方面，不同框架的理论成果也相继涌现。对于 PINNs，Shin 等人 \cite{shin2020convergence} 利用 Rademacher 复杂度证明了线性二阶椭圆与抛物型方程的收敛性；Perdikaris 团队 \cite{wang2022and} 将神经正切核理论引入分析框架，揭示了无限宽网络训练动态退化为线性模型的本质；近期，一些针对特定非线性方程的 PINNs 误差边界也被逐步建立 \cite{zhang2024priori,de2024error,qian2023physics}。对于 DRM，Lu 等 \cite{lu2021priorieigen} 从谱 Barron 空间的视角论证了其克服维数灾难的巨大潜力；Duan 等人 \cite{duan2022convergence} 率先建立了线性椭圆 PDE 的 DRM 误差分析框架，近期 Jiao \cite{jiao2024error,jiao2025error} 与 Ding \cite{ding2025convergence} 等人更是进一步推导了过参数化假设下的非渐近收敛率，明确了在 $H^1$ 范数下网络架构与期望收敛速度的量化关系。
 
-随着算法的不断演进，相关理论分析也逐渐完善。源于统计学习理论的思想，神经网络求解偏微分方程的总误差通常被严格分解为三个部分：逼近误差（Approximation Error）、泛化误差（Generalization Error）以及优化误差（Optimization Error）。
-在逼近误差方面，早期的万能逼近定理仅提供了存在性证明，缺乏对收敛速率的实际指导意义。2017年，Yarotsky率先证明了可以通过组合有限层的ReLU网络构造出对任意 Sobolev 空间函数的逼近\cite{yarotsky2017error}，并在随后的研究中探讨了网络深度对降低逼近误差的最优性\cite{yarotsky2018optimal}。Guhring等人\cite{guhring2020error}进一步扩展了这一理论，严格证明了深度ReLU网络不仅能逼近函数本身，还能以极高精度逼近其高阶弱导数，这为PINNs和DRM奠定了坚实的理论基石。2021年，沈作伟院士等人在Yarotsky的基础上进行了系统性拓展，针对更广泛的激活函数给出了最优逼近率\cite{lu2021deep}。
+综上所述，深度学习在求解经典 PDE 正问题上已形成了较为完善的闭环：算法层面以神经网络替代基函数，理论层面在逼近率、泛化误差界以及过参数化训练动力学上取得了自洽的证明。然而，受限于非线性激活函数引入的复杂非凸优化空间以及 PDE 本身的物理特性，当现有能力边界向更复杂的物理场景拓展时，仍面临着理论与算法挑战。比如在在处理解具有非唯一性与严格正交约束的特征值问题、解具有非唯一性与分叉现象的半线性椭圆PDE，以及面临强不适定性与数据噪声干扰的反势能问题时，现有深度学习框架普遍遭遇收敛瓶颈与理论失效。如何克服上述复杂约束、强非线性及不适定性带来的困难，是当前科学机器学习领域亟需解决的核心痛点，这也是本文后续研究的出发点与核心落脚点。
 
-在泛化误差分析方面，Shin等人（2020）\cite{shin2020convergence}严格证明了PINNs在求解线性二阶椭圆与抛物型方程时的收敛性，并首次引入Rademacher复杂度来界定连续物理损失与经验损失之间的泛化鸿沟。Mishra团队（2022）则结合经典PDE理论中的“条件稳定性估计”，给出了更为严格的泛化误差上限。此外，鄂维南院士与鲁剑锋教授等（2021）从谱Barron空间的视角证明了：只要PDE的精确解具备特定的低复杂度，DRM的泛化误差收敛率将完全独立于空间维数 $d$，这为深度学习方法克服维数灾难提供了极具说服力的理论支撑。
 
-综上所述，深度学习在求解经典 PDE 正问题上已形成了较为完善的闭环：算法层面以神经网络替代基函数，以物理约束构建损失泛函，并通过随机梯度下降进行优化；理论层面则在 Sobolev 空间逼近率、泛化误差界以及过参数化训练动力学上取得了自洽的证明。
 
-尽管深度学习方法在标准 PDE 正问题中取得了显著成功，但其能力边界在向更复杂的物理场景拓展时，仍面临着严峻的算法与理论挑战。比如，在特征值问题中，解的非唯一性以及特征函数间的严格正交约束，使得常规的无约束损失函数难以有效收敛，网络极易陷入平凡解或发生模式崩溃；其次，在非线性椭圆方程，其解空间的复杂性（如多解性、分岔现象）导致神经网络的优化地貌极其崎岖，传统的梯度下降法难以稳定寻优；最后，在反问题（如物性参数反演与源项反演）的研究中，由于问题固有的高度不适定性以及观测数据中不可避免的噪声干扰，现有深度学习框架普遍面临梯度病态和多目标优化方向冲突等难题。
+% 基于深度学习求解偏微分方程的探索最早可追溯至1998年，Lagaris等人\cite{lagaris1998artificial}首次提出了利用神经网络参数化PDE解的早期构想，为该领域奠定了思想萌芽。近年来，深度学习求解方法沿着三条主要路径取得了重要进展：
 
-如何克服上述复杂约束、强非线性及不适定性带来的困难，是当前 SciML 领域亟需解决的核心痛点。因此，本文正是立足于这一研究空白，旨在构建具有针对性的新型深度学习求解策略，并系统性地完善其理论支撑体系。这不仅是对现有深度学习求解 PDE 算法的重要补充，更对拓展科学机器学习的能力边界具有至关重要的意义。
+% 第一类是基于最小化方程强形式残差的方法，2019年，Raissi等人\cite{raissi2019physics}提出了一种将物理守恒定律作为软约束编码至神经网络损失函数中的通用框架。该方法直接基于方程的强形式，实现了一套能够同时处理正问题与反问题的统一架构。在理论层面，Wang等人（2021年）\cite{wang2021understanding}基于神经正切核（NTK）理论，揭示了无限宽PINNs的训练动态退化为线性模型的本质，为其优化机制提供了重要的理论视角。随后，针对复杂几何域和多尺度物理场，研究者们相继提出了cPINNs\cite{jagtap2020conservative}、XPINNs\cite{jagtap2021extended}等区域分解策略，显著提升了PINNs在复杂问题中的表达能力与训练稳定性。
 
-\begin{figure}
-\begin{center}
-\includegraphics[width=0.8\textwidth]{figures/PDE.png}
-\end{center}
-\end{figure}
+% 第二类是基于变分原理的 DRM 方法。该方法由鄂维南院士团队于2018年提出\cite{Weinan2017The}。DRM依托于变分原理，将偏微分方程的求解转化为等价的能量泛函极值问题，并利用神经网络去逼近使泛函最小化的解。由于变分形式通常只涉及较低阶的导数计算，DRM大幅降低了对神经网络平滑性的要求，且在处理高维问题时表现出良好的性能。2021年，Duan等人进一步分析了DRM在求解椭圆型方程时的逼近误差与统计误差，给出了严格的收敛速率估计。
+
+% 第三类是基于方程弱形式的深度伽辽金方法（Deep Galerkin Method, DGM）。Sirignano 和 Spiliopoulos 于 2018 年提出利用神经网络作为试探函数\cite{Justin2018DGM}，通过在时空域内进行无网格随机采样并最小化 PDE 的弱形式残差来逼近真实解，进一步丰富了无网格求解策略。
+
+% 随着算法的不断演进，相关理论分析也逐渐完善。源于统计学习理论的思想，神经网络求解偏微分方程的总误差通常被严格分解为三个部分：逼近误差（Approximation Error）、泛化误差（Generalization Error）以及优化误差（Optimization Error）。
+% 在逼近误差方面，早期的万能逼近定理仅提供了存在性证明，缺乏对收敛速率的实际指导意义。2017年，Yarotsky率先证明了可以通过组合有限层的ReLU网络构造出对任意 Sobolev 空间函数的逼近\cite{yarotsky2017error}，并在随后的研究中探讨了网络深度对降低逼近误差的最优性\cite{yarotsky2018optimal}。Guhring等人\cite{guhring2020error}进一步扩展了这一理论，严格证明了深度ReLU网络不仅能逼近函数本身，还能以较好精度逼近其高阶弱导数，这为PINNs和DRM奠定了坚实的理论基石。2021年，沈作伟院士等人在Yarotsky的基础上进行了系统性拓展，针对更广泛的激活函数给出了最优逼近率\cite{lu2021deep}。
+
+% 在泛化误差分析方面，Shin等人（2020）\cite{shin2020convergence}严格证明了PINNs在求解线性二阶椭圆与抛物型方程时的收敛性，并首次引入Rademacher复杂度来界定连续物理损失与经验损失之间的泛化鸿沟。Mishra团队（2022）则结合经典PDE理论中的“条件稳定性估计”，给出了更为严格的泛化误差上限。此外，鄂维南院士与鲁剑锋教授等（2021）从谱Barron空间的视角证明了：只要PDE的精确解具备特定的低复杂度，DRM的泛化误差收敛率将完全独立于空间维数 $d$，这为深度学习方法克服维数灾难提供了极具说服力的理论支撑。
+
+% 综上所述，深度学习在求解经典 PDE 正问题上已形成了较为完善的闭环：算法层面以神经网络替代基函数，以物理约束构建损失泛函，并通过随机梯度下降进行优化；理论层面则在 Sobolev 空间逼近率、泛化误差界以及过参数化训练动力学上取得了自洽的证明。
+
+% 尽管深度学习方法在标准 PDE 正问题中取得了较好成功，但其能力边界在向更复杂的物理场景拓展时，仍面临着算法与理论挑战。比如，在特征值问题中，解的非唯一性以及特征函数间的严格正交约束，使得常规的无约束损失函数难以有效收敛，网络极易陷入平凡解或发生模式崩溃；其次，在非线性椭圆方程，其解空间的复杂性（如多解性、分岔现象）导致神经网络的优化地貌极其崎岖，传统的梯度下降法难以稳定寻优；最后，在反问题（如物性参数反演与源项反演）的研究中，由于问题固有的高度不适定性以及观测数据中不可避免的噪声干扰，现有深度学习框架普遍面临梯度病态和多目标优化方向冲突等难题。
+
+% 如何克服上述复杂约束、强非线性及不适定性带来的困难，是当前 SciML 领域亟需解决的核心痛点。因此，本文正是立足于这一研究空白，旨在构建具有针对性的新型深度学习求解策略，并系统性地完善其理论支撑体系。这不仅是对现有深度学习求解 PDE 算法的重要补充，更对拓展科学机器学习的能力边界具有至关重要的意义。
+
+% 在误差理论的现有研究中，针对 PINNs 方法的分析率先取得重要进展。2022年，Perdikaris团队 \cite{wang2022and} 首次将神经正切核（Neural Tangent Kernel, NTK）理论引入 PINNs 的分析框架，揭示了不同损失分量在收敛速率上的内在差异，并据此提出了基于 NTK 特征值的自适应梯度下降算法。尽管 NTK 理论证明了充分宽的过参数化神经网络能够以近似线性的方式逼近 PDE 的解，但在处理非线性 PDE 时仍面临巨大挑战 \cite{bonfanti2024challenges}。随后，针对特定非线性 PDE 的 PINNs 误差边界被逐步建立：Zhang 等人（2024）\cite{zhang2024priori} 证明了在两层 tanh 网络架构下，Allen-Cahn 与 Cahn-Hilliard 方程的解场逼近误差可由训练损失和配置点数量有效控制；De Ryck 等人（2023）\cite{de2024error} 建立了求解不可压 Navier-Stokes 方程的误差估计；黄云清等人（2023）\cite{qian2023physics} 则针对波动方程、非线性 Klein-Gordon 方程等建立了误差分析并改进了损失函数。然而，上述理论分析高度依赖于 PINNs 所采用的强形式残差损失，并不适用于以变分形式为基础的 Deep Ritz 方法；同时，这些成果多局限于特定形式的非线性方程，难以推广至更一般的半线性 PDE 框架。
+
+% 另一方面，关于 DRM 的理论基础也在不断完善，但主要集中在纯线性或低阶方程域。Duan 等人（2022）\cite{duan2022convergence} 率先针对 DRM 求解线性椭圆 PDE 建立了完整的误差分析框架。随后，Jiao 等人（2024）\cite{jiao2024error} 首次推导了 DRM 求解二阶椭圆方程的非渐近收敛率，明确了在 $H^1$ 范数下如何根据样本量设定网络深度和宽度以达到期望的收敛速度。2025年，Ding 等人 \cite{ding2025convergence} 在过参数化假设下证明了收敛率可由网络权重范数控制；同年，Jiao 等人 \cite{jiao2025error} 进一步完善了基于三层双曲正切网络的 DRM 误差分析体系，并探讨了投影梯度下降算法的收敛表现。不可忽视的是，尽管这些工作进一步夯实了 DRM 的理论基石，但它们均未涉及非线性 PDE 这一核心难点，无法直接为求解半线性椭圆方程提供理论支撑。
+
+\subsection{特征值问题}
+椭圆型特征值问题在描述自然界基本波动与量子态演化中占据核心地位。在宏观尺度上，经典的薄膜振动模型导出亥姆霍兹方程：
+$$-\Delta u = \lambda u$$
+其特征谱不仅决定了系统的动力学行为，更内蕴了定义域的几何拓扑信息（如外尔定律），在遥感成像及等谱逆问题中具有基础性意义。在微观尺度上，描述微观粒子的定态薛定谔方程
+$$-\frac{\hbar^2}{2m}\Delta \psi + V\psi = E\psi$$
+本质上即为带有势能项的椭圆特征值问题，其算子谱的离散性揭示了能量量子化的数学根源。此外，在微分几何领域，估计庞加莱常数或斯捷克洛夫常数等关键几何量，同样高度依赖特征值问题的求解 \cite{johnson2004convergence,courtade2020bounds}。
+
+然而，当这些物理模型向多粒子系统或复杂高维空间拓展时（例如多电子系统的薛定谔方程 \cite{berezin2012schrodinger,fortunato1998eigenvalue}），传统数值解法遭遇了挑战。诸如有限元法（FEM）等经典离散方法深受“维数灾难”困扰，其计算成本随空间维数呈指数级增长。近年来，深度神经网络因其强大的高维函数逼近能力，逐渐成为克服维数灾难、求解高维特征值问题 \cite{PhysRevResearc,2019Deep} 的新范式。现有算法主要沿着两条主线展开：
+
+第一类方法侧重于利用特定数学结构，或将特征值直接作为网络的可训练参数进行隐式优化。例如，Han 等人 \cite{HAN2020109792} 基于深度 BSDE 框架提出了类扩散蒙特卡洛方法，将高维特征值问题转化为偏微分方程半群算子的不动点问题；Li 等人 \cite{li2022semigroup} 引入约束条件发展了神经网络半群方法，在 10 维椭圆方程中实现了超越传统方法的计算效率。针对特定物理场景，Cai 等人 \cite{cai2023deepmartnet} 设计了处理系数不连续界面的网络；而针对多电子体系，研究者们设计了严格满足费米-狄拉克反对称统计规律的网络架构（如 PauliNet）。尽管在特定场景下成效显著，但此类方法过度依赖问题的特殊构造，导致通用性不足；更为严重的是，将特征值本身作为参数参与损失函数优化，往往会改变原问题的物理变分结构，极易导致优化图景高度非凸，带来训练过程的不稳定，也为后续的严谨数学分析设置了巨大障碍。
+
+第二类方法则回归特征值的数学本源，即基于瑞利商（Rayleigh Quotient）公式进行无监督学习。瑞利商不仅赋予了特征值清晰的能量最小化物理直觉，也为神经网络提供了一个极其自然的损失函数格式。Ben-Shaul \cite{ben2023deep} 率先提出了基于瑞利商的网络训练框架；Zhang 等人 \cite{zhang2024deep} 在此基础上引入正交性约束，确保生成的特征函数能够自动满足正交性要求；Yoo 等人 \cite{yoo2025physics} 则进一步将该框架拓展至工程领域的结构振动计算中。然而，现有基于瑞利商的方法大多局限于 1 维或 2 维等低维简单区域的数值实验，在面对高维复杂物理场景（如高维薛定谔方程）时，如何高效实现高维空间中的严格正交化约束并保证收敛，仍是一个亟待解决的算法难题。
+
+更为关键的是，当前绝大多数深度神经求解算法相对缺乏系统的理论支撑。与具备完备误差分析体系的传统线性泛函分析不同，神经网络求解本质上是一个高度非线性的机器学习过程，大量采样数据的使用引入了传统理论中罕见的统计泛化误差。尽管 Lu 等人 \cite{lu2021priorieigen} 在谱 Barron 空间内，针对高维薛定谔问题的两层神经网络给出了先验泛化误差分析，初步论证了网络克服维数灾难的潜力，但该空间的严苛定义限制了其在更广泛物理情形下的适用性。
+
+此外，现有理论大多局限于系统基态特征值的求解。根据极大极小原理，系统的第 $K$ 个特征值在变分意义上对应于能量泛函的 $K$ 阶鞍点。这种非全局极小的几何特性，引出了一个重要的难题：如何构造一个既稳定又实用的变分形式，以实现多重特征值（激发态）的同步求解？这不仅是拓展现有算法能力边界的关键，更是完善科学机器学习理论支撑体系所必须跨越的鸿沟。
+
+% 椭圆型特征值问题在数学物理中占据核心地位，其理论根植于对自然界基本波动现象的描述。在宏观尺度上，经典的薄膜振动模型（如鼓面振动）提供了最直观的物理背景。设鼓面位移为 $U(x, t)$，其运动遵循波动方程 $U_{tt} = c^2 \Delta U$。若寻求驻波解（Standing Wave），即通过分离变量法设 $U(x, t) = u(x) \cos(\omega t)$，则空间分布函数 $u(x)$ 满足如下亥姆霍兹（Helmholtz）方程：
+% \begin{equation}
+% -\Delta u = \lambda u
+% \end{equation}
+% 此处，特征值 $\lambda = (\omega/c)^2$ 直接关联系统的振动频率，而特征函数 $u$ 则刻画了振动的本征模态。
+
+% 特征值谱不仅决定了系统的动力学行为，更内蕴了定义域 $\Omega$ 的几何拓扑信息。这一联系引出了著名的等谱问题（Isospectral Problem）：即马克·卡克（Mark Kac）提出的“能否通过听鼓声测出鼓面的形状？”。从数学角度看，这意味着特征值的分布与区域几何特征存在深刻对偶。外尔定律（Weyl's Law）精确地量化了这一关系：特征值的渐近增长率由区域的体积决定。对于二维区域 $\Omega$，特征值 $\lambda_n$ 表现出如下谱渐近行为：
+% $$\lambda_n \sim \frac{4\pi n}{\text{Area}(\Omega)} \quad (n \to \infty)$$
+% 这一深刻结论表明，通过分析频谱特征，可以反演重构出物体的体积、表面积乃至曲率等几何不变量，该理论在现代遥感成像及逆问题研究中具有基础性意义。
+
+% 在微观尺度上，椭圆型特征值问题同样构成了量子力学的基石。描述微观粒子运动的定态薛定谔方程：
+% $$-\frac{\hbar^2}{2m}\Delta \psi + V\psi = E\psi$$
+% 本质上即为带有势能项 $V$ 的椭圆型特征值问题。式中，特征值 $E$ 对应系统容许的量子化能级，特征函数 $\psi$ 则描述粒子在空间出现的概率幅。有界区域上椭圆算子谱的离散性，正是量子力学中能量量子化现象的数学根源。此外，在微分几何领域，估计庞加莱常数或斯捷克洛夫常数等关键几何量，同样高度依赖于高维特征值问题的求解\cite{johnson2004convergence,courtade2020bounds}。
+
+% 然而，当这些物理模型向多粒子系统或复杂高维空间拓展时（例如多电子系统的薛定谔方程\cite{berezin2012schrodinger,li1983schrodinger,fortunato1998eigenvalue}），传统数值解法遭遇了挑战。诸如有限元法（FEM）和有限体积法（FVM）等经典离散方法，深受“维数灾难”（Curse of Dimensionality）的困扰，其计算成本随空间维数呈指数级增长，导致其在高维环境中几乎失效。
+% 近年来，深度神经网络（DNN）因其强大的高维函数逼近能力，逐渐成为克服维数灾难、求解高维偏微分方程\cite{chen2021friedrichs,Weinan2017The,gu2021selectnet,raissi2019physics,Justin2018DGM,wan2020zang,han2018solving,raissi2017physics,jagtap2021extended}及特征值问题\cite{PhysRevResearc,2019Deep}的新范式。围绕高维特征值问题的深度学习求解，现有研究主要沿着两条主线展开：
+
+% 第一类方法侧重于利用特定数学结构，或将特征值直接作为网络的可训练参数进行隐式优化。 例如，Han等人\cite{HAN2020109792,HAN2019108929}基于深度BSDE框架提出了类扩散蒙特卡洛方法，将高维特征值问题巧妙地转化为偏微分方程半群算子的不动点问题；随后，Li等人\cite{li2022semigroup}引入约束条件发展了神经网络半群方法，在10维椭圆方程中实现了超越DMC的计算效率。针对特定物理场景，Cai等人\cite{cai2023deepmartnet}设计了处理系数不连续界面的神经网络以捕捉物理跳跃条件；Pfau及Hermann等人则分别针对多电子薛定谔方程，设计了严格满足费米-狄拉克反对称统计规律的深度网络架构（如PauliNet）。尽管这些方法在特定场景下取得了较好成功，但它们普遍存在一定的局限性：过度依赖问题的特殊构造导致算法通用性不足；而将特征值本身作为参数参与损失函数优化，往往会改变原问题的物理变分结构，极易导致优化图景高度非凸，带来训练过程的不稳定，也为后续的严谨数学分析带来了巨大阻碍。
+
+% 第二类方法则回归特征值的数学本源，即基于瑞利商（Rayleigh Quotient）公式进行无监督学习。 瑞利商不仅赋予了特征值清晰的能量最小化物理直觉，也为神经网络提供了一个极其自然的损失函数格式。Ben-Shaul\cite{ben2023deep}率先提出了基于瑞利商的网络训练框架；Zhang等人\cite{zhang2024deep}在此基础上引入正交性约束，确保了生成的特征函数能够自动满足正交性要求；Yoo等人\cite{yoo2025physics}则进一步将该框架拓展至土木与机械工程领域的结构振动计算中。然而，现有基于瑞利商的方法大多局限于1维或2维等低维简单区域的数值实验，在面对高维复杂物理场景（如高维薛定谔方程）时，如何高效实现高维空间中的正交化约束并保证收敛，仍是一个亟待解决的难题。
+
+% 更为关键的是，当前绝大多数深度神经求解算法相对缺乏系统的理论支撑。与具备完备误差分析体系的传统线性泛函分析方法不同\cite{duan2022convergence,mishra2023estimates,lu2021deepxde}，神经网络求解本质上是一个高度非线性的机器学习过程。大量采样数据的使用引入了传统逼近理论中罕见的统计泛化误差；同时，神经网络的函数空间难以直接纳入经典的索伯列夫赫尔德等基于正则性的框架中。尽管Lu等人\cite{lu2021priorieigen}在谱Barron空间（Spectral Barron space）内，针对高维薛定谔问题的两层神经网络给出了先验泛化误差分析，初步论证了神经网络克服维数灾难的潜力，但该空间的严苛定义限制了其在更广泛物理情形下的适用性。此外，现有理论大多局限于系统主特征值（基态）的求解。根据极大极小原理，系统的第 $K$ 个特征值在变分意义上对应于能量泛函的 $K$ 阶鞍点。这种非全局极小的几何特性，引出了一个重要的问题：如何构造一个既稳定又实用的变分形式，以实现多重特征值（激发态）的同步求解？
+
+% 近年来，PINNs和DRM方法的提出为高维 PDE 的求解开辟了新路径。研究者们相继开发了多种变体以提升其求解非线性 PDE 的精度和效率。例如，梯度增强 PINNs \cite{lawal2022physics} 通过动态调整各个损失函数分量的梯度来加速优化过程，有效防止了某一项的局部噪声主导整体的优化方向；自适应加权策略 \cite{wight2020solving,jiao2024gaussian} 依据残差信息对采样点分布进行针对性优化，在提升计算精度的同时降低了解的不确定性；此外，针对特定物理约束的模型架构优化 \cite{qiu2025data}，通过引入硬约束结构和先验信息，有效提升了网络在特定方程上的表现。然而，尽管这些基于深度学习的数值算法在实验层面取得了长足进展，其严密的收敛性理论发展却相对滞后。
+
+% 神经网络理论研究的核心难点在于，非线性激活函数引入了极其复杂的非凸优化空间，而 PDE 本身的非线性特性又使得解的性质更加难以捉摸。非线性 PDE 的解往往正则性较差，甚至存在多解或无解的情形，这直接导致了神经网络在训练过程中的极度不稳定性。正如引言所述，深度学习求解 PDE 的总误差通常可分解为逼近误差（Approximation Error）、泛化误差（也称统计误差，Statistical Error）以及优化误差（Optimization Error）\cite{mishra2023estimates}。受限于当前优化理论的瓶颈，本文将重点聚焦于前两项误差的严格理论分析。
+
+
+\subsection{半线性PDE}
+半线性PDE广泛存在于物理学、流体力学和生物学等复杂系统的理论模型中。其具有如下的形式：
+$$
+-\Delta u+f\left(u\right) =g
+$$
+半线性PDE的典型的物理场景包括：量子力学与非线性光学中的稳态薛定谔方程（如含立方非线性项的玻色-爱因斯坦凝聚模型）、化学与生态学中描述空间斑图形成的反应-扩散系统，以及共形几何与天体物理中具有指数级非线性增长特性的Liouville方程。这类方程的核心特征在于，其非线性反应项往往伴随着剧烈的多项式或指数级增长。这种强非线性不仅导致物理系统在宏观上呈现出多解性、分岔现象或奇异性，也使得相应的数学求解面临挑战。
+
+近年来，以 PINNs 和 DRM 为代表的深度学习框架为求解半线性 PDE 开辟了新路径。为了应对强非线性带来的求解困难，研究者们在算法层面进行了大量创新性尝试。例如，梯度增强 PINNs \cite{lawal2022physics} 通过动态调整各个损失函数分量的梯度，有效防止了局部高频噪声主导整体优化方向；自适应加权策略 \cite{wight2020solving,jiao2024gaussian} 则依据残差信息对采样点分布进行针对性重采样，在提升非线性剧烈区域计算精度的同时，降低了解的不确定性；此外，针对特定物理约束的模型架构优化 \cite{qiu2025data}，通过引入硬约束结构和先验信息，有效提升了网络在非线性方程上的泛化表现。
+
+然而，尽管这些基于深度学习的数值算法在实验层面取得了长足进展，其严密的理论支撑体系却相对滞后。神经网络理论研究的核心难点在于，非线性激活函数引入了极其复杂的非凸优化空间，而 PDE 本身的非线性特性又使得解的正则性难以保证。这两者的叠加，导致神经网络在寻优过程中面临极其崎岖的优化图景，极易发生梯度爆炸或陷入局部极小值。正如前文所述，在当前优化理论遭遇瓶颈的背景下，学界主要聚焦于逼近误差与泛化误差的严格界定，但现有成果在半线性方程面前仍显不足。
+
+在 PINNs 的理论进展方面，Perdikaris 团队 \cite{wang2022and} 率先将神经正切核（NTK）理论引入分析框架，但后续研究表明，NTK 在处理高阶或强非线性 PDE 时仍面临巨大局限 \cite{bonfanti2024challenges}。近期，针对特定非线性方程的 PINNs 误差边界逐步被建立，例如 Zhang 等人 \cite{zhang2024priori} 证明了 Allen-Cahn 与 Cahn-Hilliard 方程的解场逼近误差界限；De Ryck 等人 \cite{de2024error} 建立了不可压 Navier-Stokes 方程的误差估计；Huang 等人 \cite{qian2023physics} 则针对非线性 Klein-Gordon 等方程完善了误差分析。然而，这些理论成果高度依赖于 PINNs 所采用的“强形式残差损失”，其证明逻辑无法直接移植到以变分形式为基础的 DRM 框架中。
+
+另一方面，针对 DRM 的理论基础也在不断完善，但几乎全部局限于纯线性或低阶方程领域。Duan 等人 \cite{duan2022convergence} 率先针对线性椭圆 PDE 建立了完整的 DRM 误差分析框架；随后，Jiao 等人 \cite{jiao2024error,jiao2025error} 首次推导了 DRM 求解线性二阶椭圆方程的非渐近收敛率，明确了在 $H^1$ 范数下网络深度和宽度与期望收敛速度的关系；Ding 等人 \cite{ding2025convergence} 则在过参数化假设下证明了收敛率可由网络权重范数控制。不可忽视的是，尽管这些工作进一步夯实了 DRM 的理论基石，但它们均较少触及“非线性 PDE”这一领域。
+
+综上所述，当前理论体系在变分框架下求解半线性椭圆方程时存在明显的缺陷。如何为带有强非线性项的能量泛函建立严格的逼近与泛化误差分析，证明基于神经网络的变分求解方案在应对半线性 PDE 时的收敛性与稳定性，是当前亟需填补的理论空白。
+
+% 半线性椭圆方程在描述自然界众多复杂现象时扮演着基础性角色，广泛出现于物理学、几何学、流体力学和生物学等理论模型中。这类方程的求解对于理解自然规律、设计工程系统以及推动前沿科学研究具有不可替代的重要意义。以下是几个典型且具有深远物理背景的半线性椭圆方程实例：
+% \begin{itemize}
+% \item {\heiti 非线性薛定谔方程}：在量子力学和非线性光学中，稳态薛定谔型方程通常表示为：
+% $$-\Delta u + V(x)u = f(x, u)$$
+% 其中，$V(x)$ 是外部势场函数，$f(x, u)$ 为非线性相互作用项（例如在研究玻色-爱因斯坦凝聚态时常用的立方非线性项 $f(x,u) = |u|^2u$）。求解该方程有助于研究微观粒子的稳态空间分布及波在非线性介质中的局域化特性。
+% \item {\heiti 反应-扩散方程的稳态解}：在生物学、化学动力学以及生态学中，反应-扩散系统的稳态解广泛用于描述物质浓度或种群密度的空间分布平衡态。其数学模型可抽象为如下形式：
+% $$-D \Delta u = R(x, u)$$
+% 其中，$D$ 是扩散系数（或矩阵），$R(x, u)$ 是非线性反应项。著名的图灵斑图便是通过此类方程系统中非线性反应项与扩散项的相互作用，在稳态下呈现出的宏观空间周期性结构。
+% \item {\heiti 刘维尔方程}：在共形几何学、天体物理学（如等温气体球模型）以及燃烧理论（如 Frank-Kamenetskii 固体燃料点火模型）中，刘维尔方程是一个极具代表性的非线性模型：
+% $$-\Delta u = e^u \quad \text{in } \mathbb{R}^n, \quad n \ge 3$$
+% 该方程的指数非线性项带来了剧烈的非线性增长特性，使其在高维空间下的理论分析和数值求解一直是计算数学领域的经典挑战。
+% \end{itemize}
+
+% 近年来，PINNs和DRM方法的提出为高维 PDE 的求解开辟了新路径。研究者们相继开发了多种变体以提升其求解非线性 PDE 的精度和效率。例如，梯度增强 PINNs \cite{lawal2022physics} 通过动态调整各个损失函数分量的梯度来加速优化过程，有效防止了某一项的局部噪声主导整体的优化方向；自适应加权策略 \cite{wight2020solving,jiao2024gaussian} 依据残差信息对采样点分布进行针对性优化，在提升计算精度的同时降低了解的不确定性；此外，针对特定物理约束的模型架构优化 \cite{qiu2025data}，通过引入硬约束结构和先验信息，有效提升了网络在特定方程上的表现。然而，尽管这些基于深度学习的数值算法在实验层面取得了长足进展，其严密的收敛性理论发展却相对滞后。
+
+% 神经网络理论研究的核心难点在于，非线性激活函数引入了极其复杂的非凸优化空间，而 PDE 本身的非线性特性又使得解的性质更加难以捉摸。非线性 PDE 的解往往正则性较差，甚至存在多解或无解的情形，这直接导致了神经网络在训练过程中的极度不稳定性。正如引言所述，深度学习求解 PDE 的总误差通常可分解为逼近误差（Approximation Error）、泛化误差（也称统计误差，Statistical Error）以及优化误差（Optimization Error）\cite{mishra2023estimates}。受限于当前优化理论的瓶颈，本文将重点聚焦于前两项误差的严格理论分析。
+
+% 在误差理论的现有研究中，针对 PINNs 方法的分析率先取得重要进展。2022年，Perdikaris团队 \cite{wang2022and} 首次将神经正切核（Neural Tangent Kernel, NTK）理论引入 PINNs 的分析框架，揭示了不同损失分量在收敛速率上的内在差异，并据此提出了基于 NTK 特征值的自适应梯度下降算法。尽管 NTK 理论证明了充分宽的过参数化神经网络能够以近似线性的方式逼近 PDE 的解，但在处理非线性 PDE 时仍面临巨大挑战 \cite{bonfanti2024challenges}。随后，针对特定非线性 PDE 的 PINNs 误差边界被逐步建立：Zhang 等人（2024）\cite{zhang2024priori} 证明了在两层 tanh 网络架构下，Allen-Cahn 与 Cahn-Hilliard 方程的解场逼近误差可由训练损失和配置点数量有效控制；De Ryck 等人（2023）\cite{de2024error} 建立了求解不可压 Navier-Stokes 方程的误差估计；黄云清等人（2023）\cite{qian2023physics} 则针对波动方程、非线性 Klein-Gordon 方程等建立了误差分析并改进了损失函数。然而，上述理论分析高度依赖于 PINNs 所采用的强形式残差损失，并不适用于以变分形式为基础的 Deep Ritz 方法；同时，这些成果多局限于特定形式的非线性方程，难以推广至更一般的半线性 PDE 框架。
+
+% 另一方面，关于 DRM 的理论基础也在不断完善，但主要集中在纯线性或低阶方程域。Duan 等人（2022）\cite{duan2022convergence} 率先针对 DRM 求解线性椭圆 PDE 建立了完整的误差分析框架。随后，Jiao 等人（2024）\cite{jiao2024error} 首次推导了 DRM 求解二阶椭圆方程的非渐近收敛率，明确了在 $H^1$ 范数下如何根据样本量设定网络深度和宽度以达到期望的收敛速度。2025年，Ding 等人 \cite{ding2025convergence} 在过参数化假设下证明了收敛率可由网络权重范数控制；同年，Jiao 等人 \cite{jiao2025error} 进一步完善了基于三层双曲正切网络的 DRM 误差分析体系，并探讨了投影梯度下降算法的收敛表现。不可忽视的是，尽管这些工作进一步夯实了 DRM 的理论基石，但它们均未涉及非线性 PDE 这一核心难点，无法直接为求解半线性椭圆方程提供理论支撑。
+
+\subsection{反势能问题}
+本文所研究的带有未知势函数的椭圆型偏微分方程（即反势能问题），在自然科学与工程技术领域具有极其广泛的物理背景。这类问题的核心目标是：通过系统边界或内部可观测的有限状态数据，反演系统内部未知的物理参数分布。在宏观层面，以肿瘤热疗为例，人体组织内的稳态热传导过程可由带有反应项的椭圆方程 
+$$-\nabla \cdot (\alpha \nabla u) + qu = f$$ 
+描述 \cite{Trucu2010space,Choulli2021Some}。由于肿瘤伴随异常血管增生，其局部血液灌注率 $q(x)$ 显著异常，通过可观测的温度场 $u(x)$ 反推 $q(x)$，即可实现肿瘤的精准定位。同样，该模型也可用于环境工程中地下断层污染物降解率的反演。在微观层面，定态薛定谔方程
+$$-\Delta \psi + V(x)\psi = E\psi$$
+的反问题，则对应于通过电子云密度数据反演限制电子运动的微观势阱函数 $V(x)$。
+
+然而，反演未知势函数历来面临”不适定性”挑战：观测端极微弱的噪声扰动，往往会在反演端被急剧放大，从而引发重构结果的剧烈振荡与失真。为压制此类病态特征，学界长期将 Tikhonov 正则化作为求解标准范式。在经典离散数学框架下，结合有限元法的正则化策略已建立起较为成熟的理论体系 \cite{Engl1989convergence,Hao2010convergence,Nickl2020Convergence}。近期，Jin 等人 \cite{jin2024stochastic} 更进一步明确了满足特定正性条件时的稳定性界限及 Galerkin 逼近收敛率。但受限于底层对空间网格剖分的强依赖，传统 FEM 在应对高维模型、复杂几何域或不连续参数反演时，极易陷入计算复杂度激增与对高频噪声极度敏感的双重困境。
+
+伴随深度学习的跨界融合，神经网络逐渐成为改进传统反演问题的工具。起初，研究者尝试构建 FEM 与神经网络的混合算子模型 \cite{MITUSCH2021110651}，即利用网络参数化未知系数，而状态解仍依靠 Galerkin 方法获取。由于未能彻底消除网格依赖，其计算效率依然受限。随后，以 PINNs 为代表的纯无网格深度学习范式开始被广泛采用，其核心在于利用蒙特卡洛积分将 Tikhonov 泛函转化为可优化的经验风险损失 \cite{Lu2021Physics,Jin2022Imaging}。在变系数反演任务中，采用“解耦双网络”（分别拟合状态解与势函数）并联立偏微分残差与数据保真度损失，已成为当前的主流策略，并在 IWAN 算法 \cite{Bao2020Numerical} 及抛物型潜势识别 \cite{cao2025potential} 等复杂场景中展现出一定的灵活性与较好的数值表现。
+
+然而，尽管基于纯神经网络的反演算法在实验中展现了良好的性能，其背后的数学理论支撑却相对不足。传统数值分析中的理论工具无法直接移植到神经网络框架中：例如，Jin 等人 \cite{Jin2023Convergence} 证明的 Tikhonov 泛函 Galerkin 逼近收敛率，高度依赖于经典有限元空间中的“逆不等式”\cite{susanne1994mathematical}，而这一性质在神经网络构成的非线性逼近空间中并不成立，直接导致现有分析框架失效。另一方面，尽管 Liu 等人 \cite{Liu2023recovery} 近期针对反问题神经网络求解给出了一些初步探索，但其工作主要局限于统计学习中的泛化误差界，严重缺乏全局的误差收敛性分析结果。
+
+针对现有深度学习反演方法在理论与计算上的双重局限，本章提出了一种基于 Tikhonov 正则化泛函的纯神经网络反势能问题求解算法。本文在算法层面实现了有效的无网格反演，同时，我们从非线性算子方程的角度，严格证明了该神经网络格式的理论稳定性估计，并确立了重构误差关于观测微小噪声的渐近收敛率。配合详尽的数值实验，本文工作印证了理论分析的正确性，证明了算法对观测噪声的较强鲁棒性，为拓展科学机器学习在复杂反问题中的理论基础提供了具有意义的补充。
+
+% 本文所研究的带有未知势函数的椭圆型偏微分方程（即反势能问题），在自然科学与工程技术领域具有极其广泛且深刻的物理背景。这类问题通常旨在通过系统边界或内部可观测的状态数据，反演系统内部未知的物理参数分布或几何结构。
+% 在宏观生命科学层面，以肿瘤热疗与医学成像领域为例，反势能问题常被用于异常组织的精准定位。人体组织内的稳态热传导过程可由如下带有反应项的椭圆方程描述\cite{Trucu2010space,Choulli2021Some}：
+% $$-\nabla \cdot (\alpha \nabla u) + qu = f$$
+% 式中，$u(x)$ 代表组织内的温度分布，$\alpha(x)$ 为组织热导率，$q(x)$ 表示血液灌注率，而 $f(x)$ 则是空间代谢产热率。由于肿瘤组织通常伴随丰富的异常血管增生，其局部血液灌注率 $q(x)$ 往往显著高于周围正常的健康组织。因此，通过在皮肤表面或利用插入式探针测量获取的温度场数据 $u(x)$，数学上可以反推并重建 $q(x)$ 的空间分布，从而实现对肿瘤大小、形状及位置的无创或微创探测。
+% 在自然环境与地球物理层面，上述方程同样是描述稳态扩散-反应过程的核心数学模型，常用于环境工程中分析污染物在地下多孔介质中的演化规律。此时，$u(x)$ 代表污染物的浓度场，而 $q(x)$ 则表征污染物的化学反应降解率或放射性衰变速率。由于不同地质层的矿物成分与孔隙结构存在差异，当污染物渗流经过某些隐蔽的地质断层带时，其降解率 $q(x)$ 会发生显著的空间突变。工程上常通过探测井提取局部浓度数据 $u(x)$，借由反演算法重构地下的化学反应率分布，这为绘制复杂地质构造图和评估地下水环境风险提供了关键的科学依据。
+
+% 在微观量子层面，该类问题自然地对应于量子力学中的势阱重建问题。对于描述微观粒子状态的定态薛定谔方程：
+% $$-\Delta \psi + V(x)\psi = E\psi$$
+% 物理学家可通过电子显微镜等先进实验手段，观测并获取电子云的密度分布（其数值正比于波函数的模方 $|\psi|^2$）。基于这些有限的观测数据，求解反问题能够向后推导出限制电子运动的微观势阱函数 $V(x)$ 的具体形貌。
+
+% 综上所述，无论是宏观的热传导与物质扩散，还是微观的量子状态演化，带有未知势函数的椭圆型反问题在医学成像（如光学相干断层扫描）、地球物理勘探、环境监测以及材料无损检测等前沿领域，均具备重要的应用价值。本文针对该类偏微分方程所设计的求解框架，不仅具有理论探索意义，更有望为上述实际工程问题提供有效的数值计算工具
+
+% 反演偏微分方程中的未知势函数历来面临适定性挑战。具体而言，观测端极微弱的噪声扰动，往往会在反演端被急剧放大，从而引发重构结果的剧烈振荡。为压制此类病态特征，学界长期将 Tikhonov 正则化作为求解此类反问题的标准范式。在经典离散数学框架下，结合有限元法（FEM）的正则化策略已建立起较为成熟的理论体系。早期 Engl、Hao 与 Nickl 等人\cite{Engl1989convergence,Hao2010convergence,Nickl2020Convergence}系统性地论证了重构误差随噪声衰减的渐近性质；近期 Jin 等人不仅利用迭代优化恢复了位势系数\cite{jin2024stochastic}，还进一步明确了满足特定正性条件时的稳定性界限及 Galerkin 逼近收敛率。然而，受限于底层对空间网格剖分的强依赖，传统 FEM 在应对高维模型、复杂几何域或不连续参数反演时，极易陷入计算复杂度激增与对高频噪声敏感的双重困境。
+
+% 伴随深度学习在科学计算领域的交叉融合，神经网络（NN）逐渐成为改进传统反演问题的工具。起初，研究者尝试构建 FEM 结合 NN 的混合算子模型\cite{MITUSCH2021110651,Cen2023HybridNF}，即利用网络参数化未知系数，而状态解仍依靠 Galerkin 方法获取。由于该框架未从根本上消除网格依赖，其计算效率依然受限。为实现彻底的“无网格化”，以PINNs\cite{Karniadakis2021physics}为代表的纯深度学习范式开始被广泛采用。该类方法依靠蒙特卡洛积分将 Tikhonov 泛函转化为可优化的经验风险损失\cite{Lu2021Physics,Jin2022Imaging,jin2023conductivity}。从常系数辨识\cite{Pang2018fPINNsFP,GUO2022115523}到高维数据同化\cite{mishra2023estimates}，纯网络架构展现出一定的灵活性。特别是在变系数反演任务中，采用“解耦双网络”（分别拟合状态解与势函数）并联立偏微分残差与数据保真度损失，已成为当前的主流策略，并在 IWAN 算法\cite{Bao2020Numerical}、全息逆向设计\cite{Lu2021Physics}及抛物型潜势识别\cite{cao2025potential}等诸多复杂场景中取得了优异的数值表现。
+
+% 然而，尽管基于PINNs及其变体的算法在上述反演任务中展现出了较好的经验性能，但其背后的数学理论支撑却相对滞后。传统数值分析中的理论工具往往难以直接移植到神经网络框架中。例如，虽然Jin等人\cite{Jin2023Convergence}严格证明了Tikhonov泛函下Galerkin逼近的收敛率，但其证明依赖逆不等式\cite{susanne1994mathematical}，在神经网络构成的函数逼近空间中并不成立，导致分析框架失效；2023年， Liu 等人针对反问题神经网络求解给出了一些初步的理论分析\cite{Liu2023recovery}，但其工作主要聚焦于统计学习中的泛化误差界，缺乏全局的误差分析结果。
+
+% 针对现有深度学习反演方法在理论与计算上的双重局限，本章提出了一种基于Tikhonov正则化泛函的纯神经网络反势能问题求解算法。们从算子方程的角度严格证明了该神经网络格式的理论稳定性估计，并确立了重构误差关于观测微小噪声的渐近收敛率。此外，我们开展了详尽的数值实验。实验结果不仅印证了理论分析的正确性，更表明了本章提出的算法能够有效地重构具有不同特征的未知势函数，且对观测噪声表现出较好的鲁棒性。
+
+
+% \begin{figure}
+% \begin{center}
+% \includegraphics[width=0.8\textwidth]{figures/PDE.png}
+% \end{center}
+% \end{figure}
+
+
 \section{本文的主要工作和贡献}
 本文提出了了若干类椭圆型PDE问题的深度学习求解方法。
 
-第二章系统研究了利用深度里兹法（DRM）求解高维椭圆型多重特征值问题，文提出了一种基于惩罚变分原理的通用无约束优化模型，通过引入边界惩罚和正交化约束来同步求解多重特征对 。在理论层面，本章将总误差科学地分解为逼近误差、累积误差与统计误差 ，严密推导了由网络深度、宽度及样本量显式表达的误差上界，在数学上证明了该方法具有一定的收敛率，并论证了其克服维数灾难的潜力 。最后，通过在高达20维的复杂几何区域（如10维超立方体和20维单位球体）上开展丰富的数值实验，充分验证了该算法在超高维场景下依然能够保持极高精度的求解能力 。
+第二章系统研究了利用DRM求解高维椭圆型多重特征值问题，文提出了一种基于惩罚变分原理的通用无约束优化模型，通过引入边界惩罚和正交化约束来同步求解多重特征对 。在理论层面，本章将总误差科学地分解为逼近误差、累积误差与统计误差 ，严密推导了由网络深度、宽度及样本量显式表达的误差上界，在数学上证明了该方法具有一定的收敛率，并论证了其克服维数灾难的潜力 。最后，通过在高达20维的区域上开展数值实验，充分验证了该算法在较高维场景下依然能够保持较好精度的求解能力 。
 
-第三章系统研究了利用深度里兹法（DRM）求解高维半线性椭圆偏微分方程。针对非线性方程中存在的优化和收敛难题，本章首先在合理的正则性和次临界增长假设下，严格证明了基于修正能量泛函的极小化问题与原 Robin 及 Dirichlet 边值问题弱解的等价性。随后，建立了一套包含截断界 $\mathcal{B}$ 的误差分解框架，将总误差精确拆解为逼近误差、统计误差和截断误差。严密推导了 $H^1$ 范数下的总误差上界，并证明了在空间维度 $d \ge 3$ 时，该算法求解 Robin 和 Dirichlet 问题的收敛率分别可达 $\mathcal{O}(N^{-\frac{1}{8d}})$ 和 $\mathcal{O}(N^{-\frac{1}{16d-8}})$。最后，通过高维双峰问题、不光滑问题和 Liouville 方程等丰富的数值算例，充分验证了该算法在处理高维复杂非线性特征时的极高精度与鲁棒性。
+第三章系统研究了利用DRM求解高维半线性椭圆偏微分方程。针对非线性方程中存在的优化和收敛难题，本章首先在合理的正则性和次临界增长假设下，严格证明了基于修正能量泛函的极小化问题与原 Robin 及 Dirichlet 边值问题弱解的等价性。随后，建立了一套包含截断界 $\mathcal{B}$ 的误差分解框架，将总误差精确拆解为逼近误差、统计误差和截断误差。严密推导了 $H^1$ 范数下的总误差上界，并证明了在空间维度 $d \ge 3$ 时，该算法求解 Robin 和 Dirichlet 问题的收敛率分别可达 $\mathcal{O}(N^{-\frac{1}{8d}})$ 和 $\mathcal{O}(N^{-\frac{1}{16d-8}})$。最后，通过高维双峰问题、不光滑问题和 Liouville 方程等丰富的数值算例，充分验证了该算法在处理高维复杂非线性特征时的较好精度与鲁棒性。
 
-第四章提出了一种基于物理信息神经网络（PINNs）结合 Tikhonov 正则化的高效框架，用于求解椭圆偏微分方程中的反势能问题。针对反问题的严重病态性，本章在损失函数中显式引入 $H^2$ 范数的 Tikhonov 正则化项。理论上，严格证明了该方法的理论稳定性估计，并确立了重构误差关于观测噪声 $\delta$ 的渐近收敛率（最优可达 $\mathcal{O}(\delta^{1/2})$）。最后，通过丰富的数值实验，充分验证了该算法在重构各类未知势函数时的高精度及其对观测噪声的强鲁棒性。
+第四章提出了一种基于PINNs结合 Tikhonov 正则化的框架，用于求解椭圆偏微分方程中的反势能问题。针对反问题的病态性，本章在损失函数中显式引入 $H^2$ 范数的 Tikhonov 正则化项。理论上，严格证明了该方法的理论稳定性估计，并确立了重构误差关于观测噪声 $\delta$ 的渐近收敛率（最优可达 $\mathcal{O}(\delta^{1/2})$）。最后，通过丰富的数值实验，充分验证了该算法在重构各类未知势函数时的较高精度及其对观测噪声的鲁棒性。
 
-\section{预备知识}
-本节将简要回顾与本文研究密切相关的椭圆型偏微分方程的基础理论与先验估计（Priori Estimates）。本文主要考察如下形式的椭圆型方程：
-\begin{equation}\label{eq:general_elliptic}
-  -\Delta u(x) + f(x, u) = g(x), \quad x \in \Omega,
-\end{equation}
-其中，$\Omega \subset \mathbb{R}^n$ 为具有足够光滑边界的有界开区域。当非线性项 $f(x, u)$ 关于未知函数 $u$ 呈线性依赖（例如 $f(x, u) = V(x)u(x)$）时，方程 \eqref{eq:general_elliptic} 退化为线性薛定谔方程或一般线性椭圆方程，此时 $V(x)$ 通常被称为势函数。反之，若 $f(x, u)$ 包含 $u$ 的高次幂或其他非线性结构，则该方程为非线性椭圆方程。
-
-为了对解的适定性与正则性进行严密的理论分析，我们首先引入一般二阶线性椭圆算子 $L$ 的散度/非散度形式：
-$$Lu = -\sum_{i,j=1}^n (a^{ij}(x) u_{x_i})_{x_j} + \sum_{i=1}^n b^i(x) u_{x_i} + c(x)u$$
-我们称算子 $L$ 满足\textbf{一致椭圆性}条件，若：存在常数 $\theta > 0$，使得对于任意的 $x \in \Omega$ 和 $\xi \in \mathbb{R}^n$，均有 $\sum_{i,j=1}^n a^{ij}(x) \xi_i \xi_j \ge \theta |\xi|^2$。
-
-基于上述定义，以下定理系统总结了椭圆方程解在不同函数空间中的正则性与先验估计结果：
-
-\begin{lemma}[椭圆方程的内部 $L^2$ 估计]\cite{evans2010partial}
-设 $\Omega$ 是 $\mathbb{R}^n$ 中的开集。假设算子 $L$ 满足一致椭圆性条件，且其系数满足 $a^{ij} \in C^1(\Omega)$，$b^i, c \in L^\infty(\Omega)$。
-若 $u \in H^1(\Omega)$ 是方程 $Lu = f$ 在 $\Omega$ 中的弱解，且源项 $f \in L^2(\Omega)$，那么对于任意紧包含于 $\Omega$ 的子区域 $V$（即 $V \subset\subset \Omega$），均有 $u \in H^2(V)$，并且存在一个常数 $C$ 使得如下内部估计成立：
-$$||u||_{H^2(V)} \le C \left( ||f||_{L^2(\Omega)} + ||u||_{L^2(\Omega)} \right)$$
-\end{lemma}
-
-\begin{lemma}[椭圆方程的全局 $L^2$ 估计]\cite{evans2010partial}
-设 $\Omega \subset \mathbb{R}^n$ 是一个有界开集，且其边界 $\partial\Omega$ 是 $C^2$ 平滑的。假设算子 $L$ 满足一致椭圆性，且系数 $a^{ij} \in C^1(\bar{\Omega})$，$b^i, c \in L^\infty(\Omega)$。
-若 $u \in H^1(\Omega)$ 是如下 Dirichlet 边值问题的弱解：
-$$\begin{cases} 
-Lu = f & \text{在 } \Omega \text{ 内} \\ 
-u = g & \text{在 } \partial\Omega \text{ 上} 
-\end{cases}$$
-其中源项 $f \in L^2(\Omega)$，边界条件 $g \in H^{3/2}(\partial\Omega)$。那么解的全局正则性提升至 $u \in H^2(\Omega)$，并且存在一个仅依赖于 $n$, $\Omega$ 以及算子 $L$ 系数的常数 $C$，使得以下估计成立：
-$$||u||_{H^2(\Omega)} \le C \left( ||f||_{L^2(\Omega)} + ||g||_{H^{3/2}(\partial\Omega)} + ||u||_{L^2(\Omega)} \right)$$
-特别地，如果已知 $u$ 是该边值问题的唯一弱解（例如当 $c \ge 0$ 且无特征值共振时），则可以利用庞加莱不等式等技巧将右侧的 $||u||_{L^2(\Omega)}$ 项吸收。
-\end{lemma}
-
-尽管上述 $L^2$ 估计奠定了弱解存在的理论基础，但其仅局限于 Sobolev 空间内的弱导数范畴。在处理某些问题时，往往需要获取解的逐点连续性等更强的拓扑性质。De Giorgi-Nash 定理正是填补这一缺陷的关键，它在极宽泛的系数假设下赋予了弱解局部 Hölder 连续性：
-\begin{lemma}[De Giorgi-Nash 估计]
-考虑如下形式的齐次散度型方程：
-$$-\sum_{i,j=1}^n \frac{\partial}{\partial x_i} \left( a_{ij}(x) \frac{\partial u}{\partial x_j} \right) = 0$$
-假设区域边界满足外锥条件，系数矩阵 $A(x) = [a_{ij}(x)]$ 满足一致椭圆性条件，即存在常数 $\lambda, \Lambda > 0$ 使得对所有 $\xi \in \mathbb{R}^n$ 和几乎所有 $x \in \Omega$，有 $\lambda |\xi|^2 \leq \sum_{i,j=1}^n a_{ij}(x) \xi_i \xi_j \leq \Lambda |\xi|^2$。
-De Giorgi-Nash 定理表明，即使系数 $a_{ij}$ 仅仅是有界可测的，方程的弱解 $u$ 在内部也是局部 Hölder 连续的。即存在指数 $\alpha \in (0,1)$，使得 $u \in C^{\alpha}_{\text{loc}}(\Omega)$。
-\end{lemma}
-
-进一步地，当区域边界与方程系数具备更好的平滑性时，解的正则性能够得到进一步跃升。Calderón-Zygmund 理论将上述先验估计推广至更高阶的 Sobolev 空间和更一般的 $L^p$ 空间框架中：
-\begin{lemma}[全局 $L^p$ 估计, Calderón-Zygmund 估计]\label{lem:lp}
-对于一般的二阶散度型椭圆方程：
-$$-\sum_{i,j=1}^n \frac{\partial}{\partial x_i} \left( a_{ij}(x) \frac{\partial u}{\partial x_j} \right) = f$$
-设 $k$ 为非负整数，$1 < p < \infty$。若右端源项 $f \in W^{k,p}(\Omega)$，且系数 $a_{ij}$ 满足 $C^{k,1}(\bar{\Omega})$ 正则性，区域边界 $\partial \Omega$ 为 $C^{k+2}$ 级。那么，该方程的弱解 $u$ 属于 $W^{k+2,p}(\Omega)$，且满足如下 Calderón-Zygmund 型先验估计：
-$$\|u\|_{W^{k+2,p}(\Omega)} \leq C \left( \|f\|_{W^{k,p}(\Omega)} + \|u\|_{L^p(\Omega)} \right)$$
-\end{lemma}
-
-在处理非齐次边界条件或进行全空间泛函分析时（例如在构建神经网络的全局逼近函数时），Sobolev 函数的延拓算子是不可或缺的分析工具：
-\begin{lemma}[Calderón-Stein 延拓定理]\label{lem:extension}
-设 $\Omega \subset \mathbb{R}^n$ 是一个有界 Lipschitz 区域。对于每一个非负整数 $k$ 和每一个 $1 \leq p \leq \infty$，存在一个有界的线性延拓算子 $E: W^{k,p}(\Omega) \to W^{k,p}(\mathbb{R}^n)$，使得对于所有的 $f \in W^{k,p}(\Omega)$，在 $\Omega$ 上几乎处处有 $(Ef)|_\Omega = f$，且存在一个仅依赖于 $k, p, n$ 和区域 $\Omega$ 几何性质的常数 $C$，使得：
-$$\|Ef\|_{W^{k,p}(\mathbb{R}^n)} \leq C \|f\|_{W^{k,p}(\Omega)}$$
-\end{lemma}
-
-最后，在针对半线性及非线性问题的理论分析中，特别是当非线性势函数仅具备较低的局部可积性时，Brezis-Kato 定理在跨越临界指数、提升解的整体可积性方面起到了决定性的作用：
-\begin{lemma}[Brezis-Kato 定理]\label{lem:Brezis}\cite{brezis1978remarks,willem2012minimax}
-设 $\Omega$ 为 $\mathbb{R}^n$ ($n \ge 3$) 中的一个开集。假设势函数 $a(x)$ 满足 $a \in L_{\text{loc}}^{n/2}(\Omega)$。若 $u \in H_{\text{loc}}^1(\Omega)$ 是如下微分不等式的弱下解（Weak Subsolution）：
-$$-\Delta u(x) \le a(x) u(x) \quad \text{in } \Omega$$
-即对于任意的非负测试函数 $\varphi \in C_0^\infty(\Omega)$，均有积分不等式：
-$$\int_{\Omega} \nabla u \cdot \nabla \varphi \, dx \le \int_{\Omega} a(x)u\varphi \, dx$$
-则对于任意有限指数 $q \in [1, +\infty)$，均有 $u \in L_{\text{loc}}^q(\Omega)$。
-\end{lemma}
-
-\section{符号与定义}
-
-\subsection{神经网络架构与参数}
-本节将建立全连接深度神经网络的数学框架并引入相关记号。
-
-\begin{definition}[全连接神经网络，Fully Connected Neural Network, FNN]\label{def:fnn}
-我们将全连接深度神经网络表示为参数化函数$v_{\phi}: \mathbb{R}^{d} \to \mathbb{R}$。该网络通过层级递归的方式定义如下：
-\begin{equation}\label{eq:nn:fcnetwork}
-\begin{aligned}
-v_{0}(x) &= x, \\
-v_{\ell}(x) &= \sigma_{\ell}\left(A_{\ell} v_{\ell-1} + b_{\ell}\right), \quad \ell=1, 2, \cdots, L-1, \\
-v_{\phi}(x) &= v_{L}(x) = A_{L} v_{L-1} + b_{L},
-\end{aligned}
-\end{equation}
-其中，$L$ 表示网络的层数（即深度）。对于第 $\ell$ 层，$\boldsymbol{A}_{\ell} \in \mathbb{R}^{N_{\ell} \times N_{\ell-1}}$ 为权重矩阵，$b_{\ell} \in \mathbb{R}^{N_{\ell}}$ 为偏置向量，$N_{\ell}$ 表示该层的神经元个数（其中 $N_0 = d$ 为输入维数， $N_L=1$ 为输出维数）。
-
-函数 $\sigma_{\ell}$ 为按分量的激活函数。在本文中主要用到的激活函数包括：
-\begin{itemize}
-  \item 线性整流单元（Rectified Linear Unit, ReLU），定义为：
-  $$\sigma(x) = \mathrm{ReLU}(x) = \max\{0, x\},$$
-  \item $k$次幂次整流单元（Rectified Power Unit, RePU）定义为 
-  $$\sigma(x) = \mathrm{ReLU}^{k}(x) = \max\{0, x\}^k,$$
-  其中 $k \in \mathbb{N}^{+}$。
-  \item Tanh函数：定义为 $\sigma(x) = \tanh(x) = \frac{e^{x} - e^{-x}}{e^{x} + e^{-x}}$。
-\end{itemize}
-\end{definition}
-
-\begin{definition}[神经网络的参数]
-网络的深度$\mathcal{D}$ 和宽度$\mathcal{W}$ 定义为：
-\begin{equation*}
-\mathcal{D} = L, \quad \mathcal{W} = \max_{\ell=1, \dots, L} N_{\ell}.
-\end{equation*}
-
-此外，$\mathcal{B}$ 表示神经网络函数和其导数的公共上界，即
-\begin{equation*}
-\mathcal{B}=\max_{x\in \Omega}\{|u(x)|,|\nabla u(x)|\}. 
-\end{equation*}
-
-网络中所有可训练自由参数的集合记为 $\phi = \{A_{\ell}, b_{\ell}\}_{\ell=1}^{L}$。
-\end{definition}
-
-为了刻画逼近理论所需的函数空间，我们进一步定义一类满足特定复杂度约束的神经网络函数集合 $\mathcal{N}(\mathcal{D}, \mathcal{W}, \{k_{i}\}, m)$：
-
-\begin{definition}[神经网络函数类 $\mathcal{N}$]
-令 $\mathcal{N}(\mathcal{D}, \mathcal{W}, \{k_{i}\}, m)$ 表示满足以下条件的神经网络函数集合：
-\begin{enumerate}
-    \item {\heiti 规模约束}：网络实际深度 $D$ 和宽度 $W$ 满足 $D < \mathcal{D}$ 且 $W < \mathcal{W}$（其中 $D, W \in \mathbb{N}^+$）；
-    \item {\heiti 激活函数}：所有激活函数均属于族类 $\{\mathrm{ReLU}^{k} \mid k \in \{k_{i}\}\}$；
-    \item {\heiti 复杂度下界}：网络的结构参数满足如下不等式约束：
-    \begin{equation}
-        (D - 2 - \log_{2} W) W \geq m - 1.
-    \end{equation}
-\end{enumerate}
-在上下文明确且不引起混淆的情况下，我们将该函数类简记为 $\mathcal{N}$。
-\end{definition}
-
-尽管全连接神经网络具有普适逼近性质，但在处理深层结构时，往往面临梯度消失或梯度爆炸的问题，导致训练困难。为了克服这一挑战，本文在实际计算中采用了残差神经网络（Residual Neural Network, ResNet）。
-
-与方程\eqref{eq:nn:fcnetwork}定义的标准前馈结构不同，残差网络引入了“跳跃连接”，使得网络学习的是恒等映射的残差。
-
-\begin{definition}[残差神经网络]
-一个包含 $L$ 个残差块的深度残差网络 $v_{\phi}: \mathbb{R}^{d} \to \mathbb{R}$ 定义如下：
-
-首先，通过一个线性变换将输入 $x$ 映射到隐藏层空间：
-\begin{equation}
-v_{0}(x) = A_{in} x + b_{in},
-\end{equation}
-其中 $A_{in} \in \mathbb{R}^{m \times d}, b_{in} \in \mathbb{R}^{m}$，此处 $m$ 为残差块的宽度。
-
-随后，数据流经 $L$ 个残差块。第 $\ell$ 个残差块（$\ell=1, \dots, L$）的更新规则为：
-\begin{equation}\label{eq:resnet:block}
-v_{\ell}(x) = v_{\ell-1}(x) + \mathcal{F}_{\ell}(v_{\ell-1}(x)),
-\end{equation}
-其中 $\mathcal{F}_{\ell}$ 为残差函数。在最简单的形式中，$\mathcal{F}_{\ell}$ 由单层线性变换与激活函数构成：
-\begin{equation}
-\mathcal{F}_{\ell}(z) = \sigma\left(A_{\ell} z + b_{\ell}\right),
-\end{equation}
-这里要求 $A_{\ell} \in \mathbb{R}^{m \times m}, b_{\ell} \in \mathbb{R}^{m}$ 以保证维度匹配，从而实现逐元素相加。
-
-最后，通过输出层将高维特征映射回目标空间：
-\begin{equation}
-v_{\phi}(x) = A_{out} v_{L}(x) + b_{out},
-\end{equation}
-其中 $A_{out} \in \mathbb{R}^{1 \times m}, b_{out} \in \mathbb{R}$。
-\end{definition}
-
-式 \eqref{eq:resnet:block} 中的 $v_{\ell-1}(x)$ 项通常被称为跳跃连接。这一架构设计的核心优势在于，它为反向传播过程中的梯度提供了一条无损流通的“短路”路径，有效缓解了深层网络中常见的梯度消失问题，从而显著提升了模型的训练稳定性与拟合复杂函数的表达能力。
-
-在后续的数值实验中，我们主要采用基于 $\mathrm{ReLU}^{2}$ 激活函数的残差神经网络来最小化损失函数。现有文献与实证结果均表明，在求解复杂的偏微分方程时，该架构往往表现出优于标准 FNN 的精度与收敛速度。然而，需要指出的是，本文前述的部分理论结果（例如定理 \ref{th4.3} 中的误差估计）是在 FNN 的假设框架下推导得出的。这就引出了一个自然的问题：针对 FNN 建立的理论边界是否能够无缝推广至实验中所使用的 ResNet 架构？
-
-只要注意到恒等映射可以被特定激活函数的线性组合精确表示，ResNet 中的任何一个残差块就可以被等价地重构为具有相同深度的 FNN 结构。具体而言，对于 $\mathrm{ReLU}$ 和 $\mathrm{ReLU}^{2}$ 激活函数，我们拥有以下代数恒等式：
-\begin{align}
-x &= \mathrm{ReLU}(x) - \mathrm{ReLU}(-x), \\
-x &= \frac{1}{2}\left[\mathrm{ReLU}^{2}(x+1) + \mathrm{ReLU}^{2}(-x-1) - \mathrm{ReLU}^{2}(x) - \mathrm{ReLU}^{2}(-x) - 1\right]. \label{eq:relu2_identity}
-\end{align}
-通过巧妙利用上述恒等式，式 \eqref{eq:resnet:block} 中的恒等路径 $v_{\ell-1}(x)$ 可以被精确地转化为隐藏层的激活输出与线性偏置的组合（如式 \eqref{eq:relu2_identity} 中的常数项 $-1/2$ 可被直接吸收到下一层的偏置向量 $b$ 中）。因此，通过适当扩大网络每一层的宽度，ResNet 的前向传播过程可以完全等价于一个 FNN。基于这一等价性，前文针对 FNN 所建立的逼近与误差分析理论，只需经过简单的代数推导与常数放缩，即可无损地平移至 ResNet 之中。
-
-\subsection{范数与内积}
-接下来，我们介绍一些常用范数的符号。
-\begin{definition}[范数与内积]
-设 $\Omega \subset \mathbb{R}^d$ 为有界区域。对于定义在 $\Omega$ 上的函数 $u\in L^2(\Omega)$，其 $L^2$-范数定义为：
-\begin{equation*}
-\|u\|_{L^2(\Omega)} = \left( \int_{\Omega} |u(x)|^2 \text{dx} \right)^{1/2}.
-\end{equation*}
-为简便起见，若无特殊说明，下文常将 $L^2$-范数简记为 $\|\cdot\|_{L^2}$ 或 $\|\cdot\|$。
-
-对于任意正整数 $m \in \mathbb{N}^+$ 与 $1 \le p < \infty$，Sobolev 空间 $W^{m,p}(\Omega)$由所有阶数不超过 $m$ 的弱导数均属于 $L^p(\Omega)$ 的函数组成。借助多重指标 $\alpha$，其 $W^{m,p}$-范数定义为：
-$$\|u\|_{W^{m,p}(\Omega)} = \left( \sum_{|\alpha| \le m} \|D^\alpha u\|_{L^p(\Omega)}^p \right)^{1/p}.$$
-作为 $W^{m,p}$ 范数的特例，当 $p=2$ 时，$W^{m,2}(\Omega)$ 构成一个 Hilbert 空间，习惯上将其记为 $H^m(\Omega)$。
-\begin{equation*}
-\|u\|_{H^2(\Omega)}^2 = \|u\|_{L^2(\Omega)}^2 + \sum_{k=1}^d \|\partial_k u\|_{L^2(\Omega)}^2 + \sum_{k=1}^d \sum_{\ell=1}^d \|\partial_k \partial_\ell u\|_{L^2(\Omega)}^2.
-\end{equation*}
-
-针对分数阶 Sobolev 空间，函数 $u \in H^{1/2}(\Omega)$ 的范数由其 $L^2$-范数与 Gagliardo 半范数共同构成：
-\begin{equation*}
-\|u\|_{H^{1/2}(\Omega)}^2 = \|u\|_{L^2(\Omega)}^2 + |u|_{H^{1/2}(\Omega)}^2,
-\end{equation*}
-其中，衡量半阶平滑度的 Gagliardo 半范数定义为：
-\begin{equation*}
-|u|_{H^{1/2}(\Omega)}^2 = \iint_{\Omega \times \Omega} \frac{|u(x) - u(y)|^2}{|x - y|^{d+1}} \text{dxdy}.
-\end{equation*}
-
-上述空间皆为 Hilbert 空间，其范数均由相应的内积诱导。对应的内积分别记作 $\langle \cdot, \cdot \rangle_{L^2(\Omega)}$、$\langle \cdot, \cdot \rangle_{H^m(\Omega)}$ 与 $\langle \cdot, \cdot \rangle_{H^{1/2}(\Omega)}$，具体定义如下：
-\begin{align*}
-\langle u, v \rangle_{L^2(\Omega)} &= \int_{\Omega} u(x)v(x) \text{dx}, \\
-\langle u, v \rangle_{H^m(\Omega)} &= \sum_{|\alpha| \le m} \langle D^\alpha u, D^\alpha v \rangle_{L^2(\Omega)}, \\
-\langle u, v \rangle_{H^{1/2}(\Omega)} &= \langle u, v \rangle_{L^2(\Omega)} + \iint_{\Omega \times \Omega} \frac{(u(x) - u(y))(v(x) - v(y))}{|x - y|^{d+1}}  \text{dxdy}.
-\end{align*}
-
-若无混淆，在特定的上下文语境中，内积的下标通常会被省略，统一记作 $\langle \cdot, \cdot \rangle$。
-\end{definition}
-
-\begin{definition}[$L^{2}$ 误差]
-在数值实验中，为了衡量数值解 $\hat{u}$ 的精度，我们采用如下定义的相对 $L^{2}$ 误差：
-\begin{equation*}
-\quad\err(\hat{u})=\frac{\|\hat{u}-u^{\dagger}\|_{L^{2}(\Omega)}}{\|u^{\dagger}\|_{L^{2}(\Omega)}},
-\end{equation*}
-这里，$L^2$ 范数是基于网格点上的值进行近似的，即 $\|v\|_{L^{2}(\Omega)}\approx\sqrt{\frac{1}{N}\sum_{i=1}^{N}v(x_{i})^{2}}$，其中 $\{x_{i}\}_{i=1}^{N}$ 为网格点。
-\end{definition}
-
-\subsection{统计机器学习相关定义}
-给定来自均匀分布的 $n$ 个独立同分布 (i.i.d) 样本 $\mathbf{Z}_{n}=\left\{Z_{i}\right\}_{i=1}^{n}$，我们可以利用 Rademacher 复杂度来评估给定函数类 $\mathcal{N}$ 在 $n$ 个随机样本 $\mathbf{Z}_{n}$ 上的限制容量。
-\begin{definition}[Rademacher复杂度，Rademacher Complexity]\label{def:staerr:radcom}
-设集合 $A \subseteq \mathbb{R}^{n}$，该{\heiti 集合}经验Rademacher复杂度定义为：
-$$\mathfrak{R}(A)=\mathbb{E}_{\mathbf{\sigma}}\left[\sup _{a \in A} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i} a_{i}\right|\right]$$
-其中 $\{\sigma_{i}\}_{i=1}^{n}$ 是 $n$ 个独立同分布的拉德马赫随机变量，满足 $\mathbb{P}(\sigma_{i}=1)=\mathbb{P}(\sigma_{i}=-1)=1/2$。
-
-进一步地，给定包含 $n$ 个独立同分布样本的随机向量 $\mathbf{Z}_{n}=(Z_1, \dots, Z_n)$，{\heiti 函数类} $\mathcal{N}$ 关于该样本的经验Rademacher复杂度定义为：
-$$\mathfrak{R}(\mathcal{N})=\mathbb{E}_{\mathbf{Z}_{n}, \mathbf{\sigma}}\left[\sup _{u \in \mathcal{N}} \frac{1}{n} \left| \sum_{i=1}^{n} \sigma_{i} u(Z_{i}) \right|\right].$$
-\end{definition}
-
-\begin{definition}[覆盖与覆盖数，Covering Number]\label{def:staerr:cover}
-假设 $U \subset \mathbb{R}^{n}$。对于任意 $\varepsilon>0$，称集合 $V \subset \mathbb{R}^{n}$ 为 $U$ 关于无穷范数距离 $d_{\infty}$ 的一个 $\varepsilon$-覆盖（$\varepsilon$-cover），若对于任意 $u \in U$，均存在 $v \in V$ 使得 $d_{\infty}(u, v)<\varepsilon$，其中距离 $d_{\infty}$ 定义为：
-$$d_{\infty}(u, v):=\|u-v\|_{\infty}.$$
-集合 $U$ 关于距离 $d_{\infty}$ 的覆盖数记为 $\mathcal{C}(\varepsilon, U, d_{\infty})$，定义为所有可能的 $\varepsilon$-覆盖中基数最小的覆盖所包含的元素个数。
-\end{definition}
-
-\begin{definition}[一致覆盖数，Uniform Covering Number]\label{def:staerr:unicovnum}
-设 $\mathcal{N}$ 为从输入空间 $\Omega$ 映射到 $\mathbb{R}$ 的函数类。给定 $n$ 个样本 $\mathbf{Z}_{n}=\left(Z_{1}, Z_{2}, \cdots, Z_{n}\right) \in \Omega^{n}$，定义函数类 $\mathcal{N}$ 在样本集 $\mathbf{Z}_{n}$ 上的投影（或经验迹） $\left.\mathcal{N}\right|_{\mathbf{Z}_{n}} \subset \mathbb{R}^{n}$ 为：
-$$\left.\mathcal{N}\right|_{\mathbf{Z}_{n}}=\left\{\left(u(Z_{1}), u(Z_{2}), \cdots, u(Z_{n})\right): u \in \mathcal{N}\right\}.$$
-函数类 $\mathcal{N}$ 的一致覆盖数 $\mathcal{C}_{\infty}(\varepsilon, \mathcal{N}, n)$ 定义为投影集合在最坏样本分布下的最大覆盖数：
-$$\mathcal{C}_{\infty}(\varepsilon, \mathcal{N}, n)=\max_{\mathbf{Z}_{n} \in \Omega^{n}} \mathcal{C}\left(\varepsilon, \left.\mathcal{N}\right|_{\mathbf{Z}_{n}}, d_{\infty}\right).$$
-\end{definition}
-
-\begin{definition}[打散，Shattering]\label{def:staerr:shatter}
-设 $\mathcal{N}$ 为定义在 $X=\Omega \times \partial\Omega$ 上且取值于 $\{0,1\}$ 的函数族。给定样本集 $S=\left\{x_{1}, x_{2}, \cdots, x_{n}\right\} \subset X$，若对于任意的标签分配 $b \in\{0,1\}^{n}$，均存在函数 $u \in \mathcal{N}$ 满足：
-\begin{equation*}
-u\left(x_{i}\right)=b_{i}, \quad i=1,2, \ldots, n.
-\end{equation*}
-则称集合 $S$ 被函数族 $\mathcal{N}$ 打散。
-\end{definition}
-
-\begin{definition}[VC 维，VC Dimension]\label{def:staerr:vc_dim}
-函数族 $\mathcal{N}$ 的 VC 维（记为 $\operatorname{VCdim}(\mathcal{N})$）定义为能够被 $\mathcal{N}$ 打散的最大样本集合的基数。
-\end{definition}
-
-\begin{definition}[伪打散，Pseudo-shattering]\label{def:staerr:pseshatter}
-令 $\mathcal{N}$ 为从空间 $\mathcal{X}$ 到 $\mathbb{R}$ 的函数族。设存在样本子集 $S=\left\{x_{1}, x_{2}, \cdots, x_{n}\right\} \subset \mathcal{X}$。若存在一组实数界限 $y_{1},\cdots,y_{n} \in \mathbb{R}$，使得对于任意的符号分配向量 $b \in\{-1, 1\}^{n}$，都至少存在一个函数 $u \in \mathcal{N}$ 满足：
-$$\operatorname{sign}\left(u(x_{i})-y_{i}\right)=b_{i}, \quad \forall i=1,2, \ldots, n,$$
-则称集合 $S$ 被函数类 $\mathcal{N}$ 伪打散，且称向量 $\mathbf{y} = (y_{1}, \cdots, y_{n})$ 是该打散的见证
-%TODO: 见证这个词不太好，后续可以考虑替换为witness
-\end{definition}
-
-\begin{definition}[伪维数，Pseudo-dimension]\label{def:staerr:pdim}
-$\mathcal{N}$ 的伪维数（pseudo-dimension）记为 $\operatorname{Pdim}(\mathcal{N})$，定义为被 $\mathcal{N}$ 伪打散的所有集合中的最大基数。
-\end{definition}
-
-\subsection{其他定义}
-\begin{enumerate}
-\item \textbf{渐近记号}：在不等式估计中，使用符号 $A \lesssim B$ 表示存在一个与关键参数无关的有界常数 $C>0$，使得 $A \leq CB$。若该常数依赖于某些特定参数，我们将在文中特别注明。
-\item \textbf{大 $\mathcal{O}$ 记号}：若 $A \lesssim B$，则等价记为 $A = \mathcal{O}(B)$。若在此基础上隐藏了对数项，即存在常数 $k > 0$ 使得 $A \lesssim B \cdot \log^k B$，则使用带波浪号的渐近符号记为 $A = \widetilde{\mathcal{O}}(B)$。
-
-\item \textbf{辅助函数}：定义 $\varphi(x) = x\log(x)$ ($x>1$)，并记 $\psi(x)$ 为 $\varphi(x)$ 的反函数。
-\end{enumerate}
-\begin{remark}
-对于上述定义的函数 $\psi(x)$，易证对于任意 $0<k<1$，成立 $\psi(kx) \geq k\psi(x)$。此外，该函数满足如下渐近性质：
-$$ \forall \alpha>0, \quad \varphi(x) \lesssim x^{1+\alpha}, \quad \psi(x) \gtrsim x^{1-\alpha}. $$
-\end{remark}

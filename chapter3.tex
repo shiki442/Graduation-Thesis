@@ -1,993 +1,1328 @@
-\chapter{深度里兹法求解半线性偏微分方程}
-\section{问题背景与预备知识}\label{sec:pre}
-非线性椭圆偏微分方程（PDEs）是偏微分方程研究中备受瞩目的核心领域。其中，半线性椭圆方程（Semilinear Elliptic Equations）特指非线性项仅包含未知函数及其低阶（如一阶）导数的偏微分方程。在求解此类方程（尤其是在高维情形下）时，传统的基于网格的数值解法（如有限元法、有限差分法等）往往会遭遇严重的“维度灾难”（Curse of Dimensionality）。这是因为在网格方法中，离散参数或自由度的数量会随空间维度的增加呈指数级急剧增长，导致其在实际的高维计算中面临难以克服的内存和算力瓶颈。
+\chapter{DRM求解椭圆多特征值问题}\label{chap:eigen}
+本章聚焦于高维空间下椭圆型多重特征值问题的深度学习求解方法。针对传统数值方法在高维困境下的局限性，本章开发了一种基于DRM的系统求解算法。该算法不仅致力于实现多重特征值与特征函数的求解，还建立了一套独立于空间维数的先验误差分析理论，从数学本质上论证该方法克服“维数灾难”的潜力。
+\section{特征值问题概述}\label{sec_pre}
+\subsection{问题背景与物理意义}
+椭圆型特征值问题在数学物理中占据核心地位，是描述微观量子能级概率分布与宏观结构振动模态的基石。然而，当物理模型向复杂高维空间拓展时，诸如有限元法等传统网格离散方法会遭遇明显的”维数灾难”，其计算成本显著增长且逼近精度急剧下降。为突破这一计算瓶颈，本章基于该问题的惩罚变分原理，构造了一种适用于同步求解多重特征对的通用无约束优化泛函，并采用DRM对其进行高效逼近。
 
-\subsection{物理意义与研究现状}
-半线性椭圆方程在描述自然界众多复杂现象时扮演着基础性角色，广泛出现于物理学、几何学、流体力学和生物学等理论模型中。这类方程的求解对于理解自然规律、设计工程系统以及推动前沿科学研究具有不可替代的重要意义。以下是几个典型且具有深远物理背景的半线性椭圆方程实例：
-\begin{itemize}
-\item {\heiti 非线性薛定谔方程}：在量子力学和非线性光学中，稳态薛定谔型方程通常表示为：
-$$-\Delta u + V(x)u = f(x, u)$$
-其中，$V(x)$ 是外部势场函数，$f(x, u)$ 为非线性相互作用项（例如在研究玻色-爱因斯坦凝聚态时常用的立方非线性项 $f(x,u) = |u|^2u$）。求解该方程有助于研究微观粒子的稳态空间分布及波在非线性介质中的局域化特性。
-\item {\heiti 反应-扩散方程的稳态解}：在生物学、化学动力学以及生态学中，反应-扩散系统的稳态解广泛用于描述物质浓度或种群密度的空间分布平衡态。其数学模型可抽象为如下形式：
-$$-D \Delta u = R(x, u)$$
-其中，$D$ 是扩散系数（或矩阵），$R(x, u)$ 是非线性反应项。著名的图灵斑图便是通过此类方程系统中非线性反应项与扩散项的相互作用，在稳态下呈现出的宏观空间周期性结构。
-\item {\heiti 刘维尔方程}：在共形几何学、天体物理学（如等温气体球模型）以及燃烧理论（如 Frank-Kamenetskii 固体燃料点火模型）中，刘维尔方程是一个极具代表性的非线性模型：
-$$-\Delta u = e^u \quad \text{in } \mathbb{R}^n, \quad n \ge 3$$
-该方程的指数非线性项带来了极其剧烈的非线性增长特性，使其在高维空间下的理论分析和高效数值求解一直是计算数学领域的经典挑战。
-\end{itemize}
+在理论层面，本章严格推导了网络输出特征值与真实值之间误差的非渐近上界。该理论界限由前馈神经网络的深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 以及无网格训练样本量 $n$ 共同显式表达，为深度神经求解器的收敛性提供了理论支撑。
 
-近年来，物理信息神经网络（PINNs）和深度里兹方法的提出为高维 PDE 的求解开辟了新路径。研究者们相继开发了多种变体以提升其求解非线性 PDE 的精度和效率。例如，梯度增强 PINNs \cite{lawal2022physics} 通过动态调整各个损失函数分量的梯度来加速优化过程，有效防止了某一项的局部噪声主导整体的优化方向；自适应加权策略 \cite{wight2020solving,jiao2024gaussian} 依据残差信息对采样点分布进行针对性优化，在提升计算精度的同时降低了解的不确定性；此外，针对特定物理约束的模型架构优化 \cite{qiu2025data}，通过引入硬约束结构和先验信息，显著提升了网络在特定方程上的表现。然而，尽管这些基于深度学习的数值算法在实验层面取得了长足进展，其严密的收敛性理论发展却相对滞后。
+此外，为验证理论可靠性与算法泛化能力，本章开展了最高达20维的高维数值实验。在传统离散方法难以有效适用的场景下，本文构建的神经求解器能够将前几阶特征值的相对误差控制在 $10^{-2}$ 量级，并较好地捕捉对应激发态的本征模态特征。
 
-神经网络理论研究的核心难点在于，非线性激活函数引入了极其复杂的非凸优化空间，而 PDE 本身的非线性特性又使得解的性质更加难以捉摸。非线性 PDE 的解往往正则性较差，甚至存在多解或无解的情形，这直接导致了神经网络在训练过程中的极度不稳定性。正如引言所述，深度学习求解 PDE 的总误差通常可分解为逼近误差（Approximation Error）、泛化误差（也称统计误差，Statistical Error）以及优化误差（Optimization Error）\cite{mishra2023estimates}。受限于当前优化理论的瓶颈，本文将重点聚焦于前两项误差的严格理论分析。
-
-在误差理论的现有研究中，针对 PINNs 方法的分析率先取得突破。2022年，Perdikaris团队 \cite{wang2022and} 首次将神经正切核（Neural Tangent Kernel, NTK）理论引入 PINNs 的分析框架，揭示了不同损失分量在收敛速率上的内在差异，并据此提出了基于 NTK 特征值的自适应梯度下降算法。尽管 NTK 理论证明了充分宽的过参数化神经网络能够以近似线性的方式逼近 PDE 的解，但在处理非线性 PDE 时仍面临巨大挑战 \cite{bonfanti2024challenges}。随后，针对特定非线性 PDE 的 PINNs 误差边界被逐步建立：Zhang 等人（2024）\cite{zhang2024priori} 证明了在两层 tanh 网络架构下，Allen-Cahn 与 Cahn-Hilliard 方程的解场逼近误差可由训练损失和配置点数量有效控制；De Ryck 等人（2023）\cite{de2024error} 建立了求解不可压 Navier-Stokes 方程的误差估计；黄云清等人（2023）\cite{qian2023physics} 则针对波动方程、非线性 Klein-Gordon 方程等建立了误差分析并改进了损失函数。然而，上述理论分析高度依赖于 PINNs 所采用的强形式残差损失，并不适用于以变分形式为基础的 Deep Ritz 方法；同时，这些成果多局限于特定形式的非线性方程，难以推广至更一般的半线性 PDE 框架。
-
-另一方面，关于 Deep Ritz 方法（DRM）的理论基础也在不断完善，但主要集中在纯线性或低阶方程域。Duan 等人（2022）\cite{duan2022convergence} 率先针对 DRM 求解线性椭圆 PDE 建立了完整的误差分析框架。随后，Jiao 等人（2024）\cite{jiao2024error} 首次推导了 DRM 求解二阶椭圆方程的非渐近收敛率，明确了在 $H^1$ 范数下如何根据样本量设定网络深度和宽度以达到期望的收敛速度。2025年，Ding 等人 \cite{ding2025convergence} 在过参数化假设下证明了收敛率可由网络权重范数控制；同年，Jiao 等人 \cite{jiao2025error} 进一步完善了基于三层双曲正切网络的 DRM 误差分析体系，并探讨了投影梯度下降算法的收敛表现。不可忽视的是，尽管这些工作极大地夯实了 DRM 的理论基石，但它们均未涉及非线性 PDE 这一核心难点，无法直接为求解半线性椭圆方程提供理论支撑。
-
-鉴于当前非线性 DRM 理论的严重缺失，本文针对半线性椭圆 PDE 开展了系统的算法设计与理论分析，主要贡献如下：
-首先，在算法层面，本文针对半线性方程的非线性特征，提出了一种改进的 Deep Ritz 算法，并为其构造了适配非线性项的修正变分损失函数；
-其次，在理论层面，本文在合理的正则性假设下，对该非线性变分损失给出了严格的数学分析。我们不仅推导了目标解的逼近误差上限，还结合统计机器学习理论，建立了相应的统计误差（泛化误差）界限；
-最后，通过权衡逼近误差与统计误差，本文证明了当空间维度 $n \ge 3$ 时，该算法总误差的渐近收敛速率在Robin边界条件和Dirichlet边界条件下分别可达 $\mathcal{O}(N^{-\frac{1}{8d}})$ 与 $\mathcal{O}(N^{-\frac{1}{16d-8}})$（其中 $N$ 为相关采样参数，$d$ 与维度相关，具体推导详见后文）。这一结果为 Deep Ritz 方法求解高维半线性 PDE 提供了坚实的理论保障。
-%TODO实验
-
-\subsection{数学描述与问题假设}
-在本文中，我们主要考虑如下形式的半线性椭圆方程：
-\begin{equation}\label{eq:maineq}
+本章的组织结构如下：第\ref{sec_pre}节概述全文所需的基本假设、预备知识与符号系统；第\ref{sec_model}节详细推导多重特征值问题的惩罚变分公式及神经网络求解框架；第\ref{sec_main}节提供核心的先验误差分析与收敛率证明；第\ref{sec_num}节通过数值实验验证算法在高维场景下的有效性与理论分析的客观性；最后，在第\ref{sec dis}节总结全章。
+\subsection{数学描述和谱定理}
+本文主要研究如下带有Dirichlet边界条件的椭圆型特征值问题：
+\begin{equation}\label{eq:eigendiriproblem}
 \left\{\begin{aligned}
--\Delta u(x)+V\left(u(x)\right) &=g(x) & & \text { in } \Omega \\
- u(x) + \frac{1}{\mu}\frac{\partial u(x)}{\partial n} &=h(x) & & \text { on } \partial \Omega
+-\Delta u(x)+V(x) u(x) &=\lambda u(x) & & \text { in } \Omega \\
+T u(x) &=0 & & \text { on } \partial \Omega,
 \end{aligned}\right.
 \end{equation}
-其中参数 $\mu \in (0,+\infty]$。当 $\mu < +\infty$ 时，该条件为 Robin 边界条件；当 $\mu = +\infty$ 时，边界条件中的导数项系数趋于零，从而退化为 Dirichlet 边界条件
 
-为了确保神经网络能够进行有效的函数逼近，PDE 的解需要具备充分的正则性。为此，我们需对方程 \eqref{eq:maineq} 的求解区域、源项以及非线性项施加适当的假设，以从理论上保证解的存在性、唯一性及高阶可导性。后续分析均基于以下基本假设：
-\begin{assumption}[正则性条件]\label{ass:f}
-对于方程\ref{eq:maineq}，我们作如下假设
+其中~$\Omega \subset \mathbb{R}^{d}$~是一个非空的有界闭集, 其边界 $\partial \Omega$ 满足适当的光滑性假设。$V\in L^{\infty}(\Omega): \Omega \rightarrow \mathbb{R}$~是给定的势函数, $T$~是边界迹算子。特征值问题要求对应的$(\lambda, u)$对，满足上述的椭圆方程。不失一般性，我们假设势函数 $V$ 满足一致正下界条件，即存在常数 $c_0 > 0$，使得 $V(x) \ge c_0$ 在 $\Omega$ 上几乎处处成立。
+
+根据椭圆偏微分方程的经典理论\cite{evans2010partial}，上述微分算子 $\mathcal{L} = -\Delta + V$ 在配备 Dirichlet 边界条件的 Hilbert 空间 $L^2(\Omega)$ 上是自伴的，且由于区域 $\Omega$ 的有界性，其逆算子（或格林算子）$\mathcal{L}^{-1}$ 是紧算子。这一性质使得我们可以直接应用泛函分析中的紧自伴算子谱定理：
+
+\begin{theorem}[谱分解定理]
+设 $\mathcal{H}$ 为可分希尔伯特空间，若 $\mathcal{K}: \mathcal{H} \to \mathcal{H}$ 为紧自伴算子，则：
 \begin{enumerate}
-\item[(a)] 区域 $\Omega \subset \mathbb{R}^N$ 为有界开集，且其边界 $\partial \Omega$ 具有 $C^{1,1}$ 正则性，或 $\Omega$ 为凸多面体。
-\item[(b)] 内部源项满足 $g \in L^2(\Omega)$，边界函数满足 $h \in H^{1/2}(\partial \Omega)\cap L^{\infty}(\partial \Omega)$。
-\item[(c)] 非线性项 $V(s)$ 的增长速度满足 Sobolev 次临界或临界增长条件。即存在常数 $C > 0$，使得对于任意 $s \in \mathbb{R}$，有：
-$$|V(s)| \le C(1 + |s|^p)$$
-其中，当空间维度 $N \ge 3$ 时，指数 $p \le \frac{N+2}{N-2}$；当 $N=1, 2$ 时，$p \in [2, +\infty)$ 可以为任意有限值。
-\item[(d)] $V(s)$ 是关于 $s$ 的单调函数。若 $V(s)$ 非单调递增，则要求其导数具有严格的下界，且该下界严格大于算子 $-\Delta$ 在对应边界条件下的第一主特征值的相反数（即 $V'(s) \ge -\gamma > -\lambda_1$）。
-% \item 在 $\Omega^{'}\supset \bar{\Omega}$ 上存在一个调和函数 $w$，使得
-% $w+\frac{1}{\mu}\frac{\partial w}{\partial n}=h$ 在 $\partial \Omega$ 上成立。
+    \item $\mathcal{H}$ 中存在由 $\mathcal{K}$ 的特征向量 $\{u_n\}_{n=1}^{\infty}$ 构成的完备正交基。
+    \item 任意函数 $f \in \mathcal{H}$ 均可按该基底展开为广义傅里叶级数：
+    $$ f = \sum_{n=1}^{\infty} \langle f, u_n \rangle u_n $$
+    其中 $\langle \cdot, \cdot \rangle$ 表示 $\mathcal{H}$ 中的内积。
+\end{enumerate}
+\end{theorem}
+
+基于谱定理，方程\eqref{eq:eigendiriproblem}的特征值与特征函数具有如下基本性质：
+
+\begin{lemma}\label{lemma:eigen_properties}
+对于椭圆型特征值问题\eqref{eq:eigendiriproblem}，结论如下成立：
+\begin{enumerate}
+    \item {\heiti 实谱性}：所有特征值 $\lambda$ 均为实数。
+    \item {\heiti 离散性与排序}：特征值构成一个可列的离散集合，且仅以 $+\infty$ 为聚点。若考虑代数重数，特征值可按非递减顺序排列为：
+    \begin{equation}\label{eq:eigenvalue_sequence}
+    0 < \lambda_{1} < \lambda_{2} \leq \lambda_{3} \leq \cdots, \quad \text{且 } \lim_{k \to \infty} \lambda_{k} = +\infty.
+    \end{equation}
+    \item {\heiti 完备正交性}：对应的特征函数系 $\{\xi_{k}\}_{k=1}^{\infty}$ 构成 $L^{2}(\Omega)$ 空间的一组完备正交基。
+\end{enumerate}
+\end{lemma}
+
+为简化后续推导，本文约定特征函数系 $\{\xi_{k}\}_{k=1}^{\infty}$ 已关于 $L^{2}$ 范数进行归一化，即 $\|\xi_{k}\|_{L^{2}(\Omega)}=1$。
+
+
+\subsection{符号约定与正则性假设}
+
+为叙述简便，本节统一规定文中使用的符号与定义。
+
+\begin{definition}[基础符号与算子]\label{def:notation}
+\quad
+\begin{enumerate}
+    \item \textbf{谱投影算子}：基于算子 $\mathcal{L}$ 的特征值分解，定义谱投影算子 $\mathcal{P}_{<k}$ 为：
+    \begin{equation*}
+        \mathcal{P}_{<k}u = \sum_{\lambda_{l}<\lambda_{k}} \langle u,\xi_{l} \rangle \xi_{l}.
+    \end{equation*}
+    即 $\mathcal{P}_{<k}$ 表示将函数 $u$ 投影至由特征值（严格）小于 $\lambda_k$ 的特征向量所生成的子空间。类似地，我们可以定义 $\mathcal{P}_{>k}$, $\mathcal{P}_{=k}$, $\mathcal{P}_{\leq k}$, $\mathcal{P}_{\geq k}$ 以及 $\mathcal{P}_{\neq k}$。
+    
+    \item \textbf{特征值分离度}：定义特征值 $\lambda_i$ 的分离度为：
+    \begin{equation*}
+        \delta \lambda_{i} = \min_{j: \lambda_{j}\neq \lambda_{i}} |\lambda_{i}-\lambda_{j}|.
+    \end{equation*}
+\end{enumerate}
+\end{definition}
+
+关于谱投影算子，基于紧自伴算子的谱理论可知，由于 $\mathcal{P}_{<k}$ 是由特征基底构成的投影，它在 $L^{2}$ 内积和能量内积（即与椭圆算子关联的双线性形式）下均是正交投影。
+需要特别注意的是，由于特征值可能存在重数，即特征空间的维数可能大于 1，上述定义中不同的索引 $k$ 可能对应相同的特征值。这也是我们在公式 \eqref{eq:eigenvalue_sequence} 中使用非严格不等号 ($\leq$) 的原因。
+
+特征值问题的正则性是本文分析的另一个核心要素。足够高的正则性对于避免高维问题中的”维数灾难”具有重要意义（详见第 \ref{sec_main} 节）。为此，我们提出如下假设：
+
+\begin{assumption}[正则性假设]\label{ass:regularity}
+假设区域 $\Omega$ 和势函数 $V$ 满足：
+\begin{enumerate}
+    \item[(a)] $\Omega \subset \mathbb{R}^d$ 是一个有界的 $C^{m}$ 区域；
+    \item[(b)] 势函数 $V \in C^{m-1}(\bar{\Omega})$；
+    \item[(c)] $m > \max\{2, \frac{d}{2}-2\}$。
 \end{enumerate}
 \end{assumption}
 
-值得强调的是，假设\ref{ass:f}(d)的增长性条件实际上保证了$V(s)\in L^{\infty}(\Omega)$。而假设 \ref{ass:f}(d) 中对 $V(u)$ 的限制主要是为了确保能量泛函的严格凸性。若仅考察弱解的存在性，该条件可被适当弱化。
+上述关于区域边界的正则性假设主要是为了满足 Whitney 延拓定理的条件，该定理在第 \ref{subsec_app} 节的误差分析中起到了关键作用。
+值得指出的是，虽然本文的理论推导基于上述光滑性假设，但结论通常可以推广到更广泛的几何情形。例如，$\mathbb{R}^{d}$ 中的单位立方体虽然在角点处不满足 $C^m$ 边界条件，但若势函数为常数或齐次势，我们的定理结论显然依然成立。针对此类非光滑区域的有效性，我们将在第 \ref{sec_num} 节通过数值算例进一步验证。
 
-基于变分法（Variational Methods），我们可以将方程 \eqref{eq:maineq} 的强形式转化为能量泛函的极小化问题。定义能量泛函 $J: H^1(\Omega) \to \mathbb{R}$ 如下：
-\begin{equation}\label{eq:ch3loss}
-J(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} u^2 \, dS + \int_{\Omega} W(u) \, dx - \int_{\Omega} gu \, dx - \mu \int_{\partial \Omega} hu \, dS
-\end{equation}
-其中 $W(s) = \int_0^s V(t) \, dt$。
-若能量泛函 $J(u)$ 在 $H^1(\Omega)$ 中存在全局极小值点 $u$，则该点必满足一阶变分驻值条件 $\delta J(u) = 0$。该驻值条件恰好对应于原偏微分方程的弱形式。因此，求解原 Robin 边值问题等价于寻找泛函 $J(u)$ 的极小值点。而接下来的定理确立了泛函 $J(u)$ 在 $H^1(\Omega)$ 中极小值点（即弱解）的存在性与唯一性，并给出了该解的高阶正则性先验估计。
+\section{模型构建}
+\subsection{特征值与瑞利商}\label{sec_model}
+针对前文公式 \eqref{eq:eigendiriproblem} 定义的椭圆型特征值问题，其变分形式自然对应于瑞利商的极值问题。为此，我们首先定义如下的双线性能量泛函：
 
-\begin{theorem}[先验估计]\label{th:ch3reg}
-在假设 \ref{ass:f} 成立的条件下，方程 \eqref{eq:maineq} 存在唯一的解 $u \in H^2(\Omega)$，且满足如下正则性估计：
-$$\|u\|_{H^2(\Omega)} \le C \left( \|g - V(u)\|_{L^2(\Omega)} + \|h\|_{H^{1/2}(\partial \Omega)} + \|u\|_{H^1(\Omega)} \right)$$
-\end{theorem}
-\begin{proof}
-本定理的证明参考了 \cite{2013Roubiek}（第二节）、\cite{evans2010partial}（第八章） 以及 \cite{brezis2011functional}（第八、九章）中关于椭圆方程经典正则性理论的结论。为保持行文流畅，详细的推导过程参见附录 \ref{pf:th:ch3reg}。
-\end{proof}
-
-
-\section{模型构建}\label{sec:mod}
-\subsection{能量泛函及其稳定性估计}
-建立方程的先验估计后，我们便可通过极小化泛函 \eqref{eq:ch3loss} 来求解 Robin 边值问题。然而，对于 Dirichlet 边值问题，通常需要通过引入带有大罚参数的惩罚项来对边界约束进行近似逼近。关于这一逼近过程的收敛性，我们有如下定理：
-\begin{theorem}\label{thm:model}
-对于 $u\in H^{1}(\Omega)$，定义引入边界惩罚项的能量泛函：
-\begin{equation}\label{eq:ch3conloss}
-J^{\mu}(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} u^2 \, dS + \int_{\Omega} W(u) \, dx - \int_{\Omega} gu \, dx - \mu \int_{\partial \Omega} hu \, dS
-\end{equation}
-则有以下结论：
-\begin{enumerate}
-\item[(a)] 对于有限的惩罚参数 $\mu<+\infty$，$J^{\mu}$ 存在唯一的极小值点，记为 $u^{\mu}$。且该极小值点是方程 \eqref{eq:maineq} 的弱解。
-\item[(b)] 当 $\mu \rightarrow +\infty$ 时，设 $u^{D}$ 为具有精确 Dirichlet 边界条件（即在 $\partial \Omega$ 上 $u=h$）的方程 \eqref{eq:maineq} 的解。则存在仅依赖于区域和已知函数的常数 $C(\Omega,V,g,h)$，使得：
 \begin{equation*}
-\|u^{\mu}-u^{D}\|_{H^{1}}\leq C(\Omega,V,g,h)\frac{1}{\mu}.
-\end{equation*}
-\end{enumerate}
-\end{theorem}
-\begin{proof}
-首先证明第一部分。当 $\mu<+\infty$ 时，对泛函\eqref{eq:ch3conloss} 沿任意测试函数 $v \in H^1(\Omega)$ 求变分，可得其 Euler-Lagrange 方程的弱形式：
-\begin{equation*}
-\begin{aligned}
-\langle \delta J^{\mu}(u), v \rangle &= \int_{\Omega} \big( \nabla u \cdot \nabla v + V(u) v - gv \big) \,dx + \mu\int_{\partial \Omega}(u-h)v \,dS \\
-&= \int_{\Omega} \left(-\Delta u+V(u)-g\right)v \,dx + \int_{\partial \Omega} \left(\frac{\partial u}{\partial n} + \mu(u-h)\right) v \,dS,
-\end{aligned}
+a(u,v)\triangleq\langle \nabla u,\nabla v\rangle+\int_{\Omega}w uv \text{d}x, u\in H_{0}^{1}(\Omega).
 \end{equation*}
 
-其中 $V(u) = W'(u)$。由上式可知，泛函 $J^{\mu}$ 的驻点与方程 \eqref{eq:maineq} 配合 Robin 边界条件（$u+\frac{1}{\mu}\frac{\partial u}{\partial n}=h$）的弱解一一对应。由于泛函是严格凸的，该驻点存在且唯一，即为全局极小值点 $u^{\mu}$。
+而瑞利商则定义为：
+\begin{equation*}
+R(u) = \frac{a(u,u)}{\langle u, u \rangle}
+\end{equation*}
 
-其次，为了证明收敛率，我们引入一个辅助函数 $w^{\mu}$，它是以下线性椭圆方程的解：
+基于瑞利-里兹变分原理，椭圆算子的基态特征值$\lambda_1$ 可通过在容许函数空间内极小化瑞利商（Rayleigh Quotient）来刻画。具体而言，$\lambda_1$ 及其对应的特征函数 $\xi_1$ 满足：
+\begin{equation}\label{eq:first_eigen}
+\lambda_1 = \min_{\substack{u \in H_0^1(\Omega) \ u \neq 0}} \frac{a(u,u)}{\langle u, u \rangle}, \quad \xi_1 \in \mathop{\arg\min}_{\substack{u \in H_0^1(\Omega) \ u \neq 0}} \frac{a(u,u)}{\langle u, u \rangle}.
+\end{equation}
+
+对于高阶特征值，我们可以采用递归变分法进行定义。第 $k$ 个特征值 $\lambda_k$ 对应于瑞利商在与前 $k-1$ 个特征特征函数正交的子空间上的最小值。即：
+\begin{equation}\label{eq:ktheigenvalue}
+\lambda_k = \min_{\substack{u \in H_0^1(\Omega), u \neq 0 \\ \langle u,\xi_j\rangle=0, 1 \le j < k}} \frac{a(u,u)}{\langle u, u \rangle}, \quad \xi_k \in \mathop{\arg\min}_{\substack{u \in H_0^1(\Omega), u \neq 0 \\ \langle u,\xi_j\rangle=0, 1 \le j < k}} \frac{a(u,u)}{\langle u, u \rangle}.
+\end{equation}
+
+虽然理论上我们可以直接基于经典的DRM，利用公式 \eqref{eq:ktheigenvalue} 来求解第 $k$ 个特征值及其对应的特征函数，但在实际计算中，该方法的直接应用面临着以下三个主要的本质困难：
+
+\begin{itemize}
+\item 第一个困难在于如何确保神经网络近似解满足 Dirichlet 零边界条件。从函数空间的角度审视，标准神经网络生成的函数空间 $\mathcal{N}$ 通常仅满足 $\mathcal{N} \subset H^{1}(\Omega)$，而非 $\mathcal{N} \subset H^{1}_{0}(\Omega)$。
+虽然部分现有工作（如 \cite{lu2021priorieigen}）尝试通过构造距离函数或特殊网络结构来“硬约束”边界条件，但这类方法往往局限于规则区域，难以推广至复杂几何形状，且增加了理论分析的难度。
+针对一般区域的 PDE 问题，边界惩罚法提供了一种更为灵活的“软约束”策略 \cite{duan2021analysis, Mller2021ErrorEF}。其核心思想是引入如下修正的双线性形式：
+\begin{equation}\label{eq:penalty_bilinear}
+a^{\mu_1}(u,v) = a(u,v) + \mu_1\int_{\partial \Omega}uv \text{d}s,
+  \end{equation}
+其中 $\mu_1 > 0$ 为惩罚项参数。实际上，罚函数形式\ref{eq:penalty_bilinear}严格对应于如下 Robin 边值问题的变分形式：
 \begin{equation*}
 \left\{\begin{aligned}
--\Delta w^{\mu} +V(u^{D})&=g \quad \text { 在 } \Omega \text{ 中} \\
- w^{\mu}+\frac{1}{\mu}\frac{\partial w^{\mu}}{\partial n} &=h \quad \text { 在 } \partial \Omega \text{ 上},
+-\Delta u + V u &= \lambda u & \text{ in } \Omega, \\
+\frac{1}{\mu_1}\frac{\partial u}{\partial n} + u &= 0 & \text{ on } \partial\Omega.
 \end{aligned}\right.
 \end{equation*}
-根据 \cite{Maury2009Numerical}（命题 2.3 的证明）中的已知结论，我们有误差估计：
-\begin{equation}\label{eq:fuzhu}
-\|w^{\mu}-u^{D}\|_{H^{1}}\leq C(\Omega,V(u^{D}),g,h)\frac{1}{\mu}.
-\end{equation}
-由 $w^{\mu}$ 与 $u^{\mu}$ 所满足的弱形式相减，并选取测试函数为 $e^{\mu}=w^{\mu} - u^{\mu}$，结合边界条件可直接推得：
-$$\int_{\Omega} |\nabla e^{\mu}|^2 \,dx + \mu \int_{\partial \Omega} (e^{\mu})^2 \,dS = \int_{\Omega} -\left( V(u^{D}) - V(u^{\mu}) \right) e^{\mu} \,dx$$
-根据 $H^{-1}$ 空间（$H^1_0$ 或 $H^1$ 的对偶空间）的性质以及广义的 Cauchy-Schwarz 不等式，右侧可以被放缩为$\left| \int_{\Omega} \left( V(u^{D}) - V(u^{\mu}) \right) e^{\mu} \,dx \right| \leq \|V(u^{D}) - V(u^{\mu})\|_{H^{-1}} \|e^{\mu}\|_{H^{1}}$。
-利用 $ab \leq \frac{1}{2}a^2 + \frac{1}{2}b^2$ 并把 $\|e^{\mu}\|_{H^1}$ 吸收进左侧，我们最终就可以推导得出：
-$$\|e^{\mu}\|_{H^{1}}^2\leq C \|V(u^{D}) - V(u^{\mu})\|^2_{H^{-1}}\leq C(\Omega,V)$$
-结合上式和式\eqref{eq:fuzhu}，可以推知$\|u^{\mu}\|_{H^{1}}\leq C(\Omega,V,g,h)$，这表明 $\{u^{\mu}\}$ 在 $H^{1}$ 空间中是一致有界的。
+本文将严格证明：当 $\mu_1 \to +\infty$ 时，上述 Robin 问题的特征对将收敛于原 Dirichlet 问题的特征对。因此，本文提出的框架天然适用于一般的 Robin 特征值问题。为叙述简便，后文在不引起混淆的情况下将不再刻意区分两者。
 
-下面，我们着手估计误差项$e^{\mu}$的$H^1$ 半范数误差。利用格林公式以及边界条件 $u^D = h$，可得如下展开：
-\begin{equation}\label{eq:seminormcontrol}
-\begin{aligned}
-\int_{\Omega}|\nabla(u^{D}-u^{\mu})|^{2}\,dx &= \int_{\Omega}\nabla (u^{D}-u^{\mu}) \cdot \nabla u^{D}\,dx - \int_{\Omega}\nabla (u^{D}-u^{\mu}) \cdot \nabla u^{\mu}\,dx\\
-&= \int_{\Omega} -(u^{D}-u^{\mu})\Delta u^{D}\,dx - \int_{\Omega} -(u^{D}-u^{\mu})\Delta u^{\mu}\,dx \\
-&\quad + \int_{\partial \Omega}\frac{\partial u^{D}}{\partial n}(u^{D}-u^{\mu})\,dS - \int_{\partial \Omega}\frac{\partial u^{\mu}}{\partial n}(u^{D}-u^{\mu})\,dS\\
-&= -\int_{\Omega} \left[V(u^{D})-V(u^{\mu})\right]\left(u^{D}-u^{\mu}\right)\,dx \\
-&\quad + \frac{1}{\mu} \int_{\partial \Omega}\frac{\partial u^{D}}{\partial n}\frac{\partial u^{\mu}}{\partial n}\,dS - \frac{1}{\mu} \int_{\partial \Omega}\left(\frac{\partial u^{\mu}}{\partial n}\right)^{2}\,dS\\
-&\leq \frac{1}{2\mu}\left[\int_{\partial \Omega}\left(\frac{\partial u^{D}}{\partial n}\right)^{2}\,dS - \int_{\partial \Omega}\left(\frac{\partial u^{\mu}}{\partial n}\right)^{2}\,dS \right] \\
-&\leq C(\Omega,V,g,h)\frac{1}{\mu}.
-\end{aligned}
-\end{equation}
-推导的最后一步利用了函数 $V$ 的单调性：$\left(V(u^{D})-V(u^{\mu})\right)\left(u^{D}-u^{\mu}\right) \geq 0$。
+\item 第二个困难源于瑞利商泛函本身的几何性质。瑞利商具有尺度不变性（零次齐次性），即对于任意非零常数 $c$，有 $R(c u) = R(u)$。这意味着优化目标在特征函数的径向方向上是常数，导致解空间呈现出流形结构而非单一极小值点，明显削弱了梯度的导向性。
+更为重要的是，这种非凸性导致优化过程在原点附近较为不稳定。当近似解的模长趋于零（$\|v\| \to 0$）时，瑞利商的梯度计算将出现奇异性，导致优化问题变得病态。为克服这一平凡解风险，必须在损失函数中引入适当的正则化项或稳定项\cite{Weinan2017The}，以约束解的模长并维持数值稳定性。
 
-然后考虑边界项的控制，记
-$$E(u)=\frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \int_{\Omega} W(u) \, dx - \int_{\Omega} g\, dx$$
-由于 $u^{\mu}$ 为泛函 $J^{\mu}$ 全局极小值点，利用在边界上有 $u^{D}=h$，将精确解 $u^{D}$ 代入$J^{\mu}(u)$可得：
-$$J^{\mu}(u^{\mu})=E(u^{\mu}) + \frac{\mu}{2}\int_{\partial \Omega} (u^{\mu} - h)^2 \, dS - \frac{\mu}{2}\int_{\partial \Omega} h^2 \, dS \leq E(u^{D})- \frac{\mu}{2}\int_{\partial \Omega} h^2 \, dS$$
-由于前面已经证明了序列 $\{u^{\mu}\}$ 在 $H^1(\Omega)$ 中是一致有界的，内部能量泛函 $E(u^{\mu})$ 必然存在一个不依赖于 $\mu$ 的下界，因此可以推导出：
-\begin{equation}\label{eq:bdcontrol}
-\mu\int_{\partial \Omega}(u^{\mu}-h)^{2}\,dS \leq E(u^{D})-E(u^{\mu}) \leq C(\Omega,V,g,h).
-\end{equation}
+\item 求解高阶特征值（$k > 1$）面临着额外的正交性难题。根据变分原理，能量泛函的无约束最小化总是倾向于收敛至基态（最小特征值 $\lambda_1$）。为了捕获第 $k$ 个激发态，必须强制当前的近似解与前 $k-1$ 个已求得的特征函数保持正交。
+在深度学习框架下，这种正交性通常通过在损失函数中添加罚项来实现。然而，这不仅引入了额外的超参数，还使得优化图景变得更加崎岖，增加了陷入局部极小值或发生模式塌缩的可能性。
+\end{itemize}
 
-根据广义的 Poincaré 不等式，$H^1$ 空间中函数的 $L^2$ 范数可由其半范数与边界上的 $L^2$ 范数共同控制。
-% $$\|u^{\mu} - u^{D}\|_{L^2(\Omega)}^2 \leq C \left( \|\nabla (u^{\mu} - u^{D})\|_{L^2(\Omega)}^2 + \|u^{\mu} - u^{D}\|_{L^2(\partial \Omega)}^2 \right).$$
-结合半范数估计 \eqref{eq:seminormcontrol} 与边界误差估计\eqref{eq:bdcontrol}，即可得出定理所需的 $H^1$ 收敛率结论。证毕。
-\end{proof}
+\subsection{损失函数及其稳定性估计}
+为了克服上述挑战，本文并未采用直接优化瑞利商的传统策略，而是构造了如下的损失函数作为变分目标。基于该目标函数，我们建立了如下定理：
 
-下面这个定理给出了能量泛函 $J^{\mu}$ 在其极小值点附近的稳定性估计。
-\begin{theorem}[稳定性估计]\label{thm:staerr}
-设 $u^{\mu}$ 是方程 \eqref{eq:maineq} 的弱解（即泛函 $J^{\mu}$ 的极小值点），且函数$V$满足假设 \ref{ass:f} 中的单调性条件。则对于任意 $v \in H^1(\Omega)$，存在常数 $C(\Omega,\mu)>0$ 使得以下稳定性估计成立：
-\begin{equation}\label{eq:stability}
-J^{\mu}(u^{\mu}+v)-J^{\mu}(u^{\mu}) \geq C(\Omega,\mu)\|v\|_{H^{1}}^{2}.
+\begin{theorem}\label{th:3.1}
+记 $Q(v)=\|v\|^{2}-1$。定义第 $k$ 个特征值的损失函数为：
+\begin{equation}\label{eq:conloss}
+\mathcal{L}_{k}(v)=\frac{1}{2}a^{\mu_{1}}(v,v)+\frac{\mu_{2}}{4}\left[Q(v)^{2}+2\sum_{i<k}\left\langle v,\frac{\xi_{i}}{\|\xi_{i}\|}\right\rangle^{2}\right],
 \end{equation}
+设 $\xi_{k}$ 为该损失函数在空间 $H^1$ 中的极小值点，即：
+\begin{equation*}
+\xi_{k}\in \mathop{\text{argmin}}_{v\in H^{1}}\ \mathcal{L}_{k}(v).
+\end{equation*}
+若惩罚参数满足 $\mu_{2}>2\lambda_{k}$，并记$\varepsilon_1=\frac{1}{\mu_1}$，则如下误差估计成立：
+\begin{equation*}
+0<\lambda_{k}-\frac{a^{\mu_{1}}(\xi_{k},\xi_{k})}{\langle \xi_{k},\xi_{k}\rangle}\lesssim C(\Omega,w)\varepsilon_1.
+\end{equation*}
+此外，在忽略 $a^{\mu_{1}}$ 特征空间内线性变换（即相差一个特征子空间内的旋转或常数因子）的意义下，$\xi_{k}$ 是 $\mathcal{L}_{k}$ 的唯一极小化子。
 \end{theorem}
+
 \begin{proof}
-根据泛函 $J^{\mu}$ 的定义\eqref{eq:ch3conloss}，我们可以将 $J^{\mu}(u^{\mu}+v)$ 展开并与 $J^{\mu}(u^{\mu})$ 作差，得到：
+不失一般性，我们可以假设所有 $\xi_{k}$ 均已归一化。
+证明主要包含两个步骤：
+首先，我们将证明当惩罚参数 $\mu_1 \to +\infty$ 时，如下 Robin 边值问题的特征对收敛于 Dirichlet 问题的特征对（其中 $T$ 表示迹算子）：
+\begin{equation}\label{eq:eigenrobinproblem}
+\left\{\begin{aligned}
+-\Delta u+w u &=\lambda^{\mu_{1}} u & & \text { in } \Omega, \\
+\left(T + \frac{1}{\mu_{1}}\frac{\partial}{\partial n}\right) u &=0 & & \text { on } \partial \Omega.
+\end{aligned}\right.
+\end{equation}
+
+具体而言，其特征值$\lambda^{\mu_1}$和Dirichlet问题的特征值$\lambda$满足如下误差估计：
+\begin{equation*}
+0<\lambda-\lambda^{\mu_{1}}\lesssim C(\Omega,w)\frac{1}{\mu_{1}},
+\end{equation*}
+
+随后，我们将证明损失函数 $\mathcal{L}_k$ 的极小化项 $\xi_{k}$ 恰为Robin边值问题 \eqref{eq:eigenrobinproblem} 的特征向量。
+
+我首先给出第一部分的证明。为此，我们定义算子 $A: L^{2}(\Omega) \to L^{2}(\Omega)$为 Dirichlet 边值问题的源项到解的映射，即：
+\begin{equation}\label{eq:Adef2}
+\left\{\begin{aligned}
+(-\Delta+w) Af &= f & &\text{in } \Omega, \\
+TAf &= 0 & &\text{on } \partial\Omega.
+\end{aligned}\right.
+\end{equation}
+
+对于式\eqref{eq:Adef2}，若区域 $\Omega$ 是 $C^2$ 区域或凸多边形，则有椭圆方程的先验估计
+\begin{equation}\label{eq:prior}
+\|Af\|_{H^2(\Omega)} \lesssim \|f\|_{L^2(\Omega)}.
+\end{equation}
+
+以及迹定理成立：
+\begin{equation}\label{eq:trace}
+\|\frac{\partial }{\partial n}Af\|_{H^{1/2}(\partial \Omega)} \lesssim \|TAf\|_{H^{3/2}(\partial \Omega)} \lesssim \|Af\|_{H^2(\Omega)}.\\
+\end{equation}
+
+类似地，定义 $A^{\mu_{1}}: L^{2}(\Omega) \to L^{2}(\Omega)$ 为 Robin 边值问题的源项到解的映射，即：
+\begin{equation}\label{eq:Adef}
+\left\{\begin{aligned}
+(-\Delta+w) A^{\mu_{1}}f &= f & &\text{in } \Omega, \\
+\left(T+\frac{1}{\mu_{1}}\frac{\partial }{\partial n}\right)A^{\mu_{1}}f &= 0 & &\text{on } \partial\Omega,
+\end{aligned}\right.
+\end{equation}
+
+其对应的先验估计和迹定理同样成立。
+
+文献 \cite{Maury2009Numerical}（命题 2.3 的证明）已确立了 $A^{\mu_{1}}$ 强收敛于 $A$ 这一结论。尽管该结果对于求解椭圆方程已足够，但尚不足以直接证明特征值问题的收敛性。我们需要证明对于一列特征值序列$\{\xi_k\}_{k=1}^{\infty}$，都有$A^{\mu_1}\xi_k$在 $H^1(\Omega)$ 中收敛于 $A\xi_k$。因此，需要将进一步证明 $A^{\mu_{1}}$ 在算子范数意义下收敛于 $A$。
+
+我们首先沿用 \cite{Maury2009Numerical} 中的方法建立 $A^{\mu_{1}}$ 的强收敛性，该估计为应用一致有界原理提供了必要的一致有界性条件。为此，我们定义如下的残差泛函：
+
+%TODO 把引用写成引理
+
+%Lemma (Elliptic Regularity on Convex Domains):Let $\Omega \subset \mathbb{R}^2$ be a bounded convex polygonal domain. Assume $f \in L^2(\Omega)$. Then the unique solution $u \in H^1_0(\Omega)$ to the Dirichlet problem $-\Delta u = f$ satisfies $u \in H^2(\Omega)$, and there exists a constant $C$ independent of $u$ such that:
+% $$\|u\|_{H^2(\Omega)} \leq C \|f\|_{L^2(\Omega)}.$$
+% Proof Reference: This result is a direct consequence of the regularity theory for polygonal domains, specifically established by Kadlec (1964) and detailed in Grisvard (1985, Theorem 3.2.1.2).
+
+% Grisvard (最权威的引用):
+
+% Grisvard, P. (1985). Elliptic Problems in Nonsmooth Domains. Pitman. (特别是第3章)
+
+% Kadlec (原始证明):
+
+% Kadlec, J. (1964). The regularity of the solution of the Poisson problem in a domain whose boundary is similar to that of a convex domain. Czechoslovak Mathematical Journal, 14(3), 386-393.
+
+\begin{equation}\label{eq:R_lambda}
+R^{\mu_{1}}(v) = \frac{1}{2}a^{\mu_{1}}( Af-v , Af-v )+\frac{\mu_{1}}{2}\int_{\partial\Omega}\left( -\frac{1}{\mu_{1}}\frac{\partial Af}{\partial n}-v \right)^{2} \text{d}s.
+\end{equation}
+
+由式\eqref{eq:prior}和式\eqref{eq:trace}，法向导数 $\frac{\partial }{\partial n}Af, \frac{\partial }{\partial n}A^{\mu_{1}}f\in H^{1/2}(\partial \Omega)$, 而$H^{1/2}(\partial \Omega)$ 是紧嵌入到 $L^2(\partial \Omega)$, 因此法向导数$\frac{\partial }{\partial n}Af, \frac{\partial }{\partial n}A^{\mu_{1}}f$ 是平方可积的。故上述定义的泛函 $R^{\mu_{1}}$ 是良定义的。
+
+利用方程 \eqref{eq:Adef}，泛函 \eqref{eq:R_lambda} 可重写为：
 \begin{equation*}
 \begin{aligned}
-J^{\mu}(u^{\mu}+v) - J^{\mu}(u^{\mu}) 
-&= \frac{1}{2}\int_{\Omega} |\nabla v|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} v^2 \, dS \\
-&\quad + \int_{\Omega} \big( \nabla u^{\mu} \cdot \nabla v - gv \big) \, dx + \mu \int_{\partial \Omega} (u^{\mu}-h) v \, dS \\
-&\quad + \int_{\Omega} \big( W(u^{\mu}+v) - W(u^{\mu}) \big) \, dx.
+R^{\mu_{1}}(v) &= \frac{1}{2}a^{\mu_{1}}( Af,Af) - a^{\mu_{1}}( Af,v) +\frac{1}{2}a^{\mu_{1}}( v,v ) \\
+&\quad +\frac{1}{2\mu_{1}}\int_{\partial\Omega}\left(\frac{\partial Af}{\partial n}\right)^{2}ds +\int_{\partial\Omega}\frac{\partial Af}{\partial n}vds+\frac{\mu_{1}}{2}\int_{\partial\Omega}v^{2}ds \\
+&= \frac{1}{2}a^{\mu_{1}}( Af,Af)+\frac{1}{2}a^{\mu_{1}}( v,v )-\langle f,v\rangle \\
+&\quad +\frac{1}{2\mu_{1}}\int_{\partial\Omega}\left(\frac{\partial Af}{\partial n}\right)^{2}ds +\frac{\mu_{1}}{2}\int_{\partial\Omega}v^{2}ds.
 \end{aligned}
 \end{equation*}
-由于 $u^{\mu}$ 是 $J^{\mu}$ 的极小值点，满足 Euler-Lagrange 方程。因此，将其沿测试函数 $v$ 的变分代入，上述一阶项可以转化为
+
+% 上式的推导表明，$A^{\mu_{1}}f$ 正是泛函 $R^{\mu_{1}}$ 的极小化项。根据逆迹定理，存在一个有界的延拓算子，使得$\frac{\partial Af}{\partial n}$在$\Omega$上的延拓有界，取测试函数$v = Af - \frac{1}{\mu_1}T^{-1}\frac{\partial Af}{\partial n}$，我们有如下估计：
+上式的推导表明，$A^{\mu_{1}}f$ 正是泛函 $R^{\mu_{1}}$ 的极小化项。我们构造如下的测试函数$v = Af - \frac{1}{\mu_1}\frac{\partial Af}{\partial n}$并带入$R(u)$中，我们得到如下估计：
 \begin{equation*}
-\int_{\Omega} \big( \nabla u^{\mu} \cdot \nabla v - gv \big) \, dx + \mu \int_{\partial \Omega} (u^{\mu}-h) v \, dS = -\int_{\Omega} V(u^{\mu})v \, dx.
-\end{equation*}
-将此等式代回展开式中，我们得到：
-\begin{equation*}
-J^{\mu}(u^{\mu}+v) - J^{\mu}(u^{\mu}) = \frac{1}{2}\int_{\Omega} |\nabla v|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} v^2 \, dS + \int_{\Omega} \big( W(u^{\mu}+v) - W(u^{\mu}) - V(u^{\mu})v \big) \, dx.
+\begin{aligned}
+R^{\mu_{1}}(A^{\mu_{1}}f) &\leq R^{\mu_{1}}\left(Af-T^{-1}\frac{1}{\mu_{1}}\frac{\partial Af}{\partial n}\right)\\
+&= \frac{1}{2\mu_{1}^{2}}a^{\mu_{1}}\left(T^{-1}\frac{\partial Af}{\partial n}, T^{-1}\frac{\partial Af}{\partial n}\right) \\
+&\leq C\mu_{1}^{-2}.
+\end{aligned}
 \end{equation*}
 
-由中值定理可知，存在 $\theta \in (0,1)$ 使得 $W(u^{\mu}+v) - W(u^{\mu}) = V(u^{\mu}+\theta v)v$。因此，积分项中的非线性部分可以改写为：
+由 $a^{\mu_{1}}(\cdot,\cdot)$ 的椭圆性，可得：
 \begin{equation*}
-\int_{\Omega} \big( V(u^{\mu}+\theta v) - V(u^{\mu}) \big) v \, dx.
+R^{\mu_{1}}(A^{\mu_{1}}f-Af)\geq C_1\|A^{\mu_{1}}f-Af\|_{H^{1}(\Omega)}^{2},
 \end{equation*}
-鉴于函数 $V$ 是单调的，对于任意 $\theta \in (0,1)$，$\big( V(u^{\mu}+\theta v) - V(u^{\mu}) \big) v \geq 0$ 在 $\Omega$ 上几乎处处成立。
-由此可推断出：
+
+从而：
 \begin{equation*}
-J^{\mu}(u^{\mu}+v) - J^{\mu}(u^{\mu}) \geq \frac{1}{2}\int_{\Omega} |\nabla v|^2 \, dx + \frac{\mu}{2} \int_{\partial \Omega} v^2 \, dS.
+\|(A-A^{\mu_{1}})f\|_{H^{1}(\Omega)}\leq C\mu_{1}^{-1},
 \end{equation*}
-最后，由于惩罚参数 $\mu > 0$，根据广义 Poincaré 不等式，存在仅依赖于区域 $\Omega$ 和 $\mu$ 的常数 $C(\Omega,\mu)=\min\{1,\mu\}\cdot C'(\Omega)>0$，使得上式右侧以 $C(\Omega,\mu)\|v\|_{H^{1}}^{2}$ 为下界。证毕。
+
+从而我们证明了 $A^{\mu_{1}}$ 强收敛于 $A$，且由一致有界原理，该算子序列的估计是一致有界的（$C$不依赖于$\mu_{1}$和$f$），从而证明了特征函数的收敛性。进一步，为了得到特征值的误差估计，我们考察如下二次型的误差估计：
+\begin{equation*}
+\begin{aligned}
+\langle A^{\mu_{1}}f, f\rangle - \langle Af, f\rangle &= \langle A^{\mu_{1}}f, (-\Delta+w) Af\rangle - \langle Af, f\rangle \\
+&= \langle (-\Delta+w)A^{\mu_{1}}f, Af\rangle - \langle Af, f\rangle \\
+&\quad + \int_{\partial \Omega} \frac{\partial}{\partial n} A^{\mu_{1}}f \cdot T Af \, ds - \int_{\partial \Omega} T A^{\mu_{1}}f \cdot \frac{\partial}{\partial n} Af \, ds \\
+&= \frac{1}{\mu_{1}}\int_{\partial \Omega} \frac{\partial }{\partial n}A^{\mu_{1}}f \cdot \frac{\partial }{\partial n}Af \, ds \\
+&= \frac{1}{2\mu_{1}}\left(
+\left\|\frac{\partial}{\partial n}A^{\mu_{1}}f\right\|_{L^{2}}^{2} + \left\|\frac{\partial}{\partial n}Af\right\|_{L^{2}}^{2} - \left\|\frac{\partial}{\partial n}(A^{\mu_{1}}-A)f\right\|_{L^{2}}^{2}
+\right).
+\end{aligned}
+\end{equation*}
+
+而前文由式\eqref{eq:prior}和\eqref{eq:trace}已推知$\frac{\partial }{\partial n}Af, \frac{\partial }{\partial n}A^{\mu_{1}}f$在$L^2(\partial\Omega)$中可积，因此
+\begin{equation*}
+|\lambda^{\mu_1} - \lambda| \le \sup_{\|f\|=1} | \langle (A^{\mu_1} - A)f, f \rangle |\le C\mu_{1}^{-1}.
+\end{equation*}
+
+从而完成了第一部分的证明。
+
+下面进行证明的第二部分。为记号简便起见，我们将省略 $A^{\mu_1}$（原为 $A$）及其特征值、特征向量和特征分解的具体依赖标记。我们采用数学归纳法进行证明。为便于叙述，在讨论 $\mathcal{L}_k$ 时，假设对于所有 $i<k$，$\xi_i$ 均已归一化。由公式 \eqref{eq:conloss}，$\mathcal{L}_{k}$ 的变分形式可表示为:
+\begin{equation*}
+\left.\delta \mathcal{L}_{k}\right(u;\delta u)=a^{\mu_1}(u,\delta u)+\mu_1\left[Q(u) \langle \delta u, u\rangle+ \sum\limits_{i<k}\langle \delta u,\xi_{i} \rangle\langle \xi_{i},u \rangle\right].
+\end{equation*}
+
+首先考虑 $k = 1$ 的情形。令 $\delta \mathcal{L}_{1}(\xi_1)=0$，可导出 \begin{equation}\label{eq:3.16}
+\left\{
+\begin{aligned}
+\left[-\Delta+w+\mu_2Q(\xi_{1})\right]\xi_{1}&=0,\\
+\left(\frac{1}{\mu_1}\frac{\partial}{\partial n}+T\right)\xi_{1}&=0.
+\end{aligned}
+\right.
+\end{equation}
+
+这表明 $\xi_{1}=\vec{0}$，或者 $\xi_{1}$ 是对应于特征值 $-\mu_{2}Q(\xi_{1})$ 的特征向量；记该特征值为 $\lambda_{l_{1}}$。由于 $Q(v)=\|v\|^{2}-1\geq -1$，可知 $\lambda_{l_{1}}\leq \mu_{2}$。因此，根据正交性，若 $\mu_{2}>\lambda_{1}$，则至少存在一个非平凡驻点。此时二阶变分公式为：
+
+\begin{equation*}
+\begin{aligned}
+\delta^{2} \mathcal{L}_{k}(u;\delta u)=& \frac{1}{2}a^{\mu_{1}}(\delta u,\delta u) +\frac{\mu_{2}}{2}\left[2\langle u, \delta u\rangle^{2}+Q(\xi_{k})\|\delta u\|^{2}+\sum_{i<k}\left\langle\xi_{i}, \delta u\right\rangle^{2}\right].
+\end{aligned}
+\end{equation*}
+
+若 $l_{1}=1$，即 $\xi_{1}$ 是对应于主特征值 $\lambda_{1}$ 的特征向量，满足 $\|\xi_{1}\|^2=1-\frac{\lambda_{1}}{\mu_{2}}$。此时我们可以证明：
+$$\begin{aligned}
+\delta^{2} \mathcal{L}_{1}(\xi_1;\mathcal{P}_{>1}\delta u)
+&=\frac{1}{2}a^{\mu_{1}}(\mathcal{P}_{>1}\delta u,\mathcal{P}_{>1}\delta u)+\frac{\mu_{2}}{2}\left[2\langle\xi_1, \mathcal{P}_{>1}\delta u\rangle^{2}+Q(\xi_{1})|\mathcal{P}_{>1}\delta u|^{2}\right]\\
+&\geq\frac{1}{2}\lambda_{2}|\mathcal{P}_{>1}\delta u|^{2}+\frac{\mu_{2}}{2}\left(-\frac{\lambda_{1}}{\mu_{2}}|\mathcal{P}_{>1}\delta u|^{2}\right)\\
+&\geq\frac{1}{2}\delta\lambda_{1}|\mathcal{P}_{>1}\delta u|^{2}>0,
+\end{aligned}$$
+
+注意到 $\mathcal{P}_{\leq 1}\delta u$ 满足 Eq.~\eqref{eq:3.16}，我们有：
+\begin{equation}\label{eq:3.20}
+\delta^{2} \mathcal{L}_{1}(\xi_1;\mathcal{P}_{\leq 1}\delta u)=\frac{\mu_2}{2}\langle\xi_1, \mathcal{P}_{\leq1}\delta u\rangle^{2}\geq\frac{1}{2}(\mu_2-\lambda_{1})|\mathcal{P}_{\leq 1}\delta u|^{2}>0.
+\end{equation}
+
+这证明了 $\xi_1$ 不仅是临界点，而且是局部极小值点。
+
+反之，若 $l_{1}> 1$，选取 $\delta u_1$ 为特征值 $\lambda_{1}$ 对应特征空间中的向量，则有：
+$$\begin{aligned}
+\delta^{2} \mathcal{L}_{1}(\xi_1;\delta u_{1})&=\frac{1}{2}a^{\mu_{1}}(\delta u_{1},\delta u_{1})+\frac{\mu_{2}}{2}\left[2\langle \xi_{1}, \delta u_{1}\rangle^{2}+Q(\xi_{1})|\delta u_{1}|^{2}\right]\\
+&=\frac{\lambda_{1}}{2}|\delta u_{1}|^{2} +\frac{\mu_{2}}{2}\left(-\frac{\lambda_{l_{1}}}{\mu_{2}}|\delta u_{1}|^{2}\right)\\
+&=\frac{1}{2}(\lambda_{1}-\lambda_{l_1})|\delta u_{1}|^{2}< 0.
+\end{aligned}$$
+
+因此该点为鞍点而非极小值点。
+
+最后一种情形是 $\xi_{1}=\vec{0}$，此时二阶变分退化为：
+\begin{equation*}
+\delta^{2} \mathcal{L}_{1}(\xi_1;\delta u)=\frac{1}{2}\left[a^{\mu_{1}}(\delta u,\delta u)-\mu_{2}|\delta u|^{2}\right].
+\end{equation*}
+
+若 $\mu_{2}\geq \lambda_{1}$，显然$\vec{0}$ 是鞍点。综上所述，结论对 $k=1$ 成立。
+
+假设结论对 $i<k$ 成立。对于第 $k$ 步，我们有方程组：
+$$\left\{\begin{array}{rcl}
+[-\Delta + w + \mu_{2}Q(\xi_{k})]\xi_{k}&=&-\mu_{2} \sum\limits_{i<k}\langle \xi_{k},\xi_{i}\rangle\xi_{i},\\
+\left(\frac{1}{\mu_{1}} \frac{\partial}{\partial n}+T\right) \xi_{k}&=&0.
+\end{array}\right.$$
+
+令 $\alpha_{ki}=\frac{\mu_{2}\langle \xi_{k},\xi_{i} \rangle}{\lambda_{i}+\mu_{2}Q(\xi_{k})}$，其中 $i\in A_{k}=\{i|\lambda_{i}\neq -\mu_{2}Q(\xi_{k})\}$。经整理可得：
+\begin{equation*}
+[-\Delta + w + \mu_{2}Q(\xi_{k})]\left(\xi_{k}+\sum_{i\in A_{k}}\alpha_{ki}\xi_{i}\right)=-\mu_{2}\sum_{i\in A_{k}^{c}}\langle \xi_{k},\xi_{i}\rangle\xi_{i}.
+\end{equation*}
+
+由 Fredholm 二择一原理，方程右端必须正交于核空间，这意味着对 $i\in A_{k}^{c}$ 必有 $\langle \xi_{k},\xi_{i}\rangle=0$。从而方程化为齐次形式：
+\begin{equation*}
+[-\Delta + w + \mu_{2}Q(\xi_{k})]\left(\xi_{k}+\sum_{A_{k}}\alpha_{ki}\xi_{i}\right)=0.
+\end{equation*}
+
+此处的讨论与 $k=1$ 时一致。注意到 $\left(\xi_{k}+\sum_{A_{k}} \alpha_{k i} \xi_{i}\right) \perp \xi_{i}$，由此推出：
+\begin{equation*}
+\langle \xi_{k},\xi_{i} \rangle\left(1+\frac{\mu_{2}}{\lambda_{i}+\mu_{2}Q(\xi_{k})}\right)=0.
+\end{equation*}
+由于条件 $\mu_{2}>2\lambda_{k}$ 保证了括号内各项非零，故 $\langle \xi_{k},\xi_{i}\rangle=0$。这表明 $\xi_{k}$ 是特征值 $\lambda_{l_{k}}=-\mu_{2}Q(\xi_{k})$ 对应的特征向量。
+
+由归纳假设，$\{\lambda_{i}\}_{1}^{k-1}$ 对应的特征空间由 $\{\xi_{i}\}_{1}^{k-1}$ 张成，因此必有 $\lambda_{l_{k}}\geq \lambda_{k}$。若假设 $\lambda_{l_{k}}>\lambda_{k}$，则存在一个特征值为 $\lambda_{k}$ 的特征向量 $\delta u$，且 $\delta u$ 与 $\{\xi_{i}\}_{1}^{k}$ 均正交。重复前述推导可得：
+$$\delta^{2} \mathcal{L}_{k}(\xi_k;\delta u)=\frac{1}{2}(\lambda_{k}-\lambda_{l_k})|\delta u|^{2}<0.$$
+
+因此，$\xi_k$ 是 $\mathcal{L}_{k}$ 的鞍点而非局部极小值点。若 $\xi_{k}=\vec{0}$，同理可证。证毕。
 \end{proof}
-
 
 \subsection{数值算法实现}
-与前文处理特征值问题的方法相类似，我们利用离散化版本的能量泛函来构建神经网络的训练目标。设 $\mathcal{N}^{2}=\mathcal{N}(\mathcal{D},\mathcal{W},\{2\},m)$，并令 $U(\Omega)$ 与 $U(\partial\Omega)$ 分别表示区域 $\Omega$ 及其边界 $\partial\Omega$ 上的均匀分布。通过引入独立同分布的样本集 $\{X_{i}\}_{i=1}^{N}\sim U(\Omega)$ 与 $\{Y_{j}\}_{j=1}^{M}\sim U(\partial\Omega)$，方程 \eqref{eq:ch3loss} 对应的离散经验损失函数可表示为 \cite{chen2021quasi}：
-\begin{equation}\label{eq:disloss0}
+在众多基于神经网络求解偏微分方程的数值策略中，DRM\cite{Weinan2017The} 建立了一套基于变分原理的求解框架。该方法在执行上可概括为以下四个关键步骤：
+\begin{enumerate}
+    \item 将原PDE特征值问题转化为等价的变分问题，即能量泛函最小化问题；
+    \item 利用参数化的深度神经网络构造合适的试探函数空间以逼近真实解；
+    \item 应用蒙特卡洛积分方法对高维能量泛函进行离散化估算；
+    \item 采用随机梯度下降类算法求解离散后的非凸优化问题。
+\end{enumerate}
+
+下面将 DRM 应用于求解上述变分极小化问题\eqref{eq:conloss}。令假设空间为 $\mathcal{N}^{1,2}=\mathcal{N}(\mathcal{D},\mathcal{W},\{2\},m)$。针对第 $k$ 个特征函数，定义其连续损失函数为：
+\begin{equation}\label{eq:conlossphi}
+\mathcal{L}_{\phi k}(v)=\frac{1}{2} a^{\mu_{1}}(v, v)+\frac{\mu_{2}}{4}\left[Q(v)^{2}+2 \sum_{i<k}\left\langle v, \frac{\xi_{\phi i}}{\left|\xi_{\phi i}\right|}\right\rangle^{2}\right],
+\end{equation}
+
+对应的极小值点 $\xi_{\phi j}$ 定义为：
+\begin{equation*}
+\xi_{\phi j} \in \underset{v \in \mathcal{N}^{2}}{\operatorname{argmin}} \mathcal{L}_{\phi j}(v),\quad 1\leq j\leq k.
+\end{equation*}
+
+记 $U(\Omega)$ 和 $U(\partial\Omega)$ 分别为区域 $\Omega$ 及其边界 $\partial\Omega$ 上的均匀分布。通过引入独立同分布的样本集 $\{X_{i}\}_{i=1}^{N}\sim U(\Omega)$ 与 $\{Y_{j}\}_{j=1}^{M}\sim U(\partial\Omega)$，式\eqref{eq:conloss} 与式\eqref{eq:conlossphi} 的离散经验损失函数可表示为：
+\begin{equation}\label{eq:disloss}
 \begin{aligned}
-\widehat{J}^{\mu}(u) = & \frac{|\Omega|}{N}\sum\limits_{i=1}^{N} \left[ |\nabla u(X_{i})|_{2}^{2}+2W(u(X_{i}))-2g(X_{i})u(X_{i})\right]\\
-&+\mu\frac{|\partial\Omega|}{M}\sum\limits_{j=1}^{M}\left[u^{2}(Y_{j})-2u(Y_{j})h(Y_{j})\right].
+\widehat{\mathcal{L}}_{k}(v) = & \frac{|\Omega|}{N}\sum\limits_{i=1}^{N} \left[ \frac{|\nabla v(X_{i})|^{2}}{2}+\frac{w(X_{i})v^{2}(X_{i})}{2}\right]+\frac{\mu_{1}}{2}\frac{|\partial\Omega|}{M}\sum\limits_{j=1}^{M}\left[ Tv^{2}(Y_{j}) \right] \\
+&+\frac{\mu_{2}}{4}\left[\frac{|\Omega|}{N}\sum\limits_{i=1}^{N}|v(X_{i})|^{2}-1\right]^{2}+\frac{\mu_{2}}{2}\sum_{j<k}\left[\frac{|\Omega|}{N}\sum\limits_{i=1}^{N}v(X_{i})\xi_{j}(X_{i})\right]^{2},
 \end{aligned}
 \end{equation}
 
-需要注意的是，假设 \ref{ass:f} 仅要求 $g\in L^2(\Omega)$，因此无法保证 $g$ 在 $\Omega$ 上本性有界。这可能导致离散泛函 $\widehat{J}^{\mu}$ 缺乏连续性。为克服该问题，我们对函数 $g$ 引入截断界 $K$，定义截断函数 $g^K = \min\{g, K\}$。由此得到带有截断的离散损失函数：
-\begin{equation}\label{eq:dislossK}
+以及以$\widehat{\xi}_{\phi j}$为正交化约束的离散损失函数：
+\begin{equation}\label{eq:dislossphi}
 \begin{aligned}
-\widehat{J}_{K}^{\mu}(u) = & \frac{|\Omega|}{N}\sum\limits_{i=1}^{N} \left[ |\nabla u(X_{i})|_{2}^{2}+2W(u(X_{i}))-2g^K(X_{i})u(X_{i})\right]\\
-&+\mu\frac{|\partial\Omega|}{M}\sum\limits_{j=1}^{M}\left[u^{2}(Y_{j})-2u(Y_{j})h(Y_{j})\right].
+\widehat{\mathcal{L}}_{\phi k}(v) = & \frac{|\Omega|}{N}\sum_{i=1}^{N} \left[ \frac{|\nabla v(X_{i})|^{2}}{2}+\frac{w(X_{i})v^{2}(X_{i})}{2}\right]+\frac{\mu_{1}}{2}\frac{|\partial\Omega|}{M}\sum\limits_{j=1}^{M}\left[ Tv^{2}(Y_{j}) \right] \\
+&+\frac{\mu_{2}}{4}\left[\frac{|\Omega|}{N}\sum\limits_{i=1}^{N}|v(X_{i})|^{2}-1\right]^{2}+\frac{\mu_{2}}{2}\sum_{j<k}\left[\frac{|\Omega|}{N}\sum\limits_{i=1}^{N}v(X_{i})\widehat{\xi}_{\phi j}(X_{i})\right]^{2},
 \end{aligned}
 \end{equation}
-该截断操作不可避免地会引入误差，其具体影响将在后续定理中予以量化评估。
 
-令 $u_{\text{nn}}$ 与 $\widehat{u}^{K}_{\text{nn}}$ 分别表示连续损失泛函 $J^{\mu}$ 和截断离散损失泛函 $\widehat{J}_{K}^{\mu}$ 在神经网络假设空间 $\mathcal{N}^{2}$ 中的极小值点：
-\begin{equation}\label{eq:u_hat}
-u_{\text{nn}}= \underset{u \in \mathcal{N}^{2}}{\operatorname{argmin}}\,J^{\mu}(u),\quad
-\widehat{u}^{K}_{\text{nn}}= \underset{u \in \mathcal{N}^{2}}{\operatorname{argmin}}\,\widehat{J}_{K}^{\mu}(u).
+其中，$\widehat{\xi}_{\phi j}$ 为离散损失函数在 $\mathcal{N}^{2}$ 上的极小值点：
+\begin{equation}\label{eq:xi_hat}
+\widehat{\xi}_{\phi j}\in\mathop{\arg\min}_{v_{\phi}\in \mathcal{N}^{2}}\widehat{\mathcal{L}}_{\phi j}(v_{\phi}),\quad 1\leq j\leq k.
 \end{equation}
-在后续讨论中，我们将统一使用 $n=O(N,M)$ 来表征样本量 $N$ 与 $M$ 的渐近规模。最终，我们总结得到如下\ref{alg:DRM_semilinear}的算法。
 
+为简化表述，下文将统一样本量 $N$ 和 $M$ 为 $n$，算法总结为以下伪代码\ref{alg:DRM_Eigen}。
 \par\noindent
 \begin{minipage}{\textwidth}
 \renewcommand*\footnoterule{}
 \renewcommand{\thempfootnote}{\fnsymbol{mpfootnote}}
 \begin{algorithm}[H]
-\caption{深度里兹法求解半线性偏微分方程 (Deep Ritz Method)}
-\label{alg:DRM_semilinear}
+\caption{基于 DRM  的多重特征值求解算法}
+\label{alg:DRM_Eigen}
 \begin{algorithmic}[1]
-\Require 区域 $\Omega$ 及其边界 $\partial \Omega$。源项 $g(x)$，边界函数 $h(x)$。非线性项 $V(u)$ 及其原函数 $W(s) = \int_0^s V(t) \, dt$。配点 $\{X_i\}_{i=1}^N \sim U(\Omega)$和$\{Y_j\}_{j=1}^M \sim U(\partial \Omega)$
-\State 初始化参数 $\theta$ 及神经网络 $u(\theta)$。
-\State 构造截断源项 $g^K(x) = \min\{g(x), K\}$ 。
-
-\State \textcolor{white!30!black}{\texttt{\# 模型训练阶段}}
-\For {$k=1:\texttt{epochs}$}
-\State {计算内部能量经验损失：$$\widehat{J}_{in}(u(\theta)) = \frac{|\Omega|}{N} \sum_{i=1}^{N} \left[ |\nabla u_{\theta}(X_i)|^2 + 2W(u_{\theta}(X_i)) - 2g^K(X_i)u_{\theta}(X_i) \right]$$}
-\State {计算边界惩罚经验损失：$$\widehat{J}_{bd}(u(\theta)) = \mu \frac{|\partial\Omega|}{M} \sum_{j=1}^{M} \left[ u_{\theta}^2(Y_j) - 2u_{\theta}(Y_j)h(Y_j) \right]$$}
-\State {计算带有截断的总离散损失函数：$$\widehat{J}_{K}^{\mu}(u(\theta)) = \widehat{J}_{in}(u(\theta)) + \widehat{J}_{bd}(u(\theta))$$}
-\State {反向传播 $g_{\theta}=\nabla_{\theta}\widehat{J}_{K}^{\mu}(u(\theta))$。}
-\State {通过 SGD 类或 Adam 算法更新 $\theta$：$\theta\leftarrow\operatorname{Optimizer}\big\{\theta,g_{\theta},\eta\big\}$。}
+\Require 计算区域 $\Omega$ 及边界 $\partial\Omega$；需要求解的特征值数量 $k$；由参数 $\phi$ 参数化的神经网络模型 $v_{\phi} \in \mathcal{N}^{2}$；惩罚参数 $\mu_1, \mu_2$；每轮迭代采样点数 $N, M$；最大迭代次数 $T_{max}$ 以及学习率 $\eta$。
+\State 初始化空集合保存已求得的特征函数：$\mathcal{V} \leftarrow \emptyset$。
+\State \textcolor{white!30!black}{\texttt{\# 外层循环：利用正交惩罚，逐级求解第 $j$ 个特征函数。}}
+\For {$j=1:k$}
+\State {初始化当前神经网络的参数 $\phi$。}
+\State \textcolor{white!30!black}{\texttt{\# 内层循环：训练网络以最小化包含多重惩罚项的经验损失函数。}}
+\For {$t=1:T_{max}$}
+\State {在区域内部独立采样 $\{X_i\}_{i=1}^N \sim U(\Omega)$，在边界上独立采样 $\{Y_i\}_{i=1}^M \sim U(\partial\Omega)$。}
+\State {计算瑞利商与边界惩罚项:
+$$J_{base} = \frac{|\Omega|}{N}\sum_{i=1}^{N} \left[ \frac{|\nabla v_{\phi}(X_{i})|^2}{2}+\frac{w(X_{i})v_{\phi}^{2}(X_{i})}{2}\right] + \frac{\mu_{1}}{2}\frac{|\partial\Omega|}{M}\sum_{i=1}^{M} T v_{\phi}^{2}(Y_{i})$$}
+\State {计算特征函数归一化约束项:
+$$J_{norm} = \frac{\mu_{2}}{4}\left[\frac{|\Omega|}{N}\sum_{i=1}^{N}|v_{\phi}(X_{i})|^{2}-1\right]^{2}$$}
+\State {计算正交化约束项（利用集合 $\mathcal{V}$ 中已求得的前 $j-1$ 个特征函数 $\widehat{\xi}_{\phi l}$）:
+$$J_{orth} = \frac{\mu_{2}}{2}\sum_{l=1}^{j-1}\left[\frac{|\Omega|}{N}\sum_{i=1}^{N}v_{\phi}(X_{i})\widehat{\xi}_{\phi l}(X_{i})\right]^{2}$$}
+\State {计算总的离散经验损失：$\widehat{\mathcal{L}}_{\phi j}(v_{\phi}) = J_{base} + J_{norm} + J_{orth}$。}
+\State {反向传播计算梯度 $g_{\phi} = \nabla_{\phi}\widehat{\mathcal{L}}_{\phi j}$。}
+\State {通过 Adam 或 SGD 优化器更新 $\phi$：$\phi \leftarrow \phi - \eta g_{\phi}$。}
 \EndFor
-\Ensure {最优近似解 $\widehat{u}^{K}_{\text{nn}}\leftarrow u(\theta)$。}
+\State {记录当前收敛的特征函数：$\widehat{\xi}_{\phi j} \leftarrow v_{\phi}$，并更新集合 $\mathcal{V} \leftarrow \mathcal{V} \cup \{\widehat{\xi}_{\phi j}\}$。}
+\EndFor
+\Ensure {近似多重特征函数序列 $\mathcal{V} = \{\widehat{\xi}_{\phi 1}, \dots, \widehat{\xi}_{\phi k}\}$。}
 \end{algorithmic}
 \end{algorithm}
 \end{minipage}
 
-\section{误差分析}
+\section{误差估计}\label{sec_main}
 \subsection{误差分解}
-首先，我们介绍一个关于截断误差的简单引理：
-\begin{lemma}\label{lemma:truerr}
-设 $1\leq q<p<\infty$。若 $u\in L^{p}(\Omega)$ 且定义截断函数 $u_{K}=u 1_{\{|u|<K\}}$，则存在常数 $C(u)>0$，使得：
-\begin{equation*}
-\|u-u_{K}\|_{L^{q}} \leq C(u)\frac{1}{K^{p/q-1}}.
-\end{equation*}
-\end{lemma}
-\begin{proof}
-根据截断函数 $u_{K}$ 的定义，只需在集合 $\{x \in \Omega : |u(x)| \geq K\}$ 上计算 $L^q$ 范数。由于 $q < p$，在该集合上有 $|u|^{q-p} \leq K^{q-p}$，故
+显然，最小化离散经验损失函数 \eqref{eq:dislossphi} 与求解原连续变分问题 \eqref{eq:conloss} 并不等价。这种差异主要源于三个方面：首先，神经网络假设空间 $\mathcal{N}^{2}$ 的逼近能力有限，无法完全覆盖精确特征函数空间；其次，离散损失函数基于有限样本构建，蒙特卡洛积分的引入不可避免地带来统计误差；最后，由于当前的优化目标依赖于前序计算得到的近似特征函数 $\widehat{\xi}_{\phi j}$（而非精确解 $\xi_j$），这会导致正交化过程中的误差在序列求解中逐级累积。
+
+为此，我们采用经典的误差分解策略，将总误差拆解为若干相互独立的误差项分别进行分析，这一策略在后面的几个章节中还会被再次使用。下述引理给出了具体的误差上界估计。
+\begin{lemma}{}\label{lem:3.2}
+针对离散损失函数 \eqref{eq:dislossphi} 与连续损失函数 \eqref{eq:conloss}，存在如下误差分解：
 \begin{equation*}
 \begin{aligned}
-\|u-u_{K}\|_{L^{q}}^{q} &= \int_{\{|u| \geq K\}} |u|^{q} \, dx \\
-&= \int_{\{|u| \geq K\}} |u|^{p} |u|^{q-p} \, dx \\
-&\leq K^{q-p} \int_{\{|u| \geq K\}} |u|^{p} \, dx \\
-&\leq K^{q-p} \|u\|_{L^{p}}^{p}.
+&\mathbb{E}\left|\mathcal{L}_{k}\left(\widehat{\xi}_{\phi k}\right)-\mathcal{L}_{k}(\xi_{k})\right| \\
+\lesssim\quad & \underbrace{\inf_{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{\phi k}(u)-\mathcal{L}_{\phi k}(\xi_{k})\right| }_{\mathcal{E}_{\text{app}}}+\underbrace{\varepsilon_2(\|\xi_k\|^2+\|\xi_{\phi k}\|^2)\sum\limits_{i<k}\frac{1}{\|\xi_i\|}\|\xi_{\phi i}-\xi_{i}\|}_{\mathcal{E}_{\text{cum}}} \\
+& + \underbrace{ \sup_{u \in \mathcal{N}^{2}}\mathbb{E}\left|\mathcal{L}_{k}(u)-\widehat{\mathcal{L}}_{k}(u)\right|+\sup_{u \in \mathcal{N}^{2}}\mathbb{E}\left|\mathcal{L}_{\phi k}(u)-\widehat{\mathcal{L}}_{\phi k}(u)\right|}_{\mathcal{E}_{\text{sta}}},
 \end{aligned}
 \end{equation*}
-两边同时取 $1/q$ 次方，可得：
-\begin{equation*}
-\|u-u_{K}\|_{L^{q}} \leq K^{\frac{q-p}{q}} \|u\|_{L^{p}}^{\frac{p}{q}} = \|u\|_{L^{p}}^{\frac{p}{q}} \frac{1}{K^{p/q-1}}.
-\end{equation*}
-令常数 $C(u) = \|u\|_{L^{p}}^{p/q}$，即得结论。证毕。
-\end{proof}
-
-\begin{theorem}[误差分解]\label{th:energyerr}
-设 $\widehat{u}^{K}_{\text{nn}}$ 为上一节所定义的极小值点，$u^{*}$ 为原偏微分方程的精确弱解，则有以下误差分解成立：
-\begin{equation*}
-\begin{aligned}
-&J^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)-J^{\mu}(u^{*})&\\
-\leq&\displaystyle\underbrace{ \inf _{u_{\text{nn}} \in \mathcal{N}^{2}}\left[ J^{\mu}(u_{\text{nn}})- J^{\mu}(u^{*})\right]}_{\mathcal{E}_{\text{app}}}+\underbrace{2 \sup _{u_{\text{nn}} \in \mathcal{N}^{2}}\left|J^{\mu}_{K}(u_{\text{nn}})-\widehat{J}^{\mu}_{K}(u_{\text{nn}})\right|}_{\mathcal{E}_{\text{sta}}}+\underbrace{C(g)\mathcal{B}K^{-1}}_{\mathcal{E}_{\text{tru}}},&\\
-\end{aligned}
-\end{equation*}
-上述不等式右侧的三项分别对应于逼近误差（$\mathcal{E}_{\text{app}}$）、统计误差（$\mathcal{E}_{\text{sta}}$）以及截断误差（$\mathcal{E}_{\text{tru}}$）。
-\end{theorem}
-\begin{proof}
-首先定义带有截断的连续能量泛函：
-\begin{equation*}
-J_{K}^{\mu}(v)=\frac{1}{2}\int_{\Omega} |\nabla v|_{2}^{2} \,dx + \int_{\Omega} \big(W(v) - v g^K\big)\,dx + \frac{\mu}{2} \int_{\partial \Omega} \big(v^{2}-2 v h\big)\,ds.
-\end{equation*}
-由引理 \ref{lemma:truerr} 可知，对于任意给定的 $u_{\text{nn}}\in \mathcal{N}^{2}(\mathcal{D},\mathcal{W},\mathcal{B})$，均有如下截断误差界：
-\begin{equation*}
-|J_{K}^{\mu}(u_{\text{nn}})-J^{\mu}(u_{\text{nn}})|\leq\int_{\Omega}|u_{\text{nn}}(g-g^K)|\,dx\leq C(g)\mathcal{B}K^{-1}.
-\end{equation*}
-因此，对于任意给定的 $u_{\text{nn}}\in \mathcal{N}^{2}$，目标误差可作如下分解：
-\begin{equation*}
-\begin{aligned}
-J^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)-J^{\mu}(u^{*}) = &\left[J^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)-J_{K}^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)\right]+\left[J_{K}^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)-\widehat{J}_{K}^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)\right]\\
-&+\left[\widehat{J}_{K}^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)-\widehat{J}_{K}^{\mu}\left(u_{\text{nn}}\right)\right]+\left[\widehat{J}_{K}^{\mu}\left(u_{\text{nn}}\right)-J_{K}^{\mu}\left(u_{\text{nn}}\right)\right]\\
-&+\left[J_{K}^{\mu}\left(u_{\text{nn}}\right)-J^{\mu}\left(u_{\text{nn}}\right)\right]+\left[J^{\mu}\left(u_{\text{nn}}\right)-J^{\mu}(u^{*})\right].
-\end{aligned}
-\end{equation*}
-上述分解式共包含六项。具体而言，第一项与第五项的绝对值受限于截断误差 $\mathcal{E}_{\text{tru}}$；第二项与第四项受限于统计误差 $\mathcal{E}_{\text{sta}}$；由 $\widehat{u}^{K}_{\text{nn}}$ 作为 $\widehat{J}_{K}^{\mu}$ 极小值点的定义可知，第三项非正；而由于 $u_{\text{nn}}$ 的任意性，最后一项在取下确界后恰好对应于逼近误差 $\mathcal{E}_{\text{app}}$。综合以上各项的放缩结果，即可完成本定理的证明。
-\end{proof}
-
-
-\subsection{逼近误差}\label{sec:apperr}
-与特征值问题中特征函数可通过迭代提升法获得更高的正则性，从而顺利嵌入连续函数空间不同，方程 \eqref{eq:maineq} 的解 $u$ 的正则性通常仅能保证其属于 Sobolev 空间 $H^2(\Omega)$。为此，我们需要引入截断界 $\mathcal{B}$，并建立如下的全局逼近引理\cite{guhring2020error,siegel2022high}：
-
-\begin{lemma}[全局逼近]\label{lemma:totalapp}
-对于任意 $u\in W^{s,p}(\Omega)\cap W^{1,\infty}(\Omega)$ 且 $s\in (1,2]$，只要截断界 $\mathcal{B}\geq 2\|u\|_{W^{1,\infty}(\Omega)}$，深度 $\mathcal{D}\geq \lceil \log_{2}d\rceil +5$ 且宽度 $\mathcal{W}$ 足够大，则存在神经网络 $u_{\text{nn}}\in \mathcal{N}^{2}(\mathcal{W},\mathcal{D},\mathcal{B})$ 使得：
-\begin{equation*}
-\|u-u_{\text{nn}}\|_{W^{1,p}}\leq C(s,p,d,\Omega)[u]_{s,p,\Omega}\mathcal{W}^{(1-s)/d}.
-\end{equation*}
-\end{lemma}
-引理的证明详见附录 \ref{pf:lemma:totalapp}。
-
-基于上述全局逼近引理，我们可以推导出如下关于逼近误差的定理：
-\begin{theorem}[逼近误差]\label{thm:apperr}
-如果 $\mathcal{D}$，$\mathcal{W}$ 和 $\mathcal{B}$ 充分大，我们可以建立如下结果：
-\begin{equation*}
-\mathcal{E}_{a p p}=\inf _{u_{\text{nn}} \in \mathcal{N}^{2}(\mathcal{D},\mathcal{W},\mathcal{B})}\left[J^{\mu}\left(u_{\text{nn}}\right)-J^{\mu}\left(u^{*}\right)\right]\leq C(\Omega,u^{*},V)\mu\left(\mathcal{B}^{-2/(d-2)}+\mathcal{W}^{-1/d}\right).
-\end{equation*}
-\end{theorem}
-\begin{proof}
-设 $L_{V}$ 为函数 $V$ 的 Lipschitz 常数。经过变分展开，目标泛函的差值可被控制为：
-\begin{equation*}
-\begin{aligned}
-J^{\mu}\left(u^{*}+v\right) &= \int_{\Omega}|\nabla u^{*}|^{2}+|\nabla v|^{2}-2\Delta u^{*}v +2 W(u^{*}+v)-2 \left(u^{*}+v\right) g\,d x\\
-&\quad +\mu \int_{\partial \Omega} \left(u^{*}+v\right)^{2}-2 \left(u^{*}+v\right) h\,ds + \int_{\partial \Omega}2v\frac{\partial u^{*}}{\partial n} \,d s\\
-&= \int_{\Omega}|\nabla v|^{2}+2 \left[W(u^{*}+v)-W(u^{*})-V(u^{*})v\right]\,d x\\
-&\quad +\mu \int_{\partial \Omega} v^{2}+2\left(u^{*}+\frac{1}{\mu}\frac{\partial u^{*}}{\partial n}-h\right)v \,d s+J^{\mu}\left(u^{*}\right)\\
-&\leq \int_{\Omega}|\nabla v|^{2}\,dx+2L_{V}\int_{\Omega}v^{2}\,dx+\mu\int_{\partial \Omega}v^{2}\,ds+J^{\mu}\left(u^{*}\right).
-\end{aligned}
-\end{equation*}
-
-基于上述不等式，利用目标泛函 $J^{\mu}$ 的连续性以及三角不等式，并结合全局逼近引理 \ref{lemma:totalapp} 与磨光函数 $u_{\mathcal{B}}^{\mu}$ 在引理 \ref{lemma:modifier} 中的性质，逼近误差可最终界定为：
-\begin{equation*}
-\begin{aligned}
-\mathcal{E}_{a p p}&=\inf\limits _{u_{\text{nn}} \in \mathcal{N}^{2}}\left[J^{\mu}\left(u_{\text{nn}}\right)-J^{\mu}\left(u^{*}\right)\right]\\
-&\leq C(\Omega,V)\mu\inf\limits _{u_{\text{nn}} \in \mathcal{N}^{2}}\|u_{\text{nn}}-u^{*}\|_{H^{1}}^{2}\\
-&\leq C(\Omega,V)\mu\left(\inf\limits _{u_{\text{nn}} \in \mathcal{N}^{2}}\|u_{\text{nn}}-u^{*}_{\mathcal{B}}\|_{H^{1}}^{2}+\|u^{*}_{\mathcal{B}}-u^{*}\|_{H^{1}}^{2}\right)\\
-&\leq C(\Omega,V)\mu\left(\mathcal{W}^{-1/d}+\mathcal{B}^{-q/d}\right).
-\end{aligned}
-\end{equation*}
-其中$q$是Sobolev指数，空间维度$d=1,2$时，$q$取任意大的有限值，$d\geq 3$时，$q = \frac{2d}{d-2}$。
-\end{proof}
-
-\subsection{统计误差}\label{sec:staerr}
-本节的核心目标是推导并界定统计误差：
-\begin{equation*}
-\mathcal{E}_{sta}=2\sup_{u_{\text{nn}}\in\mathcal{N}^{2}}\left| J^{\mu}_{K}(u_{\text{nn}})-\widehat{J}^{\mu}_{K}(u_{\text{nn}}) \right|.
-\end{equation*}
-
-为便于逐项估计，我们首先将统计误差分解为如下五个组成部分。具体而言，我们有如下放缩：
-\begin{equation}\label{lemma:staerr:ch3dec}
-\sup _{u_{\text{nn}} \in \mathcal{N}^2}\left|J^{\mu}_{K}(u_{\text{nn}})-\widehat{J}^{\mu}_{K}(u_{\text{nn}})\right|\leq\sum_{j=1}^{5}\sup _{u_{\text{nn}} \in \mathcal{N}^2}\left|J_{j}^{\mu}(u_{\text{nn}})-\widehat{J}_{j}^{\mu}(u_{\text{nn}})\right|,
-\end{equation}
-具体而言，各项定义如下：
-\begin{equation}\label{eq:ch3dispartloss}
-\begin{aligned} 
-J_{1}^{\mu}(u)&=|\Omega|\mathop{\mathbb{E}}_{X\sim U(\Omega)}\left[\frac{|\nabla u(X)|^{2}}{2}\right], &\widehat{J}_{1}^{\mu}(u)&=\frac{|\Omega|}{N}\sum\limits_{i=1}^{N}\left[ \frac{|\nabla u(X_{i})|^{2}}{2}\right], \\ 
-J_{2}^{\mu}(u)&=|\Omega|\mathop{\mathbb{E}}_{X\sim U(\Omega)}\left[W(u(X))\right], &\widehat{J}_{2}^{\mu}(u)&=\frac{|\Omega|}{N}\sum\limits_{i=1}^{N}\left[W(u(X_{i}))\right], \\
-J_{3}^{\mu}(u)&=\frac{\mu}{2} |\partial \Omega|\mathop{\mathbb{E}}_{Y\sim U(\partial\Omega)}\left[ u^{2}(Y) \right], &\widehat{J}_{3}^{\mu}(u)&=\frac{\mu}{2} \frac{|\partial\Omega|}{M}\sum\limits_{j=1}^{M}\left[u^{2}(Y_{j}) \right],\\
-J_{4}^{\mu}(u)&=-|\Omega|\mathop{\mathbb{E}}_{X\sim U(\Omega)}\left[u(X)g_{K}(X)\right], &\widehat{J}_{4}^{\mu}(u)&=-\frac{|\Omega|}{N}\sum\limits_{i=1}^{N}\left[u(X_{i})g_{K}(X_{i})\right], \\
-J_{5}^{\mu}(u)&=-\mu |\partial \Omega|\mathop{\mathbb{E}}_{Y\sim U(\partial\Omega)}\left[ u(Y)h(Y) \right], &\widehat{J}_{5}^{\mu}(u)&=-\mu \frac{|\partial\Omega|}{M}\sum\limits_{j=1}^{M}\left[u(Y_{j})h(Y_{j}) \right]. 
-\end{aligned} 
-\end{equation}
-
-这里，$U(\Omega)$ 和 $U(\partial\Omega)$ 分别表示在 $\Omega$ 和 $\partial\Omega$ 上的均匀分布。上式的离散经验形式与特征值问题中的式\eqref{eq:dispartloss}非常相似，但是由于方程 \eqref{eq:maineq} 的非线性特征和非齐次边界条件，导致式子\eqref{eq:ch3dispartloss}多出了两项 $J_{2}^{\mu}$ 和 $J_{5}^{\mu}$。但由于不存在归一化和正交误差，因此不需要式\eqref{eq:dispartloss}中的$\mathcal{L}_4$和$\mathcal{L}_5$项。
-
-
-采用与引理 \ref{lemma:staerr:Rad234} 相似的推导过程，我们可以证明引理 \ref{lemma:staerr:ch3Rad234}。
-
-\begin{lemma}\label{lemma:staerr:ch3Rad234}
-我们有
-\begin{equation}
-\begin{aligned}
-&\mathbb{E}_{\left\{X_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|J^{\mu}_{1}(u)-\widehat{J}^{\mu}_{1}(u)\right| \leq \frac{1}{2} |\Omega|\mathfrak{N}\left(\mathcal{N}^{1,2}\right),\\
-&\mathbb{E}_{\left\{X_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|J^{\mu}_{2}(u)-\widehat{J}^{\mu}_{2}(u)\right| \leq |\Omega|\|V\|_{\infty}\mathfrak{N}\left(\mathcal{N}^{2}\right),\\
-&\mathbb{E}_{\left\{Y_{i}\right\}_{i=1}^{M}} \sup _{u \in \mathcal{N}^{2}}\left|J^{\mu}_{3}(u)-\widehat{J}^{\mu}_{3}(u)\right| \leq \frac{\mu}{2}|\partial\Omega| \mathcal{B} \mathfrak{N}\left(\mathcal{N}^{2}\right),\\
-&\mathbb{E}_{\left\{X_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|J^{\mu}_{4}(u)-\widehat{J}^{\mu}_{4}(u)\right| \leq |\Omega|K \mathfrak{N}\left(\mathcal{N}^{2}\right),\\
-&\mathbb{E}_{\left\{Y_{i}\right\}_{i=1}^{M}} \sup _{u \in \mathcal{N}^{2}}\left|J^{\mu}_{5}(u)-\widehat{J}^{\mu}_{5}(u)\right| \leq \mu|\partial\Omega|\|h\|_{\infty} \mathfrak{N}\left(\mathcal{N}^{2}\right).\\
-\end{aligned}
-\end{equation}
+不等式右侧的三项分别对应近似误差（Approximation Error）、累积误差（Cumulative Error）和统计误差（Statistical Error）。
 \end{lemma}
 
-引理 \ref{lemma:staerr:ch3Rad234} 的证明思路与引理 \ref{lemma:staerr:Rad234} 基本一致。在此，我们仅重点说明与特征值问题有所区别的两项—— $J_{2}^{\mu}$ 和 $J_{5}^{\mu}$。由于这两项对应的 Lipschitz 常数分别为 $\|V\|_{\infty}$ 和 $\|h\|_{\infty}$，运用相同的技巧即可得出上述不等式。
-
-基于相似的逻辑，我们可以进一步界定目标函数类的伪维度（Pdim）
-\begin{equation}\label{eq:ch3pdim}
+\begin{proof}
+对于任意 $u\in\mathcal{N}^{2}$，我们将目标误差项分解为如下六项之和：
+\begin{equation}\label{eq:errdecom}
 \begin{aligned}
-\operatorname{Pdim}(\mathcal{N}^{2})\leq C_{1} \mathcal{D}^2\mathcal{W}^2(\mathcal{D}+\log\mathcal{W}),\\
-\operatorname{Pdim}(\mathcal{N}^{1,2})\leq C_{2} \mathcal{D}^4\mathcal{W}^2(\mathcal{D}+\log\mathcal{W}).\\
+\mathcal{L}_{k}(\widehat{\xi}_{\phi k})-\mathcal{L}_{k}\left(\xi_{k}\right)
+= & \left[\mathcal{L}_{k}(\widehat{\xi}_{\phi k})-\widehat{\mathcal{L}}_{k}(\widehat{\xi}_{\phi k})\right]
++\left[\widehat{\mathcal{L}}_{k}(\widehat{\xi}_{\phi k})-\widehat{\mathcal{L}}_{\phi k}(\widehat{\xi}_{\phi k})\right] \\
+& +\left[\widehat{\mathcal{L}}_{\phi k}(\widehat{\xi}_{\phi k})-\widehat{\mathcal{L}}_{\phi k}(u)\right]
++\left[\widehat{\mathcal{L}}_{\phi k}(u)-\mathcal{L}_{\phi k}(u)\right] \\
+& +\left[\mathcal{L}_{\phi k}(u)-\mathcal{L}_{\phi k}\left(\xi_{k}\right)\right]
++\left[\mathcal{L}_{\phi k}\left(\xi_{k}\right)-\mathcal{L}_{k}\left(\xi_{k}\right)\right].
 \end{aligned}
 \end{equation}
-其中 $C_1$, $C_2$ 是独立于 $d$ 的常数。
 
-结合引理 \ref{lemma:staerr:ch3Rad234} 的结论与式 \eqref{eq:ch3pdim} 中的伪维度估计，我们能够推导出整体统计误差的上界。
-\begin{theorem}[统计误差]\label{thm:staerr:ch3finalthm}
-\begin{equation*}
-\mathcal{E}_{\text {sta }}\leq C(\Omega,V,h)\left(K+\mathcal{D} +\mu\mathcal{B}\right)\mathcal{B}\mathcal{D} \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}}\sqrt{\frac{\log n}{n}}.
-\end{equation*}
-\end{theorem}
+考察方程 \eqref{eq:errdecom} 中的各项：第一项和第四项属于统计误差 $\mathcal{E}_{\text{sta}}$ 的范畴；由于 $\widehat{\xi}_{\phi k}$ 是 $\widehat{\mathcal{L}}_{\phi k}$ 的极小值点，第三项非正，因此在建立上界时可忽略；由于 $u$ 的任意性，取下确界后即可由近似误差 $\mathcal{E}_{\text{app}}$ 控制。至此，剩余需处理的仅为第二项与最后一项。
 
-\begin{proof}
-综合引理 \ref{lemma:staerr:ch3Rad234} 至引理 \ref{lemma:staerr:pdim} 的结论，可得：
+针对第二项，我们将其进一步拆解为：
+\begin{equation}\label{eq:cumerror}
+\begin{aligned}
+\widehat{\mathcal{L}}_{k}(\widehat{\xi}_{\phi k})-\widehat{\mathcal{L}}_{\phi k}(\widehat{\xi}_{\phi k}) = & \left[\widehat{\mathcal{L}}_{k}(\widehat{\xi}_{\phi k})-\mathcal{L}_{k}(\widehat{\xi}_{\phi k})\right]+
+\left[\mathcal{L}_{k}(\widehat{\xi}_{\phi k})-\mathcal{L}_{\phi k}(\widehat{\xi}_{\phi k})\right] \\
+& +\left[\mathcal{L}_{\phi k}(\widehat{\xi}_{\phi k})-\widehat{\mathcal{L}}_{\phi k}(\widehat{\xi}_{\phi k})\right].
+\end{aligned}
+\end{equation}
+
+方程 \eqref{eq:cumerror} 右侧的第一项与第三项同样归属于统计误差 $\mathcal{E}_{\text{sta}}$。此时，方程 \eqref{eq:cumerror} 的中间项与方程 \eqref{eq:errdecom} 中的最后一项合并，构成了因前序特征函数偏差引入的累积误差。利用柯西-施瓦茨不等式及三角不等式，这两项的差值可估计如下：
 \begin{equation*}
 \begin{aligned}
-\sup _{u \in \mathcal{N}^{2}}\left|J^{\mu}(u)-\widehat{J}^{\mu}(u)\right|\leq &\frac{|\Omega|}{2}\mathfrak{N}\left(\mathcal{N}^{1,2}\right)+|\Omega|\left(\|V\|_{\infty}+K\right)\mathfrak{N}\left(\mathcal{N}^{2}\right)\\
-&+\frac{\mu}{2}|\partial\Omega|\left(\|h\|_{\infty}+2B\right)\mathfrak{N}\left(\mathcal{N}^{2}\right)
+\left|\mathcal{L}_{k}(v)-\mathcal{L}_{\phi k}(v)\right| &= \left| \frac{\mu_2}{2}\sum\limits_{i<k}\left\langle v, \frac{\xi_{\phi i}}{\left|\xi_{\phi i}\right|}-\frac{\xi_{i}}{\left|\xi_{i}\right|}\right\rangle\left\langle v, \frac{\xi_{\phi i}}{\left|\xi_{\phi i}\right|}+\frac{\xi_{i}}{\left|\xi_{i}\right|}\right\rangle \right| \\
+& \leq \frac{\mu_{2}}{2}|v|^{2}\sum\limits_{i<k}\left|\frac{\xi_{\phi i}}{\left|\xi_{\phi i}\right|}-\frac{\xi_{i}}{\left|\xi_{i}\right|}\right| \left|\frac{\xi_{\phi i}}{\left|\xi_{\phi i}\right|}+\frac{\xi_{i}}{\left|\xi_{i}\right|}\right| \\
+& \leq \mu_2|v|^2\sum\limits_{i<k}\frac{1}{|\xi_i|}|\xi_{\phi i}-\xi_{i}|.
 \end{aligned}
 \end{equation*}
-根据 Rademacher 复杂度与伪维度的基本关系，有：
-\begin{equation*}
-\mathfrak{N}\left(\mathcal{N}\right)\leq C\mathcal{B}\sqrt{\operatorname{Pdim}(\mathcal{N})} \sqrt{\frac{\log{n}}{n}}
-\end{equation*}
-将式 \eqref{eq:ch3pdim} 中关于 $\mathcal{N}^{1,2}$ 与 $\mathcal{N}^{2}$ 的伪维度上界分别代入上式，即可得出定理 \ref{thm:staerr:ch3finalthm} 的结论。证明完毕。
+结合上述所有估计，引理得证。
 \end{proof}
 
 
-\subsection{总误差估计}\label{sec:mainres}
-针对带有 Robin 边界条件的问题，我们建立如下的总误差估计：
-\begin{theorem}[总误差估计，Robin边界条件]\label{mainthm:robin}
-假设条件 \ref{ass:f} 成立。设 $u^*$ 为原 Robin 边值问题的真解，$\widehat{u}_{\text{nn}}^{K}$ 为由式 \eqref{eq:u_hat} 给出的神经网络近似解。令 $q$ 为 Sobolev 嵌入指数，其取值依赖于空间维度 $d$：当 $d=1,2$ 时，$q \in [2, +\infty)$；当 $d\geq 3$ 时，$q = \frac{2d}{d-2}$。则有如下 $H^1$ 范数下的总误差估计：
+\subsection{逼近误差}\label{subsec_app}
+本小节旨在建立逼近误差
 \begin{equation*}
-\|\widehat{u}_{\text{nn}}^K-u^*\|_{H^{1}}\leq C(\Omega,\mu)\sqrt{\delta},
+\mathcal{E}_{app}=\inf_{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{\phi k}(u)-\mathcal{L}_{\phi k}(\xi_{k})\right|.
 \end{equation*}
-其中
+的上界估计。
+
+基于 $\mathcal{L}_{\phi k}$ 的连续性与双线性形式的性质，我们有如下展开：
 \begin{equation*}
 \begin{aligned}
-\delta&\leq\displaystyle C_1\left(\Omega, \mu, V, g, h\right) \left(\mathcal{B}^{-q / d}+\mathcal{W}^{-1 / d}\right)+C_2(g) \mathcal{B}K^{-1}\\
-{}&\displaystyle+C_3(\Omega,\mu, f, h)(K+\mathcal{D}+\mathcal{B}) \mathcal{B} \mathcal{D} \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}} \sqrt{\frac{\log n}{n}}.
+&\left|\mathcal{L}_{\phi k}(u)-\mathcal{L}_{\phi k}(\xi_{k})\right|\\
+=& \frac{1}{2}a^{\mu_{1}}(u+\xi_{k},u-\xi_{k})+\frac{\mu_{2}}{4}\left[Q(u)-Q(\xi_{k})\right]\left[Q(u)+Q(\xi_{k})\right]\\
+&+\frac{\mu_{2}}{2}\sum\limits_{i<k}\left\langle u+\xi_{k},\frac{\xi_{\phi i}}{|\xi_{\phi i}|} \right\rangle \left\langle u-\xi_{k},\frac{\xi_{\phi i}}{|\xi_{\phi i}|} \right\rangle \\
+\leq& \lambda_{k}\|u+\xi_{k}\|_{H^{1}}\|u-\xi_{k}\|_{H^{1}}+\frac{\mu_{2}}{4}\|u+\xi_{k}\|\|u-\xi_{k}\|\left[Q(u)+Q(\xi_{k})\right]\\
+&+\frac{\mu_{2}(k-1)}{2}\|u+\xi_{k}\|\|u-\xi_{k}\| \\
+\leq&\left\{\lambda_{k}\|u+\xi_{k}\|_{H^{1}}+\frac{\mu_{2}}{4}\|u+\xi_{k}\|\left[Q(u)+Q(\xi_{k})\right]+\frac{\mu_{2}(k-1)}{2}\|u+\xi_{k}\|\right\} \|u-\xi_{k}\|_{H^{1}},\\
+=& C(k, \xi_k, u) \|u-\xi_{k}\|_{H^{1}},
 \end{aligned}
 \end{equation*}
-\end{theorem}
 
-\begin{proof}
-首先，由泛函 $J^{\mu}$ 稳定性估计\eqref{thm:staerr}：存在常数 $C_4(\Omega,\mu)>0$，使得
-\begin{equation}\label{eq:stability1}
-\|\widehat{u}_{\text{nn}}^K-u^*\|_{H^{1}}^2 \leq C_4(\Omega,\mu) \left( J^{\mu}(\widehat{u}_{\text{nn}}^K)-J^{\mu}(u^*) \right).
-\end{equation}
-另一方面，综合引理 \ref{th:energyerr}、第 \ref{sec:apperr} 节的逼近误差估计以及第 \ref{sec:staerr} 节的统计误差分析，可得能量误差的上界为：
-\begin{equation}\label{eq:energy_bound}
-J^{\mu}(\widehat{u}_{\text{nn}}^K)-J^{\mu}(u^*)\leq \delta.
-\end{equation}
-将式 \eqref{eq:energy_bound} 代入式 \eqref{eq:stability1} 中，并对两边同时开平方，令 $C(\Omega,\mu) = \sqrt{C_4(\Omega,\mu)}$，即可完成定理的证明。
-\end{proof}
+其中 $C(k, \xi_k, u)$ 为有界项。因此，控制逼近误差的关键在于控制 $H^1$ 范数下的误差 $\|u-\xi_{k}\|_{H^{1}}$。
 
-\begin{corollary}\label{cor:corrobin}
-在定理 \ref{mainthm:robin} 的假设下，为了平衡各项误差以获得最优收敛率，我们对网络参数与样本量 $n$ 作如下渐近设定（使用大 $O$ 符号 $\widetilde{\mathcal{O}}$ 隐藏对数项）：
-$$ \mathcal{D} = \mathcal{O}(1), \quad \mathcal{W} = \mathcal{O}(n^w), \quad \mathcal{B} = \mathcal{O}(n^b), \quad K = \mathcal{O}(n^k). $$
-通过令 $\delta$ 上界中的各项关于 $n$ 具有相同的代数衰减速率 $n^{-r} \ (r>0)$，可推导出如下参数关系：
-$$ w = dr, \quad b = \frac{d}{q}r, \quad k = b+r. $$
-求解可得统一的衰减指数：
+我们的分析主要依赖于椭圆方程的正则性理论、Stein 延拓定理 \cite{fefferman_2005} 以及 Hon 等人 \cite{hon2021simultaneous,yarotsky2017error} 提出的神经网络逼近理论。\cite{hon2021simultaneous} 中的逼近定理如下所述：
+\begin{lemma}[连续函数的神经网络逼近]\label{th:apperr}
+假设 $\tilde{\xi}_{k} \in C^{s}\left([0,1]^{d}\right)$，其中 $s\in \mathbb{N}^{+}$，且对于任意满足 $|\alpha| \leq s$ 的 $\alpha \in \mathbb{N}^{d}$，有 $\left\|\partial^{\alpha} \tilde{\xi}_k\right\|_{\mathcal{D}^{\infty}\left([0,1]^{d}\right)}<1$。对于任意满足 
+$$\left(D-2-\log _{2} W\right) W \geq s$$
+的 $W,D \in  \mathbb{N}^{+}$，存在一个宽度为 $\mathcal{W}=16 s^{d+1} d(W+2) \log _{2}(8 W)$ 且深度为 $\mathcal{D} = 27 s^{2}(D+2) \log _{2}(4 D)$ 的 $u_{\phi}\in\mathcal{N}^{2}$，使得
 \begin{equation*}
-r = \frac{q}{2(dq + 2d + 2q)}.
+|u_{\phi}-\tilde{\xi}_{k}|_{H^{1}\left([0,1]^{d}\right)} \leq 85(s+1)^{d} 8^{s} D^{-2(s-1) / d} W^{-2(s-1) / d}.
 \end{equation*}
+\end{lemma}
 
-由此，我们可以得到不同空间维数 $d$ 下，能量误差界 $\delta$ 与最终逼近误差的最优收敛阶：
-
-\begin{itemize}
-    \item \textbf{当 $d = 1$ 时}：分母变为 $6q+4$，统一的能量误差界收敛阶为 $\delta = \widetilde{\mathcal{O}}\left( n^{-\frac{q}{6q+4}} \right)$。开平方后，原问题在 $H^1$ 范数下的最终逼近误差收敛阶为 $\widetilde{\mathcal{O}}\left( n^{-\frac{q}{12q+8}} \right)$。随着 $q \to +\infty$，该误差的收敛速度渐近趋于 $\widetilde{\mathcal{O}}\left( n^{-1/12} \right)$。
-    
-    \item \textbf{当 $d = 2$ 时}：分母变为 $8(q+1)$，统一的能量误差界收敛阶为 $\delta = \widetilde{\mathcal{O}}\left( n^{-\frac{q}{8(q+1)}} \right)$。开平方后，原问题在 $H^1$ 范数下的最终逼近误差收敛阶为 $\widetilde{\mathcal{O}}\left( n^{-\frac{q}{16(q+1)}} \right)$。随着 $q \to +\infty$，该误差的收敛速度渐近趋于 $\widetilde{\mathcal{O}}\left( n^{-1/16} \right)$。
-    
-    \item \textbf{当 $d \geq 3$ 时}：此时 $q = \frac{2d}{d-2}$，代入可得 $r = \frac{1}{4d}$。网络参数的具体设定为：
-    $$ \mathcal{W} = \mathcal{O}\left(n^{1/4}\right), \quad \mathcal{B} = \mathcal{O}\left(n^{\frac{d-2}{8d}}\right), \quad K = \mathcal{O}\left(n^{1/8}\right). $$
-    此时统一的能量误差界收敛阶为 $\delta = \widetilde{\mathcal{O}}\left( n^{-\frac{1}{4d}} \right)$。开平方后，原问题在 $H^1$ 范数下的最终逼近误差收敛阶变为：
-    $$ \|\widehat{u}_{\text{nn}}^K-u^*\|_{H^{1}} = \widetilde{\mathcal{O}}\left( n^{-\frac{1}{8d}} \right). $$
-\end{itemize}
-\end{corollary}
-
-针对 Dirichlet 边界条件，我们建立如下主要定理：
-\begin{theorem}[总误差估计，Dirichle边界条件]\label{mainthm:diri}
-假设 \ref{ass:f} 成立，且惩罚系数 $\mu\geq 1$。设 $u^*$ 为原 Dirichlet 边值问题的真解，$\widehat{u}_{\text{nn}}^{K}$ 为由式 \eqref{eq:u_hat} 给出的神经网络近似解。令 $q$ 为 Sobolev 嵌入指数，其取值依赖于空间维度 $d$：当 $d=1,2$ 时，$q \in [2, +\infty)$；当 $d\geq 3$ 时，$q = \frac{2d}{d-2}$。则在 $H^1$ 范数下，我们有如下总误差估计：
+\begin{theorem}\label{th4.3}
+在假设 \ref{ass:regularity} 成立的条件下，对于全连接神经网络，逼近误差满足以下上界：
 \begin{equation*}
-\|\widehat{u}_{\text{nn}}^{K}-u^{*}\|_{H^{1}}\leq C(\Omega)\sqrt{\delta},
-\end{equation*}
-其中，$\delta$ 满足：
-\begin{equation*}
-\begin{aligned}
-\delta&\leq C_1\left(\Omega, V, g, h\right) \mu\left(\mathcal{B}^{-q / d}+\mathcal{W}^{-1 / d}\right)+C_2(g) \mathcal{B}K^{-1}\\
-{}&\displaystyle+C_3(\Omega, V, h)(K+\mathcal{D}+\mu \mathcal{B}) \mathcal{B} \mathcal{D} \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}} \sqrt{\frac{\log n}{n}}+C_4(\Omega,V,g,h)\frac{1}{\mu}.
-\end{aligned}
+\mathcal{E}_{app}\leq 2\left(\lambda_{k}+k\mu_{2}\right)85m^{d} 8^{m-1} \psi(\mathcal{D})^{-2(m-2) / d} \psi(\mathcal{W})^{-2(m-2) / d},
 \end{equation*}
 \end{theorem}
 \begin{proof}
-设 $u^{\mu}$ 为带有惩罚系数 $\mu$ 的 Robin 边界条件问题的解，根据三角不等式，我们有：
+该定理的证明主要分为三个阶段：正则性分析、区域延拓以及误差界导出。
+
+首先，为了建立所需的正则性 $\xi_{k} \in C^{m-1}(\Omega)$，我们采用基于椭圆正则性估计和索伯列夫嵌入的标准自举论证。回顾特征对 $(\lambda_k, \xi_k)$ 在弱意义下满足方程 $\mathcal{L} \xi_k = \lambda_k \xi_k$，且 $\xi_k \in H^1_0(\Omega)$。De Giorgi-Nash-Moser 定理直接保证了 $\xi_k \in C^{0,\alpha}(\bar{\Omega})$，进而隐含 $\xi_k \in L^\infty(\Omega)$。
+
+一旦确立 $\xi_k \in L^\infty(\Omega)$，根据假设 \ref{ass:regularity}，边界 $\partial \Omega$ 是 $C^m$ 连续的，我们可以迭代应用椭圆方程的高阶 $L^p$ 估计（引理\ref{lem:lp}）。
+
+具体而言，对于任意 $1 < p < \infty$，由于右端项 $\lambda_k \xi_k \in L^p(\Omega)$，全局 $W^{2,p}$ 估计意味着 $\xi_k \in W^{2,p}(\Omega)$。
+通过对方程求导并重复椭圆正则性估计（导数自举），我们得到：
+\begin{equation}\label{eq:high_reg}
+\xi_k \in W^{m, p}(\Omega), \quad \forall p \in (1, \infty).
+\end{equation}
+
+第二步，利用 Stein 延拓定理（引理 \ref{lem:extension}），我们将 $\xi_{k}$ 延拓至定义在边长为 $B$ 的超立方体上的函数 $\tilde{\xi}_{k} \in W^{m, p}([0,B]^d)$。
+
+在此需指出关于函数空间嵌入的技术性细节：虽然 $W^{m,p}$ 估计对任意有限的 $p$ 成立，但由于 Calderón-Zygmund 理论在 $L^\infty$ 端点的失效，我们无法直接断言 $\xi_k \in C^m(\Omega)$。然而，依据 Sobolev 嵌入定理 $W^{m,p}(\Omega) \hookrightarrow C^{m-1, 1-d/p}(\bar{\Omega})$，由于 $p$ 可以取任意大，我们足以保证延拓后的函数满足：$\tilde{\xi}_{k}\in C^{m-1}([0,B]^d)$。
+
+最后，利用引理 \ref{th:apperr} 中的逼近理论结果。
+回顾网络参数与辅助函数 $\psi$ 的关系：
 \begin{equation*}
-\|\widehat{u}_{\text{nn}}^{K}-u^{*}\|_{H^{1}}\leq \|\widehat{u}_{\text{nn}}^{K}-u^{\mu}\|_{H^{1}}+\|u^{\mu}-u^{*}\|_{H^{1}},
+W\leq \psi(\frac{1}{16s^{d+1}d}\mathcal{W})\leq\psi(\mathcal{W}),
+\quad D\leq \psi(\frac{1}{27s^2}\mathcal{D})\leq\psi({\mathcal{D}}).
 \end{equation*}
-对于上述不等式右侧，第一项可通过精细分析定理 \ref{mainthm:robin} 中的误差界 $\delta$，并将其对系数 $\mu$ 的依赖关系显式提取出来加以界定；第二项则可由定理 \ref{thm:model} 的结论直接得出。综合上述两项估计，即可完成定理的证明。
+令平滑度参数 $s=m-1$，并将上述关系代入引理 \ref{th:apperr} 的误差界中，即可证得。
 \end{proof}
 
-\begin{corollary}\label{cor:cordiri}
-在定理 \ref{mainthm:diri} 的假设下，为了平衡各项误差以获得最优收敛率，我们对网络参数、惩罚参数 $\mu$ 与样本量 $n$ 作如下渐近设定：
-$$ \mathcal{D} = \mathcal{O}(1), \quad \mathcal{W} = \mathcal{O}(n^w), \quad \mathcal{B} = \mathcal{O}(n^b), \quad K = \mathcal{O}(n^k), \quad \mu = \mathcal{O}(n^m). $$
-通过令 $\delta$ 上界中的各项（惩罚误差、逼近误差、算子截断误差以及统计误差）关于 $n$ 具有相同的代数衰减速率 $n^{-r} \ (r>0)$，可推导出如下参数关系：
-$$ m = r, \quad w = 2dr, \quad b = \frac{2d}{q}r, \quad k = b+r. $$
-代入统计误差项求解，可得统一的衰减指数：
+\begin{remark}[关于多面体区域的正则性]
+虽然定理 \ref{th4.3} 假设边界 $\partial \Omega$ 具有足够的光滑性（如 $C^m$ 类）以利用经典的椭圆正则性理论，但在 DRM 的实际应用中，区域常为多面体（如超立方体）。
+在此类 Lipschitz 区域上，角点奇点可能会破坏全局 $W^{m,p}$ 正则性 \cite{grisvard2011elliptic}。然而，解的内部正则性 ($\xi_k \in C^\infty(\Omega)$) 始终成立。为了理论推导的严谨性与聚焦于神经网络的逼近能力，我们在本节中保留光滑边界的假设。
+\end{remark}
+
+
+\subsection{统计误差}\label{subsec_gen}
+本小节旨在建立统计误差 $\mathcal{E}_{sta}$ 的上界：
 \begin{equation*}
-r = \frac{q}{4(dq + 2d + q)}.
+\mathcal{E}_{sta}=2 \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{k}(u)-\widehat{\mathcal{L}}_{k}(u)\right|+2 \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{\phi k}(u)-\widehat{\mathcal{L}}_{\phi k}(u)\right|.
 \end{equation*}
 
-由此，我们可以得到不同空间维数 $d$ 下，能量误差界 $\delta$ 与最终逼近误差的最优收敛阶：
+如前节所述，由于所有特征函数均具备 Holder 连续性，其必然是本质有界的。基于此，本节假设所有相关函数在 $L^{\infty}(\Omega)$ 空间内一致有界，且上界为 $\mathcal{B}$。鉴于 $\mathcal{L}_{k}$ 与 $\mathcal{L}_{\phi k}$ 具有相同的推导逻辑，下文将着重针对 $\mathcal{L}_{k}$ 的误差进行界定
 
-\begin{itemize}
-    \item \textbf{当 $d = 1$ 时}：分母变为 $8(q+1)$，统一的能量误差界收敛阶为 $\delta = \widetilde{\mathcal{O}}\left( n^{-\frac{q}{8(q+1)}} \right)$。开平方后，原问题在 $H^1$ 范数下的最终逼近误差收敛阶为 $\widetilde{\mathcal{O}}\left( n^{-\frac{q}{16(q+1)}} \right)$。随着 $q \to +\infty$，该误差的收敛速度渐近趋于 $\widetilde{\mathcal{O}}\left( n^{-1/16} \right)$。
-    
-    \item \textbf{当 $d = 2$ 时}：分母变为 $4(3q+4)$，统一的能量误差界收敛阶为 $\delta = \widetilde{\mathcal{O}}\left( n^{-\frac{q}{4(3q+4)}} \right)$。开平方后，原问题在 $H^1$ 范数下的最终逼近误差收敛阶为 $\widetilde{\mathcal{O}}\left( n^{-\frac{q}{8(3q+4)}} \right)$。随着 $q \to +\infty$，该误差的收敛速度渐近趋于 $\widetilde{\mathcal{O}}\left( n^{-1/24} \right)$。
-    
-    \item \textbf{当 $d \geq 3$ 时}：此时 $q = \frac{2d}{d-2}$，代入可得 $r = \frac{1}{4(2d-1)} = \frac{1}{8d-4}$。网络参数与惩罚系数的具体设定为：
-    $$ \mu = \mathcal{O}\left(n^{\frac{1}{8d-4}}\right), \quad \mathcal{W} = \mathcal{O}\left(n^{\frac{2d}{8d-4}}\right), \quad \mathcal{B} = \mathcal{O}\left(n^{\frac{d-2}{8d-4}}\right), \quad K = \mathcal{O}\left(n^{\frac{d-2+q}{q(8d-4)}}\right). $$
-    此时统一的能量误差界收敛阶为 $\delta = \widetilde{\mathcal{O}}\left( n^{-\frac{1}{8d-4}} \right)$。开平方后，原问题在 $H^1$ 范数下的最终逼近误差收敛阶变为：
-    $$ \|\widehat{u}_{\text{nn}}^K-u^*\|_{H^{1}} = \widetilde{\mathcal{O}}\left( n^{-\frac{1}{16d-8}} \right). $$
-\end{itemize}
-\end{corollary}
-
-
-
-
-
-
-\section{数值实验}\label{sec:num}
-正如引言所述，受制于“维数灾难”，传统基于网格的偏微分方程（PDE）数值解法在处理高维问题时往往面临巨大挑战。前文的理论推导已严格证明了 Deep Ritz 方法具有与维数无关的收敛性。为了进一步验证该理论结果在高维情形下的实际有效性，本节开展了一系列数值实验。
-
-本节的数值算例重点考察模型对半线性椭圆方程解的逼近能力，具体涵盖了齐次与非齐次边界条件等多种情形。此外，实验不仅测试了多种类型的非线性项，还设计了部分放宽算法初始假设的拓展算例，旨在深入探索该数值算法的适用边界与泛化能力。
-
-在求解框架上，我们构建了残差神经网络来参数化方程的解。在模型优化阶段，采用 Adam 优化算法，并辅以逐步衰减的学习率策略，以最小化损失函数~\eqref{eq:ch3conloss}。
-
-所有数值实验的程序实现均基于 CentOS 操作系统，编程环境为 Python 3.9.12 与 PyTorch 深度学习框架。硬件配置方面，计算节点配备了两颗主频为 2.40 GHz 的 Intel(R) Xeon(R) E5-2640 v4 处理器，以及一块拥有 16 GB 显存的 Nvidia Tesla V100 GPU。
-
-为保证研究的透明度与结果的可重复性，并便于后来的研究者参考学习，本章涉及的所有程序源代码及相应问题的超参数配置文件均已开源（链接：\url{https://github.com/shiki442/DeepRitz_NonlinearPDE}）。
-
-\subsection{高维双峰问题}
-本节考虑一个具有复杂解结构的五维非线性椭圆型方程，旨在考察模型处理高维复杂特征的能力。在此类高维设定下，传统的基于网格的数值方法（如有限元法）往往因“维数灾难”而难以直接应用。本文考虑的具体边值问题如下：
-\begin{equation}\label{eq:eq1}
-\left\{\begin{aligned}
--\Delta u + \exp(u) & = g_1(\mathbf{x}), & \mathbf{x} \in \Omega, \\
-u(\mathbf{x}) & = 0, & \mathbf{x} \in \partial\Omega,
-\end{aligned}\right.
+首先，利用三角不等式，我们将统计误差分解为五个子项以便分别进行处理：
+\begin{equation}\label{lemma:staerr:dec}
+\sup _{u \in \mathcal{N}^2}\left|\mathcal{L}_{k}(u)-\widehat{\mathcal{L}}_{k}(u)\right|\leq\sum_{j=1}^{5}\sup _{u \in \mathcal{N}^2}\left|\mathcal{L}_{k,j}(u)-\widehat{\mathcal{L}}_{k,j}(u)\right|,
 \end{equation}
 
-其中，计算域定义为五维超立方体 $\Omega=[0,1]^5$。为了定量验证算法的精确性，我们构造了如下精确解：
-$$u_1(\mathbf{x}) = \sin(2\pi x_1) \prod_{i=2}^{5} 4x_i(1-x_i)$$
-由此推导得到源项 $g_1(\mathbf{x})$ 为：
-$$g_1(\mathbf{x}) = 4\pi^2 u_1(\mathbf{x}) + 2\sum_{i=2}^{5} \frac{u_1(\mathbf{x})}{x_i(1-x_i)} + \exp(u_1(\mathbf{x}))$$
-
-需要特别指出的是，尽管该方程中的非线性势能项 $\exp(u)$ 并不满足假设 \ref{ass:f}(c) 所要求的增长性条件，但根据定理 \ref{th:ch3reg} 的证明过程可知，该边值问题解的唯一性依然成立。同时，本文构造的精确解 $u_1$ 具备明确的解析形式与良好的光滑性。因此，从理论层面而言，本文所提方法完全适用于求解该问题。
-% 数值结果分析
-模型采用 Adam 优化器进行训练，设置初始学习率为 $1.0\times 10^{-3}$，边界惩罚系数 $\mu$ 取值为 $5000$。经过 4000 步迭代后，模型表现出良好的收敛性，最终的相对误差降至 $5.44 \times 10^{-3}$。训练过程中的损失函数与验证误差随迭代步数的变化曲线如图 \ref{fig:loss_curve} 所示。
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.9\textwidth]{./figures2/eq1_loss_val_error_curves.png}
-    \caption{五维双峰问题的训练损失与验证误差曲线}
-    \label{fig:loss_curve}
-\end{figure}
-
-为了更直观地考察模型在高维空间域内的局部拟合效果，我们固定后三个空间维度，选取二维切面 $(x_1, x_2, 0.5, 0.5, 0.5)$，绘制了精确解、预测解及其绝对误差的热力图（详见图 \ref{fig:heatmapeq1}）。此外，图 \ref{fig:diagonal} 进一步展示了沿对角线方向上预测解与精确解的分布对比。实验结果表明，本文所提方法能够准确捕捉解的波峰与波谷等复杂的非线性特征，并在全域内保持了较高的拟合精度。
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=\textwidth]{./figures2/eq1_twopeak_heatmap.png}
-    \caption{高维切面上的精确解、预测解与误差分布}
-    \label{fig:heatmapeq1}
-\end{figure}
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.9\textwidth]{./figures2/eq1_twopeak_diagonal.png}
-    \caption{沿对角线方向的解对比图}
-    \label{fig:diagonal}
-\end{figure}
-
-综上所述，针对五维双峰问题，本文采用的深度学习求解框架展现出了优异的数值表现。通过合理的超参数配置，模型不仅在有限的迭代步数内实现了稳定收敛，而且在面对高维空间中多变的局部特征时，依然展现出极强的表达与泛化能力。
-
-\subsection{不光滑问题}
-为了进一步验证本文提出的深度学习求解框架在面对低正则性解时的拟合能力与鲁棒性，本节将考察如下带有三角函数非线性项的偏微分方程边值问题：
-\begin{equation}\label{eq:eq2}
-\left\{\begin{aligned}
--\Delta u + 2\text{sin}(\frac{\pi}{2}u) & = g_2(x) & \text{in } & \Omega,\\
-Tu& = 0 & \text{on }  & \partial\Omega.\\
-\end{aligned}\right.
+其中，连续形式与对应的离散经验形式定义如下：
+\begin{equation}\label{eq:dispartloss}
+\begin{aligned}
+\mathcal{L}_{k,1}(v) &= |\Omega|\mathop{\mathbb{E}}_{X\sim U(\Omega)}\left[ \frac{|\nabla v(X)|_{2}^{2}}{2}\right], \quad &\widehat{\mathcal{L}}_{k,1}(v) &= \frac{|\Omega|}{N}\sum_{i=1}^{N}\left[ \frac{|\nabla v(X_{i})|_{2}^{2}}{2}\right], \\
+\mathcal{L}_{k,2}(v) &= |\Omega|\mathop{\mathbb{E}}_{X\sim U(\Omega)}\left[ \frac{w(X)v^{2}(X)}{2} \right], \quad &\widehat{\mathcal{L}}_{k,2}(v) &= \frac{|\Omega|}{N}\sum_{i=1}^{N}\left[ \frac{w(X_{i})v^{2}(X_{i})}{2} \right], \\
+\mathcal{L}_{k,3}(v) &= \frac{\mu_{1}}{2} |\partial\Omega|\mathop{\mathbb{E}}_{Y\sim U(\partial\Omega)}\left[ Tv^{2}(Y) \right], \quad &\widehat{\mathcal{L}}_{k,3}(v) &= \frac{\mu_{1}}{2} \frac{|\partial\Omega|}{M}\sum_{j=1}^{M}\left[ Tv^{2}(Y_{j}) \right], \\
+\mathcal{L}_{k,4}(v) &= \frac{\mu_{2}}{4}\left\{|\Omega|\mathop{\mathbb{E}}_{X\sim U(\Omega)}\left[v^{2}(X)\right]-1\right\}^{2}, \quad &\widehat{\mathcal{L}}_{k,4}(v) &= \frac{\mu_{2}}{4}\left\{\frac{|\Omega|}{N} \sum_{i=1}^{N}\left|v(X_{i})\right|^{2}-1\right\}^{2}, \\
+\mathcal{L}_{k,5}(v) &= \frac{\mu_{2}}{2} \sum_{j<k}\left\{|\Omega|\mathop{\mathbb{E}}_{X\sim U(\Omega)}\left[v(X) \xi_{j}(X)\right]\right\}^{2}, \quad &\widehat{\mathcal{L}}_{k,5}(v) &= \frac{\mu_{2}}{2} \sum_{j<k}\left\{\frac{|\Omega|}{N} \sum_{i=1}^{N} v(X_{i}) \xi_{j}(X_{i})\right\}^{2}.
+\end{aligned}    
 \end{equation}
 
-本算例的空间定义域设定为五维超立方体 $\Omega=[0,1]^5$。我们构造该方程的精确解 $u_2$ 为一个分段函数：
-$$u_2(x) = \begin{cases}
-\frac{1}{2}-r^2, & r^2 > \frac{1}{6},\\[2mm]
-\frac{1}{3}, & r^2 \leq \frac{1}{6}.
-\end{cases}$$
+统一记 $\mu$ 为 $\Omega$ 或 $\partial \Omega$ 上的均匀分布。给定 $n$ 个来自 $\mu$ 的独立同分布样本 $\mathbf{Z}_{n}=\{Z_{i}\}_{i=1}^{n}$（其中 $Z_i$ 代表 $X_i$ 或 $Y_i$，且 $n$ 对应 $N$ 或 $M$），我们将用Rademacher 复杂度来量化神经网络假设空间 $\mathcal{N}$ 在给定经验样本 $\mathbf{Z}_{n}$ 上的容量。
 
-其中 $r$ 表示空间点到原点的距离。容易看出，该精确解在临界界面 $r^2 = \frac{1}{6}$ 处其导数是不连续的，即存在“不可导”的折点。方程右端源项 $g_2(x)$ 的解析表达式为：
-$$g_2(\mathbf{x}) = \begin{cases}
-10 + 2\sin\left(\frac{\pi}{4} - \frac{\pi}{2}r^2\right), & r^2 > \frac{1}{6},\\
-1, & r^2 \leq \frac{1}{6}.
-\end{cases}$$
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.9\textwidth]{./figures2/eq2_loss_val_error_curves.png}
-    \caption{五维不光滑问题的训练损失与验证误差曲线}
-    \label{fig:loss_curveeq2}
-\end{figure}
+界定统计误差的整体逻辑框架如下：1.定义容量指标：在定义 \ref{def:staerr:radcom} 至 \ref{def:staerr:pdim} 中，依次了给出Rademacher复杂度 $\mathfrak{R}$、覆盖数$\mathcal{C}_{\infty}$ 以及伪维数（Pdim）的严谨数学定义。2.误差项分解控制：利用Rademacher复杂度，通过引理 \ref{lemma:staerr:Rad234} 对上述各分解项的泛化间隙进行约束。3.复杂度链式传递：引理 \ref{lemma:staerr:Rad_cover} 建立起通过覆盖数积分控制Rademacher复杂度的桥梁；随后，引理 \ref{lemma:staerr:cover_Pdim} 进一步证明覆盖数可由伪维数所控制。4.网络结构关联：引理 \ref{lemma:staerr:pdim} 显式给出了具有特定深度与宽度的神经网络的伪维数阶数。最终，定理 \ref{thm:staerr:finalthm} 将上述所有理论组件整合，推导出总体统计误差的显式上界。
 
-针对上述五维不光滑问题，我们利用神经网络进行了迭代求解。图 \ref{fig:loss_curveeq2} 记录了模型在训练过程中的损失函数与验证误差随迭代步数的下降趋势。尽管目标解在局部区域缺乏光滑性，模型依然展现出了稳定且良好的收敛态势。
+为保证正文逻辑的流畅性与可读性，本节先陈述核心的引理与定理，所有相关结论的详细证明均收录于附录 \ref{app:proofingen} 中。
 
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=\textwidth]{./figures2/eq2_nondiff_heatmap.png}
-    \caption{高维切面上的精确解、预测解与误差分布}
-    \label{fig:heatmapeq2}
-\end{figure}
-为了直观地展示神经网络对不光滑界面的捕捉能力，我们选取了特定的高维切面，并绘制了精确解、预测解及其对应误差的热力图分布（见图 \ref{fig:heatmapeq2}）。从图中可以清晰地观察到，预测解在全域内与精确解保持了高度一致，并且误差水平被有效控制在极低的量级。
 
-此外，图 \ref{fig:diagonaleq3} 给出了沿对角线方向上预测解与精确解的一维对比。结果清晰地表明，即使在 $r^2 = \frac{1}{6}$ 这一导致导数突变的不光滑点附近，神经网络不仅没有发生振荡或平滑过度，反而较准确地拟合了真实的折点特征。
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.9\textwidth]{./figures2/eq2_nondiff_diagonal.png}
-    \caption{沿对角线方向的解对比图}
-    \label{fig:diagonaleq3}
-\end{figure}
-本节的数值实验表明，本文所采用的深度学习方法具备更强的几何灵活性和非线性表达能力，能够高效地处理带有一些带有不光滑特征的高维偏微分方程。
-
-\subsection{Liouville方程}
-Liouville方程在数学与物理中均有广泛的应用。在微分几何中，该方程常用于描述常曲率曲面的度量变换；例如，在平面上寻找共形变换以构造具有常曲率的新度量（如双曲几何模型）时，其核心即为求解Liouville方程。在物理学领域，该方程也经常出现于二维量子引力理论及等离子体物理的研究中。本文考虑如下形式的边值问题：
-\begin{equation}\label{eq:eq3}
-\left\{\begin{aligned}
-\Delta u + \lambda\text{exp}(u) & = 0 & \text{in } & \Omega,\\
-Tu& = h_3(x) & \text{on }  & \partial\Omega.\\
-\end{aligned}\right.
-\end{equation}
-
-% 在$[0,1]^2$上的拉普拉斯算子的基态特征值为$2\pi^2$
-这里$\Omega=[0,1]^2$，$h_3(x) = -2 \ln(1 + x_1^2+x_2^2) $通常情况下，受指数型非线性项的影响，Liouville方程的解并不具备唯一性。然而存在一个特殊情形：当临界参数 $\lambda = 8$ 时，方程 \eqref{eq:eq3} 存在唯一的精确解，其解析形式为 $ u_3 = -2 \ln(1 + x_1^2+x_2^2) $。在解的正则性得到保证的前提下，本文后续章节所提出的定理依然适用。
-
-本节采用 Deep Ritz 方法对该方程进行数值求解。我们在区域边界与内部区域分别采样了 200,000 个和 500,000 个配点。模型训练采用 Adam 优化器，设定初始学习率为 $ 6\times 10^{-4} $，共迭代训练 10,000 步。训练过程中的损失函数与验证误差下降曲线如图 \ref{fig:loss_curveeq3} 所示。
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.9\textwidth]{./figures2/eq3_loss_val_error_curves.png}
-\caption{Liouville方程的训练损失与验证误差曲线}
-\label{fig:loss_curveeq3}
-\end{figure}
-
-图 \ref{fig:heatmapeq3} 以热力图的形式直观地展示了精确解、神经网络预测解以及两者之间的误差分布。实验结果表明，Deep Ritz 方法能够高精度地逼近该方程的精确解。
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{./figures2/eq3_liouville_heatmap.png}
-\caption{精确解、预测解与误差分布}
-\label{fig:heatmapeq3}
-\end{figure}
-
-% 为了进一步评估数值解的局部精度，我们沿定义域的对角线方向提取了预测解与精确解的值进行对比，结果如图 \ref{fig:diagonaleq3} 所示。
-
-% \begin{figure}[htbp]
-% \centering
-% \includegraphics[width=0.9\textwidth]{./figures2/eq1_twopeak_diagonal.png}
-% \caption{沿对角线方向的解对比图}
-% \label{fig:diagonaleq3}
-% \end{figure}
-
-该数值算例表明，假设 \ref{ass:f} 仅为 Deep Ritz 方法收敛的一个充分条件。对于自身具备良好正则性的边值问题，假设 \ref{ass:f}(c)(d) 中的条件可被放宽至仅需满足单调性。这一结论在理论与实践上均进一步拓展了本文所提方法的适用范围。
-
-\subsection{Yamabe方程}
-Yamabe 方程起源于黎曼几何中的共形形变问题，旨在寻找与给定黎曼度量共形且具有常数量曲率的新度量。在偏微分方程理论中，它是研究半线性椭圆方程的一个经典模型。本文考察如下带有 Dirichlet 边界条件的 Yamabe 方程：
-\begin{equation}\label{eq:eq4}
-\left\{\begin{aligned}
-\Delta u + u^{\frac{d+2}{d-2}} & = 0 & \text{in } & \Omega,\\
-Tu& = h_4(x) & \text{on }  & \partial\Omega.\\
-\end{aligned}\right.
-\end{equation}
-
-其中，计算区域设定为 $d$ 维单位超立方体 $\Omega=[0,1]^d$。该方程的解空间结构异常复杂，其核心难点在于非线性项的指数 $p = \frac{d+2}{d-2}$ 恰好对应于临界 Sobolev 指数。在这种临界状态下，方程的解的存在性异常脆弱，解的性质也及其复杂。
-
-为了构造数值实验的测试算例，我们采用著名的 Talenti 泡作为该方程的精确解，其解析表达式为：
-$$u_4 = \left(\frac{\sqrt{d(d-2)}}{1 + |x-x_0|^2} \right)^{\frac{d}{2}-1}$$
-方程中的边界条件 $h_4(x)$ 即由该精确解在边界 $\partial\Omega$ 上的迹给定。Talenti 泡的中心取为$x_0=0.3$。选取此类具有临界非线性特征且解结构复杂的方程进行测试，旨在充分验证本文所提方法在处理高维强非线性问题时的鲁棒性与泛化能力。
-
-在具体的数值实验中，我们考虑三维情形（即 $d=3$）。在网络训练的数据准备阶段，我们在区域内部 $\Omega$ 和边界 $\partial\Omega$ 分别随机采样了 1,500,000 和 500,000 个配置点。模型优化采用学习率为 0.002 的优化算法，共计训练 2,000 个迭代步。训练过程中的损失函数下降轨迹与验证误差演化如图 \ref{fig:loss_curveeq4} 所示。
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.9\textwidth]{./figures2/eq4_loss_val_error_curves.png}
-\caption{Yamabe方程的训练损失与验证误差曲线}
-\label{fig:loss_curveeq4}
-\end{figure}
-
-借助热力图\ref{fig:heatmapeq4}，我们直观地评估模型的数值求解精度，并对比在特定截面上的精确解、神经网络预测解，以及两者之间的绝对误差分布。
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{./figures2/eq4_yamabe_heatmap.png}
-\caption{精确解、预测解与误差分布}
-\label{fig:heatmapeq4}
-\end{figure}
-
-\subsection{超参数对数值解精度的影响}
-为了探究模型超参数（如采样点规模、神经网络结构等）对算法收敛性及求解精度的具体影响，我们首先考虑如下带有齐次边界条件的 Dirichlet 边值问题：
-\begin{equation}
-\left\{\begin{aligned}
--\Delta u + \frac{1}{1+u^2} & = g_5(x) & \text{在 } & \Omega \text{ 中},\\
-Tu& = 0 & \text{在 }  & \partial\Omega \text{ 上}.\\
-\end{aligned}\right.
-\end{equation}
-其中，空间域设为 $\Omega=[0,1]^{2}$，方程右端的源项 $g_5(x)$ 的解析表达式为：
-\begin{equation*}
-g_5(x)=8\sum_{\stackrel{1\leq i\leq d}{i\neq j}}\prod_{j=1}^{d}x_{j}(1-x_{j})+\frac{1}{1+\left(\prod_{i=1}^{d}4x_{i}(1-x_{i})\right)^2},
-\end{equation*}
-这里，方程的非线性项 $S(u) = \frac{1}{1+u^2}$ 属于 $L^{\infty}(\Omega)$，且满足 Lipschitz 连续条件与有界性，从而符合前文所述的假设 \ref{ass:f}。该问题的精确解构造为 $u_5(x)=\prod_{i=1}^{d}4x_{i}(1-x_{i})$
-
-为了保证实验变量的单一性并验证算法的鲁棒性，本节的所有数值实验均采用一致的基础训练配置：使用 Adam 优化器，设置初始学习率为 $5.0\times 10^{-4}$，共进行 5000 步迭代优化，并将边界惩罚参数 $\lambda$ 设定为 4000。
-
-\subsubsection*{1. 采样点规模对求解精度的影响}
-
-我们首先固定神经网络结构（深度为 3，宽度为 80 的残差网络），在不同样本量配置下进行了对比实验。图 \ref{fig:fig_n} 展示了不同样本量下的训练误差收敛曲线。从图中可以清晰地看出，更大的样本量不仅能在相同的迭代步数下促使误差下降得更为迅速，且最终能收敛至更高的数值精度。此外，当样本量过小时，误差曲线在训练后期出现了先降低后上升的现象，这反映了低采样密度下模型容易发生过拟合或数值失稳，进一步凸显了充足样本量对维持算法稳定性的重要作用。
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.8\textwidth]{./figures2/eq5_n_error_epoch_curves.png}
-\caption{不同样本量下的训练误差曲线} \label{fig:fig_n}
-\end{figure}
-
-图 \ref{fig:fig_n1} 直观地展示了各样本量配置下模型预测解的热力图分布对比。
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{./figures2/eq5_n_heatmaps_comparison.png}
-\caption{不同样本量下的预测解热力图对比} \label{fig:fig_n1}
-\end{figure}
-
-为了进行定量分析，图 \ref{fig:fig_n2} 绘制了模型相对误差随样本量变化的趋势线。结果表明，随着采样密度的增加，模型能够更充分地捕捉空间域内的全局与局部信息，整体泛化误差呈现出稳步下降的趋势。这一实验现象与推论 \ref{cor:cordiri} 中给出的理论衰减率（即误差随样本量呈多项式衰减）基本吻合。
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.8\textwidth]{./figures2/eq5_n_sample_size_vs_error.png}
-\caption{预测精度（相对误差）随样本量大小的变化曲线} \label{fig:fig_n2}
-\end{figure}
-
-\subsubsection*{2. 神经网络宽度对逼近精度的作用机制}
-
-接下来，我们探讨网络参数量对模型表达能力的影响。参照推论 \ref{cor:cordiri} 中关于参数量的渐近设定，我们在保持基础超参数和网络深度不变的前提下，调整了残差网络隐藏层的神经元个数（即网络宽度）并重新进行训练。相应的训练误差收敛曲线如图 \ref{fig:fig_w} 所示。
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.8\textwidth]{./figures2/eq5_w_error_epoch_curves.png}
-\caption{不同网络宽度下的训练误差曲线} \label{fig:fig_w}
-\end{figure}
-
-各网络宽度下所得到的数值解局部细节对比如图 \ref{fig:fig_w1} 所示。
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{./figures2/eq5_w_heatmaps_comparison.png}
-\caption{不同网络宽度下的预测解热力图对比} \label{fig:fig_w1}
-\end{figure}
-
-最后，图 \ref{fig:fig_w2} 总结了预测精度随网络宽度变化的规律。实验结果证实，适度扩展网络的宽度能够显著增强模型的非线性逼近能力与函数空间表达能力，从而获得更高的数值拟合精度，这再次印证了本文前述理论分析的正确性。
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.8\textwidth]{./figures2/eq5_w_width_vs_error.png}
-\caption{预测精度（相对误差）随网络宽度的变化曲线} \label{fig:fig_w2}
-\end{figure}
-
-\section{本章小结}\label{sec:dis}
-在本文中，我们研究了利用具有 $\mathrm{ReLU}^2$ 激活函数的 ResNet 求解半线性椭圆问题。我们提出了一种基于惩罚变分形式的通用公式，用于计算半线性椭圆方程的解。随后，我们使用 Deep Ritz 方法对该惩罚变分形式进行求解。我们根据 $\mathrm{ReLU}^2$ ResNet 的深度 $\mathcal{D}$ 和宽度 $\mathcal{W}$ 以及训练样本数量 $n$，推导了估计解与真解之间误差的上界。我们的数值模拟结果证明了所提方法在克服维数灾难方面的有效性，并验证了我们的理论结果。
-
-\section{本章附录}\label{sec:appd}
-\subsection{定理\ref{th:ch3reg}的证明}\label{pf:th:ch3reg}
-\begin{theorem}[先验估计]
-在假设 \ref{ass:f} 成立的条件下，方程 \eqref{eq:maineq} 存在唯一的解 $u \in H^2(\Omega)$，且满足如下正则性估计：
-$$\|u\|_{H^2(\Omega)} \le C \left( \|g - V(u)\|_{L^2(\Omega)} + \|h\|_{H^{1/2}(\partial \Omega)} + \|u\|_{H^1(\Omega)} \right)$$
-\end{theorem}
-\begin{proof}[Robin边界条件]
-定义泛函 $J: H^1(\Omega) \to \mathbb{R}$ 为：
-$$J(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} u^2 \, dS + \int_{\Omega} W(u) \, dx - \int_{\Omega} gu \, dx - \mu \int_{\partial \Omega} hu \, dS$$
-其中 $W(s) = \int_0^s V(t) \, dt$。我们将泛函分为二次项 $Q(u)$、非线性项 $N(u)$ 以及线性项 $L(u)$。通过计算 $J(u)$ 的 Gâteaux 变分可知，$J(u)$ 的驻点即为方程 \eqref{eq:maineq} 的弱解。下文将基于变分法直接法分步证明解的存在性、唯一性与正则性。
-
-第一步：证明泛函 $J(u)$ 的强制性。
-即证明当 $\|u\|_{H^1} \to \infty$ 时，$J(u) \to \infty$。
-首先，考察泛函的二次项。在 $H^1(\Omega)$ 空间中，由于 $\mu > 0$，根据广义 Poincaré 不等式，存在常数 $C_1 > 0$ 使得：
-$$\frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} u^2 \, dS \ge C_1 \|u\|_{H^1(\Omega)}^2$$
-记 $\lambda_1$ 为对应拉普拉斯算子的第一特征值，由 Rayleigh 商的定义可知：
-\begin{equation*}
-Q(u) \ge \frac{\lambda_1}{2} \int_{\Omega} u^2 \, dx.
-\end{equation*}
-其次，对于非线性势能项，由假设 $V'(u) \ge -\gamma$ 且积分下限条件，可得 $W(u) \ge -\frac{\gamma}{2} u^2$。由于 $\gamma < \lambda_1$，可以取 $\varepsilon = 1 - \frac{\gamma}{\lambda_1} > 0$。通过配凑，可将二次项与非线性项合并放缩为：
+\begin{lemma}\label{lemma:staerr:Rad234}
+记 $\mathcal{N}^{2}=\mathcal{N}(\mathcal{D}+3,(\mathcal{D}+2)\mathcal{W},\{2\},\infty)$，我们有
 \begin{equation*}
 \begin{aligned}
-Q(u) + N(u) &\ge (1-\varepsilon)Q(u) + \varepsilon Q(u) - \frac{\gamma}{2}\|u\|_{L^2}^2\\
-&\ge \varepsilon Q(u) + \left( \frac{\gamma}{\lambda_1} \frac{\lambda_1}{2} \|u\|_{L^2}^2 - \frac{\gamma}{2} \|u\|_{L^2}^2 \right) \\
-&= \varepsilon Q(u)
+&\mathbb{E}_{\left\{X_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{1}(u)-\widehat{\mathcal{L}}_{1}(u)\right| \lesssim \frac{|\Omega|}{2}\mathfrak{N}\left(\mathcal{N}^{1,2}\right),\\
+&\mathbb{E}_{\left\{X_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{2}(u)-\widehat{\mathcal{L}}_{2}(u)\right| \lesssim \frac{|\Omega|\|w\|_{\infty}\mathcal{B}}{2}\mathfrak{N}\left(\mathcal{N}^{2}\right),\\
+&\mathbb{E}_{\left\{Y_{i}\right\}_{i=1}^{N}} \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{3}(u)-\widehat{\mathcal{L}}_{3}(u)\right| \lesssim \frac{\mu_{1}\|\partial \Omega\|\mathcal{B}}{2} \mathfrak{N}\left(\mathcal{N}^{2}\right),\\
 \end{aligned}
 \end{equation*}
-最后，利用 Cauchy-Schwarz 不等式及迹定理，线性项 $L(u)$ 可被控制为：
-$$\left| \int_{\Omega} gu \, dx + \mu \int_{\partial \Omega} hu \, dS \right| \le \|g\|_{L^2}\|u\|_{L^2} + \mu \|h\|_{L^2(\partial\Omega)}\|u\|_{L^2(\partial\Omega)} \le C_2 \|u\|_{H^1(\Omega)}$$
-综上可得 $J(u) \ge \varepsilon C_1 \|u\|_{H^1(\Omega)}^2 - C_2 \|u\|_{H^1(\Omega)}$。由于二次项的增长占优，当 $\|u\|_{H^1} \to \infty$ 时，$J(u) \to \infty$，强制性得证。
+且
+\begin{equation*}
+\begin{aligned}
+&\mathbb{E}_{\left\{X_{j}\right\}_{j=1}^{M}} \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{4}(u)-\widehat{\mathcal{L}}_{4}(u)\right| \lesssim \frac{\mu_{2}}{2}|\Omega|^{2}\mathcal{B}^{3} \mathfrak{N}\left(\mathcal{N}^{2}\right)+\frac{\mu_{2}}{4}|\Omega|^{2}\mathcal{B}^{2}\left[ \mathfrak{N}\left(\mathcal{N}^{2}\right)\right]^{2},\\
+&\mathbb{E}_{\left\{X_{j}\right\}_{j=1}^{M}} \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{5}(u)-\widehat{\mathcal{L}}_{5}(u)\right| \lesssim
+\mu_{2}|\Omega|^{2}\mathcal{B}^{3}\mathfrak{N}\left(\mathcal{N}^{2}\right)+\frac{\mu_{2}}{2}|\Omega|^{2}\mathcal{B}^{2}\left[ \mathfrak{N}\left(\mathcal{N}^{2}\right)\right]^{2}.\\
+\end{aligned}
+\end{equation*}
+\end{lemma}
+证明详见附录。
 
-第二步：提取极小化序列的弱收敛子列。
-由强制性可知 $J(u)$ 存在下界，记 $m = \inf_{u \in H^1(\Omega)} J(u)$。由下确界定义，存在极小化序列 $\{u_k\} \subset H^1(\Omega)$ 使得 $\lim_{k \to \infty} J(u_k) = m$。
-由于 $\{J(u_k)\}$ 收敛，故其必定有界。结合强制性可知，序列的范数 $\|u_k\|_{H^1(\Omega)}$ 一致有界。根据 Banach-Alaoglu 定理，自反的 Hilbert 空间中的有界序列必存在弱收敛子列。不妨仍记该子列为 $\{u_k\}$，则存在 $u^* \in H^1(\Omega)$ 使得：
-$$u_k \rightharpoonup u^* \quad \text{in } H^1(\Omega)$$
+为了利用定义 \ref{def:staerr:pdim} 中定义的覆盖数来界定 Rademacher 复杂度，我们参考 Dudley 的经典结果。
 
-第三步，证明泛函的弱下半连续性（w.l.s.c.）。
-我们需要证明 $J(u^*) \le \liminf_{k \to \infty} J(u_k)$。我们将分别考察泛函的各项：
+\begin{lemma}[Dudley 熵公式 \cite{dudley}]\label{lemma:staerr:Rad_cover}
+假设 $0\in \mathcal{N}$，且函数族 $\mathcal{N}$ 一致有界。则该函数族的经验 Rademacher 复杂度满足如下 Dudley 积分界：
+$$\mathfrak{R}(\mathcal{N}) \leq  \inf_{0<\delta<\mathcal{B}}\left(4 \delta+\frac{12}{\sqrt{n}} \int_{\delta}^{\mathcal{B}} \sqrt{\log (2\mathcal{C}\left( \varepsilon, \mathcal{N}, n\right))}\mathrm{d}\varepsilon\right).$$
+\end{lemma} 该证明在附录的证明 \ref{pf:lemma:staerr:Rad_cover} 中给出。
+
+随后的引理揭示了覆盖数与伪维数 (Pdim) 之间的相互关系。为了寻求分段多项式函数的伪维数的上界，我们参考了 \cite{bartlett2019nearly} 中提出的结论，这些结论适用于我们公式中定义的函数类。
+
+\begin{lemma}\label{lemma:staerr:cover_Pdim}
+设 $\mathcal{N}$ 为定义在输入空间 $X$ 上，且值域在有界区间 $[0, \mathcal{B}]$ 内的实值函数族。对于任意 $\varepsilon>0$，其经验覆盖数满足：
+\begin{equation*}
+\mathcal{C}(\varepsilon, \mathcal{N}, n) \leq \sum_{i=1}^{\mathrm{Pdim}(\mathcal{N})}
+\begin{pmatrix}
+n \\
+i
+\end{pmatrix}
+\left(\frac{\mathcal{B}}{\varepsilon}\right)^{i}
+\end{equation*}
+特别地，当样本量 $n\geq\mathrm{Pdim}(\mathcal{N})$ 时，该覆盖数可进一步由下述上界控制：
+$$\mathcal{C}(\varepsilon, \mathcal{N}, n) \leq \left(\frac{en\mathcal{B}}{\varepsilon\cdot\mathrm{Pdim}(\mathcal{N})}\right)^{\mathrm{Pdim}(\mathcal{N})}.$$
+\end{lemma}
+该引理的证明见 \cite{anthony2009neural} 中的定理 12.2。
+
+\begin{lemma}\label{lemma:staerr:pdim}
+设 $\mathcal{N}$ 为满足以下条件的函数族：
 \begin{itemize}
-\item {\heiti 梯度项：}在 Hilbert 空间中范数具有弱下半连续性，故：
-$$\int_{\Omega} |\nabla u^*|^2 dx \le \liminf_{k \to \infty} \int_{\Omega} |\nabla u_k|^2 dx$$
-\item {\heiti 边界项：}根据 Rellich-Kondrachov 紧嵌入定理的边界版本，$H^1(\Omega)$ 紧嵌入到 $L^2(\partial \Omega)$ 中。因此 $H^1$ 中的弱收敛蕴含 $L^2(\partial \Omega)$ 中的强收敛，即 
-$$\int_{\partial \Omega} (u^*)^2 \, dS = \lim_{k \to \infty} \int_{\partial \Omega} u_k^2 \, dS$$
-\item {\heiti 线性项：}对于连续线性泛函，弱收敛直接保证了极限的交换性：
-$$\int_{\Omega} gu_k dx \to \int_{\Omega} gu^* dx \quad \text{且} \quad \int_{\partial \Omega} hu_k dS \to \int_{\partial \Omega} hu^* dS$$
-\item {\heiti 非线性项：}同样由紧嵌入定理，$H^1(\Omega)$ 紧嵌入到 $L^2(\Omega)$，故 $u_k \to u^*$ 在 $L^2(\Omega)$ 中强收敛。进一步可提取子列使得 $u_k(x) \to u^*(x)$ 几乎处处成立。
-由假设 $V'(s) \ge -\gamma$（不妨设 $W(0)=0$ 以及 $V(0)=0$），可知辅助函数 $\tilde{W}(s) = W(s) + \frac{\gamma}{2}s^2 \ge 0$。由于 $\tilde{W}(s)$ 非负且连续，我们可以合法地对其应用 Fatou 引理：
-$$\int_{\Omega} \tilde{W}(u^*) \, dx \le \liminf_{k \to \infty} \int_{\Omega} \tilde{W}(u_k) \, dx$$
-即：
-$$\int_{\Omega} \left( W(u^*) + \frac{\gamma}{2}(u^*)^2 \right) \, dx \le \liminf_{k \to \infty} \int_{\Omega} \left( W(u_k) + \frac{\gamma}{2}u_k^2 \right) \, dx$$
-由于 $\frac{\gamma}{2} \int_{\Omega} u_k^2 \, dx$ 是一个存在确定极限的强收敛序列，我们可以利用下极限的性质 $\liminf (a_k + b_k) = \liminf a_k + \lim b_k$ 将其分离并抵消：
-$$\int_{\Omega} W(u^*) \, dx + \frac{\gamma}{2} \int_{\Omega} (u^*)^2 \, dx \le \liminf_{k \to \infty} \int_{\Omega} W(u_k) \, dx + \frac{\gamma}{2} \int_{\Omega} (u^*)^2 \, dx$$
-两边同时减去 $\frac{\gamma}{2} \int_{\Omega} (u^*)^2 \, dx$，得到：
-$$\int_{\Omega} W(u^*) \, dx \le \liminf_{k \to \infty} \int_{\Omega} W(u_k) \, dx$$
+\item[(i)] 可由深度不超过 $\mathcal{D}$ 且宽度不超过 $\mathcal{W}$ 的神经网络实现；
+\item[(ii)] 网络中各隐藏层的激活函数均为 $\mathrm{ReLU}$ 或 $\mathrm{ReLU}^{2}$。
 \end{itemize}
+则该函数族的伪维度满足：
+\begin{equation*}
+\operatorname{Pdim}(\mathcal{N})\lesssim C_1\mathcal{D}^2\mathcal{W}^2(\mathcal{D}+\log\mathcal{W}).
+\end{equation*}
+\end{lemma}
+证明在附录中给出，参见 \ref{pf:lemma:staerr:pdim}
 
-综合上述四项，严格得出结论：
-$$J(u^*) \le \liminf_{k \to \infty} J(u_k)$$
+基于上述引理，不妨记$\mathcal{N}^{1,2}$表示用于逼近梯度$\nabla u$的$ReLU$-$ReLU^2$神经网络函数类。结合引理\ref{lem:gradcomplexity}中给出的神经网络导数复杂度界，我们可以直接推导出该假设空间的伪维度上界为：
+\begin{equation*}
+\operatorname{Pdim}(\mathcal{N}^{1,2})\lesssim C_2 \mathcal{D}^4\mathcal{W}^2(\mathcal{D}+\log\mathcal{W}).
+\end{equation*}
+其中，$C_2$ 为不依赖于输入维度 $d$ 的绝对常数
 
-第四步，证明解的存在性。结合第二、三步的结论，我们有：
-$$J(u^*) \le \liminf_{k \to \infty} J(u_k) = \lim_{k \to \infty} J(u_k) = m$$
-又因 $m = \inf_{u \in H^1(\Omega)} J(u)$，必有 $J(u^*) \ge m$。故 $J(u^*) = m$，这表明 $u^{*} \in H^1(\Omega)$ 为能量泛函的全局极小值点，即弱解存在。
+基于前文的理论准备，本节将通过严格的推导建立统计误差的上界。
+\begin{theorem}\label{thm:staerr:finalthm}
+设 $\mathcal{D}$ 和 $\mathcal{W}$ 分别表示神经网络假设空间 $\mathcal{N}$ 的深度和宽度参数，$\mathcal{B}$ 为特征函数系 $\{\xi_{l}\}_{l=1}^{k}$ 及权重函数 $w$ 的 $L^{\infty}$ 一致界。则统计误差满足如下上界：
+\begin{equation*}
+\mathcal{E}_{\text {sta }}\lesssim C(\Omega,\mathcal{B})(\mu_{1}+\mu_{2})\mathcal{D}^{2}\mathcal{W}\sqrt{\mathcal{D}+\log\mathcal{W}}\sqrt{\frac{\log n}{n}}.
+\end{equation*}
+\end{theorem}
 
-第五步，证明解的唯一性。唯一性等价于泛函的严格凸性。由于线性项 $L(u)$ 是仿射的，不影响凸性。对于二次项 $Q(u)$，由于 $\mu > 0$，其满足对任意 $u \neq v$ 及 $t \in (0, 1)$：
-\begin{equation}\label{eq:Qu}
-Q(tu + (1-t)v) = tQ(u) + (1-t)Q(v) - \frac{1}{2}t(1-t)\left( \int_{\Omega} |\nabla(u-v)|^2 \, dx + \mu \int_{\partial \Omega} (u-v)^2 \, dS \right)
-\end{equation}
-对于非线性项 $N(u)$，考虑辅助函数 $W_s(s) = W(s) + \frac{\gamma}{2}s^2$。因其二阶导数：$W_s''(s) = W''(s) + \gamma \ge -\gamma + \gamma = 0$，$W_s(s)$ 是凸函数。将其代入积分，得到：
-\begin{equation}\label{eq:Nu}
-N(tu + (1-t)v) \le tN(u) + (1-t)N(v) + \frac{\gamma}{2}t(1-t)\int_{\Omega} (u-v)^2 \, dx
-\end{equation}
-将 \eqref{eq:Qu} 与 \eqref{eq:Nu} 相加，并利用 Rayleigh 商定义（令 $w = u - v$）:
-$$\int_{\Omega} |\nabla w|^2 \, dx + \mu \int_{\partial \Omega} w^2 \, dS \ge \lambda_1 \int_{\Omega} w^2 \, dx$$
-由于 $\gamma < \lambda_1$，不等式 \eqref{eq:Qu} 尾项产生的负贡献严格大于 \eqref{eq:Nu} 尾项产生的正贡献。因此：
-$$J(tu + (1-t)v) < tJ(u) + (1-t)J(v)$$
-这证明了 $J(u)$ 的严格凸性，从而全局极小值点唯一。
-
-最后一步，证明解的正则性。将原方程视作以 $g(x) - V(u(x))$ 为源项的线性椭圆边值问题：
-\begin{equation}\label{eq:linearized}
-\left\{\begin{aligned}
--\Delta u+ &=f & & \text { in } \Omega \\
- \mu u + \frac{\partial u}{\partial n} &=h & & \text { on } \partial \Omega
-\end{aligned}\right.
-\end{equation}  
-
-要应用经典的 $L^2$ 椭圆正则性理论得出 $u \in H^2(\Omega)$，我们需要证明右端项 $f \in L^2(\Omega)$。由于已知 $g \in L^2(\Omega)$，问题归结为证明非线性项 $V(u) \in L^2(\Omega)$。根据假设 (c) 的增长性条件 $|V(s)| \le C(1 + |s|^p)$，这等价于证明 $u \in L^{2p}(\Omega)$。
-
-已知 $u \in H^1(\Omega)$，我们将根据空间维度 $N$ 分情况讨论：
-
-{\heiti 情形一：低维情形 ($N = 1, 2$)}
-
-根据 Sobolev 嵌入定理，当 $N=1$ 时，$H^1(\Omega) \hookrightarrow L^\infty(\Omega)$；当 $N=2$ 时，对于任意有限的 $q \in [1, +\infty)$，均有 $H^1(\Omega) \hookrightarrow L^q(\Omega)$。因此，无论 $p$ 为何有限值，我们直接有 $u \in L^{2p}(\Omega)$，从而 $V(u) \in L^2(\Omega)$ 自动成立。
-
-{\heiti 情形二：高维情形 ($N \ge 3$)}
-
-由 Sobolev 临界嵌入定理知 $u \in L^{2^*}(\Omega)$，其中临界指数 $2^* = \frac{2N}{N-2}$。
-我们将非线性项进行代数重写，令 $V(u) = a(x)u + b(x)$，其中
-$$a(x) = \begin{cases} \frac{V(u(x))}{u(x)}, & u(x) \neq 0 \\ 0, & u(x) = 0 \end{cases}$$
-由假设 (c) $|V(s)| \le C(1 + |s|^p)$ 可知，存在常数 $C' > 0$，使得：
-$$|a(x)| \le C'(1 + |u(x)|^{p-1})$$
-由于我们假设 $p \le \frac{N+2}{N-2}$，故 $p-1 \le \frac{4}{N-2}$。因为 $u \in L^{\frac{2N}{N-2}}(\Omega)$，所以 $|u|^{p-1}$ 最高具有 $\frac{2N}{(N-2)(p-1)} \ge \frac{N}{2}$ 的可积性。这意味着系数 $a(x) \in L^{N/2}(\Omega)$。
-此时，方程 \eqref{eq:linearized} 可以改写为：
-$$-\Delta u = a(x)u + \tilde{g}(x)$$
-其中 $\tilde{g}(x) = g(x) - b(x) \in L^2(\Omega)$。
-这是一个带有 $L^{N/2}$ 奇异系数的线性方程。根据经典的 Brezis-Kato 定理\ref{lem:Brezis}，由于 $a \in L^{N/2}(\Omega)$，弱解 $u$ 的可积性可以被提升至任意有限指数空间，即对于任意 $q < \infty$，都有：
-$$u \in L^q(\Omega)$$
-取 $q \ge 2p$，我们立即得到 $u \in L^{2p}(\Omega)$，进而严格推导出 $V(u) \in L^2(\Omega)$。
-
-综上所述，无论是哪种维度，我们均证明了源项 $f(x) = g(x) - V(u(x)) \in L^2(\Omega)$。
-再结合边界条件 $h \in H^{1/2}(\partial \Omega)$ 以及 $\partial \Omega$ 的 $C^{1,1}$（或凸多面体）正则性，根据标准的线性椭圆方程 $H^2$ 正则性理论，弱解自动提升为强解，即 $u \in H^2(\Omega)$，且满足先验估计：
-$$\|u\|_{H^2(\Omega)} \le C \left( \|g - V(u)\|_{L^2(\Omega)} + \|h\|_{H^{1/2}(\partial \Omega)} + \|u\|_{H^1(\Omega)} \right)$$
-定理得证。
-\end{proof}
-
-\begin{proof}[Dirichlet边界条件]
-Dirichlet 边界条件下解的适定性证明与 Robin 边界条件的情形类似，此处主要阐述两者的差异部分。
-首先，定义可容许的函数空间 $\mathcal{A}$ 为满足 Dirichlet 边界条件的 $H^1$ 函数集合：
-$$\mathcal{A} = \left\{ u \in H^1(\Omega) \mid u = h \text{ on } \partial \Omega  \right\}$$
-定义能量泛函 $J: \mathcal{A} \to \mathbb{R}$ 如下：
-$$J(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \int_{\Omega} W(u) \, dx - \int_{\Omega} gu \, dx$$
-其中势函数满足 $W(s) = \int_0^s V(t) \, dt$。与 Robin 边界条件相比，该泛函的二次项 $Q(u)$ 与线性项 $L(u)$ 均不包含与惩罚参数 $\mu$ 相关的边界积分项。
-令 $u^{*} = \arg\min_{u \in \mathcal{A}} J(u)$，通过计算 $J(u)$ 的 Gâteaux 变分可知，$u^{*}$ 即为方程\eqref{eq:maineq} 在 Dirichlet 边界条件下的弱解。下面分步证明该极小值点的存在性、唯一性与正则性。
-
-第一步：证明泛函 $J(u)$ 的强制性 
-对于任意 $u \in \mathcal{A}$，引入固定函数 $\bar{h} \in H^1(\Omega)$ 且使得在迹意义下 $\bar{h}|_{\partial \Omega} = h$。令 $v = u - \bar{h}$，显然在边界上 $v=0$，即 $v \in H^1_0(\Omega)$
-根据 $H^1_0$ 空间上的庞加莱不等式：
-$$\int_{\Omega} |\nabla v|^2 \, dx \ge C_P \int_{\Omega} v^2 \, dx$$
-由于 $\bar{h}$ 是固定的，在 $H^1_0(\Omega)$ 空间中，梯度的 $L^2$ 范数 $\|\nabla v\|_{L^2}$ 等价于完整的 $H^1$ 范数。因此存在常数 $C_1 > 0$ 与依赖于 $h$ 的常数 $C(h)$，使得：
-$$\frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx \ge C_1 \|u\|_{H^1(\Omega)}^2 + C(h)$$
-进一步，记 $\lambda_1$ 为 Dirichlet 拉普拉斯算子的第一特征值，则对于二次项有放缩：$Q(u) \ge \frac{\lambda_1}{2} \int_{\Omega} u^2 \, dx$。
-对于非线性项 $N(u)$，与 Robin 边界条件的证明类似，通过适当的积分放缩，可将其与二次项合并并控制为下界 $\varepsilon Q(u)$。
-对于线性项 $L(u)$，利用 Cauchy-Schwarz 不等式及 Poincaré 不等式，有：
+\begin{proof}[定理 \ref{thm:staerr:finalthm} 的证明]
+综合引理 \ref{lemma:staerr:Rad234} 至引理 \ref{lemma:staerr:pdim} 的结果，我们可以对经验损失与期望损失的绝对误差进行一致界定
 $$\begin{aligned}
--\int_{\Omega} gu \, dx &= -\int_{\Omega} gv \, dx - \int_{\Omega} g\bar{h} \, dx \\
-&\ge -|g|_{L^2(\Omega)} |v|_{L^2(\Omega)} - |g|_{L^2(\Omega)} |\bar{h}|_{L^2(\Omega)} \\
-&\ge -|g|_{L^2(\Omega)} \sqrt{C_P} |\nabla v|_{L^2(\Omega)} - C_2
+\sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{k}(u)-\widehat{\mathcal{L}}_{k}(u)\right| \leq\;& \frac{|\Omega|}{2}\mathfrak{N}\left(\mathcal{N}^{1,2}\right) +
+\left(\frac{|\Omega|\mathcal{B}^{2}}{2}+\frac{\mu_{1}|\partial\Omega|\mathcal{B}}{2}+\frac{3\mu_{2}|\Omega|^{2}\mathcal{B}^{3}}{2}\right)\mathfrak{N}\left(\mathcal{N}^{2}\right)\\
+&+\frac{3\mu_{2}|\Omega|^{2}\mathcal{B}^{2}}{4}\left[\mathfrak{N}\left(\mathcal{N}^{2}\right)\right]^{2}.
 \end{aligned}$$
-综合上述估计可得：
-$$J(u) \ge \varepsilon C_1 \|u\|_{H^1(\Omega)}^2 - C_3 \|u\|_{H^1(\Omega)} - C_4.$$
-由于二次项的增长速率占优，当 $\|u\|_{H^1} \to \infty$ 时，必有 $J(u) \to \infty$，泛函的强制性得证。
 
-第二步：极小化序列与弱收敛。设 $m = \inf_{u \in \mathcal{A}} J(u)$，并选取极小化序列 $\{u_k\} \subset \mathcal{A}$。由泛函的强制性可知，该序列在 $H^1(\Omega)$ 中是一致有界的。依据弱紧性定理，存在子列（仍记为 $\{u_k\}$）在 $H^1(\Omega)$ 中弱收敛：
-$$u_k \rightharpoonup u^* \quad \text{in } H^1(\Omega)$$
-由于迹算子 $T: H^1(\Omega) \to L^2(\partial \Omega)$ 是连续的线性算子，它保持弱收敛性，即 $Tu_k \rightharpoonup Tu^*$。又因对所有 $k$ 均有 $Tu_k = h$，故极限函数同样满足 $Tu^* = h$，从而 $u^* \in \mathcal{A}$。
+对于任意函数族 $\mathcal{N}$，Rademacher 复杂度 $\mathfrak{N}\left(\mathcal{N}\right)$，利用 Dudley 熵积分不等式，我们有：
+$$\begin{aligned}
+\mathfrak{N}\left(\mathcal{N}\right) &\leq 4 \delta+\frac{12}{\sqrt{n}} \int_{\delta}^{\mathcal{B}} \sqrt{\log (2 \mathcal{C}(\varepsilon, \mathcal{N}, n))} \mathrm{d} \varepsilon\\
+&\leq 4 \delta+\frac{12}{\sqrt{n}} \mathcal{B} \sqrt{\log (2 \mathcal{C}(\delta, \mathcal{N}, n))}\\
+&\leq 4 \delta+\frac{12}{\sqrt{n}} \mathcal{B} \sqrt{\log 2 + \operatorname{Pdim}(\mathcal{N})\log\left(\frac{e n \mathcal{B}}{\delta \operatorname{Pdim}(\mathcal{N})}\right)}.
+\end{aligned}$$
 
-第三与第四步：弱下半连续性与解的存在性.泛函中 $Q(u)$ 和 $N(u)$ 的弱下半连续性证明与 Robin 边界条件完全一致。基于此性质，可得：
-$$J(u^*) \le \liminf_{k \to \infty} J(u_k)$$
-由于 $u^* \in \mathcal{A}$，必然有 $J(u^*) = m$，这证明了全局极小值点（即弱解）的存在性。
+上式第二个不等式成立是因为经验覆盖数 $\mathcal{C}(\varepsilon, \mathcal{N}, n)$ 关于精度参数 $\varepsilon$ 是单调递减的。在此基础上，选取 $\delta=\mathcal{B}\sqrt{\frac{\operatorname{Pdim}(\mathcal{N})}{n}}$，上式可进一步化简为：
+$$\begin{aligned}
+\mathfrak{N}\left(\mathcal{N}\right) &\leq 4\delta\left\{ 4+ 3\sqrt{\frac{\log 2}{\operatorname{Pdim}(\mathcal{N})}} +\frac{3\sqrt{6}}{2}\sqrt{\log\left(\frac{n}{ \operatorname{Pdim}(\mathcal{N})}\right)}\right\}\\
+&\lesssim C(\operatorname{Pdim}(\mathcal{N})) \mathcal{B}\sqrt{\frac{\operatorname{Pdim}(\mathcal{N})}{n}\log\frac{n}{\operatorname{Pdim}(\mathcal{N})}}\\
+&\lesssim C(\operatorname{Pdim}(\mathcal{N})) \mathcal{B}\psi\left(\frac{n}{\operatorname{Pdim}(\mathcal{N})}\right)^{-1/2}.
+\end{aligned}$$
 
-第五步：解的唯一性。
-为证明 $J(u)$ 在 $\mathcal{A}$ 上的严格凸性，计算其二阶 Gâteaux 导数。对于任意给定的 $u \in \mathcal{A}$ 以及任意非零的测试方向 $v \in H^1_0(\Omega)$，泛函的二阶变分为：
-$$J''(u)[v, v] = \left. \frac{d^2}{dt^2} J(u + tv) \right|_{t=0} = \int_{\Omega} |\nabla v|^2 \, dx + \int_{\Omega} V'(u)v^2 \, dx$$
-将势函数条件 $V'(u) \ge -\gamma$ 代入，并结合第一特征值的 Rayleigh 商定义 $\int_{\Omega} |\nabla v|^2 \, dx \ge \lambda_1 \int_{\Omega} v^2 \, dx$，可得：
-$$J''(u)[v, v] \ge (\lambda_1 - \gamma) \int_{\Omega} v^2 \, dx>0$$
-泛函的严格凸性保证了该极小值点在可容许空间 $\mathcal{A}$ 中是唯一的。
-
-第六步：解的正则性。与 Robin 边界条件的情形同理，原方程可等价视作以 $g(x) - V(u(x))$ 为源项的线性椭圆 Dirichlet 边值问题。由经典的线性椭圆正则性理论，相关的先验估计不等式依然成立，定理得证。
+最后，结合引理 \ref{lemma:staerr:pdim} 中关于网络伪维度 $\operatorname{Pdim}(\mathcal{N})$ 的估计，并利用性质 $\psi(kx)\geq k\psi(x)$（对于 $k\leq 1$ 成立），将上述 Rademacher 复杂度界代入初始的误差不等式中，即可完成定理的证明。
 \end{proof}
 
 
-\subsection{引理\ref{lemma:totalapp}的证明}\label{pf:lemma:totalapp}
-为了建立主定理的逼近误差界，我们首先需要引入几个关于函数磨光与神经网络逼近的辅助引理。
-首先，引入标准的磨光核（mollifier）$\rho\in C_{0}^{\infty}(\mathbb{R}^d)$，满足如下性质：$\int \rho\,dx=1$ 且 $\rho \geq 0$；当 $\|x\|> 1$ 时 $\rho(x) = 0$；$\|\rho(x)\|_{\infty}=2V_{d}$，其中 $V_{d}$ 为 $d$ 维单位球的体积。取 $q$ 为索伯列夫指数，当$d\geq3$时，$q = \frac{2d}{d-2}$，当$d-1,2$时，$q$取为任意大的有限数。定义卷积平滑后的函数为：
+\subsection{总误差估计}\label{subsec_main}
+基于前文的理论准备，本节将给出本文的主要误差分析结果。
+\begin{theorem}{总误差估计}\label{mainthm}
+假设 \ref{ass:regularity} 成立，且惩罚参数满足 $\mu_{2}>2\lambda_{k}$。对于 式\eqref{eq:xi_hat} 中定义的近似特征函数 $\widehat{\xi}_{\phi k}$，其特征空间投影误差满足：
 \begin{equation*}
-u^{\varepsilon}_{\mathcal{B}}(x)=\int \mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)u^{\varepsilon}(x+y)\,dy.
+\mathbb{E} \|\mathcal{P}_{\neq k}\widehat{\xi}_{\phi k}\|\lesssim \upsilon^{1/4},
 \end{equation*}
+且相应的特征值逼近误差满足：
+\begin{equation*}
+\displaystyle\mathbb{E}\left|\lambda_{k}-\frac{a^{\mu_{1}}(\widehat{\xi}_{\phi k},\widehat{\xi}_{\phi k})}{\|\widehat{\xi}_{\phi k}\|^{2}}\right|\lesssim C(\Omega,w)\frac{1}{\mu_{1}}+\upsilon^{1/2}.
+\end{equation*}
+其中，综合误差项 $\upsilon$ 的上界为：
+\begin{equation*}
+\upsilon\lesssim C(k,\mu_{2},m,d,n,\Omega,V)\left(
+\psi(\mathcal{D})^{\frac{4-2m}{d}}\psi(\mathcal{W})^{\frac{4-2m}{d}}
++
+\mu_{1}\mathcal{D}^2 \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}}\sqrt{\frac{\log n}{n}}
+\right).
+\end{equation*}
+\end{theorem}
+为了证明上述主定理，我们引入了误差分解技术，将损失函数的总误差拆解为：逼近误差、统计误差以及多特征值求解过程中特有的累积误差。为表述简明，下文记 $\mathcal{E}_{\text{app}}^{(i)}$ 与 $\mathcal{E}_{\text{sta}}^{(i)}$ 分别为求解第 $i$ 个特征函数时产生的逼近误差与统计误差。我们首先通过以下引理给出累积误差的递归估计。
 
-关于该平滑函数，我们有如下界限估计：
-\begin{lemma}[截断与平滑估计]\label{lemma:modifier} 设 $u^{\varepsilon}_{\mathcal{B}}$ 如上定义，则有以下结论成立：
-\begin{enumerate}
-    \item $\|u^{\varepsilon}_{\mathcal{B}}\|_{W^{1,\infty}(\Omega)}\leq \left(2V_{d}\|u^{\varepsilon}\|_{W^{2,2}(\Omega)}^{q}+2\right)\mathcal{B}$；
-    \item $\|u^{\varepsilon}_{\mathcal{B}}-u^{\varepsilon}\|_{H^{1}(\Omega)}\leq 2\|u^{\varepsilon}\|_{W^{2,2}(\Omega)}\mathcal{B}^{-q/d}$;
-    \item $\|u^{\varepsilon}_{\mathcal{B}}\|_{W^{2,2}(\Omega)}\leq \|u^{\varepsilon}\|_{W^{2,2}(\Omega)}$
-\end{enumerate}
+\begin{lemma}[累计误差]\label{lemma:cumerror}
+在与定理 \ref{mainthm} 相同的假设条件下，若对所有 $i \leq K$，逼近误差与统计误差之和一致满足 $\mathcal{E}^{(i)}_{\text{app}} + \mathcal{E}^{(i)}_{\text{sta}} \leq \delta$，则累积误差满足：
+$$\mathcal{E}^{(i)}_{\text{cum}} \leq 2\delta\left(1+\frac{4\mu_2}{\sqrt{\delta}\min\limits_{j\leq K}\delta \lambda_{j}}\right)^{i-1}-2\delta \leq (i-1)\frac{4\mu_{2}\sqrt{\delta}}{\min\limits_{j\leq K}\delta \lambda_{j}},$$
+该结论对所有 $i \leq K$ 均成立。
 \end{lemma}
 \begin{proof}
-对于结论 1，令 $E_{\mathcal{B}}=\{x:|u^{\varepsilon}(x)|>\mathcal{B}\}$。根据引理 \ref{lemma:truerr}，可知 $\|u^{\varepsilon}1_{E_{\mathcal{B}}}\|_{L^{1}}\leq 2\|u^{\varepsilon}\|_{L^{q}}^{q}\mathcal{B}^{1-q}$。因此：
-\begin{equation*}
-\begin{aligned}
-|u^{\varepsilon}_{\mathcal{B}}(x)|&\leq \int \mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)|u^{\varepsilon}(x+y)|\,dy\\
-&= \int_{E_{\mathcal{B}}}\mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)|u^{\varepsilon}(x+y)|\,dy+\int_{E_{\mathcal{B}}^{c}}\mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)|u^{\varepsilon}(x+y)|\,dy\\
-&\leq \left\|\mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)\right\|_{L^{\infty}}\|u^{\varepsilon}1_{E_{\mathcal{B}}}\|_{L^{1}}+\left\|\mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)\right\|_{L^{1}}\|u^{\varepsilon}1_{E_{\mathcal{B}}^{c}}\|_{L^{\infty}}\\
-&\leq \left(2V_{d}\|u^{\varepsilon}\|_{L^{q}}^{q}+1\right)\mathcal{B}.
-\end{aligned}
-\end{equation*}
-由于 $\nabla u^{\varepsilon}\in L^{q}$，且微分算子与卷积操作可交换，上述论证对 $\nabla u^{\varepsilon}_{\mathcal{B}}$ 同样成立。
+我们采用数学归纳法证明此结论。
+当 $i=1$ 时，由于此时不涉及正交惩罚，累积误差恒为零，结论显然成立。
+假设该结论对所有 $i \leq k$ 均成立，则根据定义有：
+$$\mathcal{L}_{i}(\xi_{\phi i}) - \mathcal{L}_{i}(\xi_{i}) \leq \mathcal{E}^{(i)}_{\text{app}} + \mathcal{E}^{(i)}_{\text{sta}} + \mathcal{E}^{(i)}_{\text{cum}}.$$
 
-对于结论 2，利用积分的 Minkowski 不等式进行放缩：
-\begin{equation*}
-\begin{aligned}
-\|u^{\varepsilon}_{\mathcal{B}}-u^{\varepsilon}\|_{L^{2}}&\leq \left[\int_{x}\left(\int_{y}\rho(y)\left|u^{\varepsilon}(x+\mathcal{B}^{-q/d}y)-u^{\varepsilon}(x)\right|\,dy\right)^{2}\,dx\right]^{1/2}\\
-&\leq \left[\int_{x}\left(\int_{y}\int_{t=0}^{\mathcal{B}^{-q/d}}\rho(y)\left|y^{T}\nabla u^{\varepsilon}(x+ty)\right|\,dtdy\right)^{2}\,dx\right]^{1/2}\\
-&\leq \int_{y}\int_{t=0}^{\mathcal{B}^{-q/d}}\rho(y)\|y\|_{2}\|\nabla u^{\varepsilon}(x+ty)\|_{L_{x}^{2}}\,dtdy\\
-&\leq \|\nabla u^{\varepsilon}\|_{L^{2}}\mathcal{B}^{-q/d}.
-\end{aligned}
-\end{equation*}
-鉴于 $\nabla u^{\varepsilon}\in W^{1,2}$，该界限对 $\nabla u^{\varepsilon}$ 同样适用。结论 3 则是 Fubini 定理的直接推论。证毕。
+另一方面，由目标泛函的凸性可导出如下关于投影的下界：
+$$\begin{aligned} 
+\frac{1}{2}(\lambda_{i+1}-\lambda_{i})\|\mathcal{P}_{>i}\xi_{\phi i}\|^2 &\leq \mathcal{L}_{i}(\xi_{\phi i})-\mathcal{L}_{i}(\xi_{i}),\\ \frac{1}{2}(\lambda_{i}-\lambda_{i-1})\|\mathcal{P}_{<i}\xi_{\phi i}\|^2 &\leq \mathcal{L}_{i}(\xi_{\phi i})-\mathcal{L}_{i}(\xi_{i}). 
+\end{aligned}$$
+
+结合上述不等式，并在不失一般性地忽略特征子空间内正交变换的前提下，我们可以得出：
+$$\|\xi_{\phi i}-\xi_{i}\|^{2} \leq \frac{2}{\delta \lambda_{i}}\left(\mathcal{E}^{(i)}_{\text{app}} + \mathcal{E}^{(i)}_{\text{sta}} + \mathcal{E}^{(i)}_{\text{cum}}\right),$$
+其中 $\delta \lambda_i$ 对应于第 $i$ 个特征值的谱间隔。
+
+进而，对于第 $k+1$ 步的累积误差 $\mathcal{E}_{\text{cum}}^{(k+1)}$，利用前述界限，我们有如下放缩：
+$$\begin{aligned} 
+\mathcal{E}_{\text{cum}}^{(k+1)} &= \mu_2(\|\xi_{k+1}\|^2+\|\xi_{\phi, k+1}\|^2)\sum\limits_{i=1}^{k}\frac{1}{\|\xi_i\|}\|\xi_{\phi i}-\xi_{i}\| \\
+&\leq 8\mu_2\sum\limits_{i=1}^{k}\frac{1}{\delta \lambda_{i}}\sqrt{\mathcal{E}^{(i)}_{\text{app}}+\mathcal{E}^{(i)}_{\text{sta}}+\mathcal{E}^{(i)}_{\text{cum}}} \\
+&\leq \frac{8\mu_2}{\min\limits_{j\leq K}\delta \lambda_{j}}\sum\limits_{i=1}^{k}\sqrt{\delta+\mathcal{E}^{(i)}_{\text{cum}}} \\
+&\leq \frac{8\mu_2}{\min\limits_{j\leq K}\delta \lambda_{j}}\sum\limits_{i=1}^{k}\sqrt{\delta}\left(1+\frac{1}{2\delta}\mathcal{E}^{(i)}_{\text{cum}}\right) \\
+&\leq \frac{8\mu_2 \sqrt{\delta}}{\min\limits_{j\leq K}\delta \lambda_{j}}\left(k+\frac{1}{2\delta}\sum\limits_{i=1}^{k}\mathcal{E}^{(i)}_{\text{cum}}\right). 
+\end{aligned}$$
+由上述递推关系，通过数学归纳法即可完成引理的证明。
 \end{proof}
 
-接下来，为了证明 $W^{s,p}(\Omega)$ 空间中的函数可被神经网络逼近，我们引入基于单位分解的局部逼近引理。不失一般性，假设 $\Omega\subset [0,1]^{d}$。我们可构造如下的一组单位分解。
-\begin{definition}[单位分解 $\lambda_{\mathbf{I}}(x)$]
-定义辅助函数：
-\begin{equation*}
-\psi(x;\delta) = \frac{2}{\delta^{2}}\left[\mathrm{ReLU}^{2}(x)+\mathrm{ReLU}^{2}(x+\delta)-2\mathrm{ReLU}^{2}(x+\frac{\delta}{2})\right].
-\end{equation*}
-易知 $\psi$ 是一个结构为 $\{1,3,1\}$ 的 $\mathrm{ReLU}^{2}$-神经网络。对于任意多重指标 $\mathbf{I}\in \{1,2,3,\cdots,N\}^{d}$，定义：
-\begin{equation*}
-\lambda_{\mathbf{I}}(x)=\prod_{j=1}^d\left[\psi\left(x^{(j)}-\frac{\mathbf{I}(j)}{N} ; \frac{1}{N}\right)-\psi\left(x^{(j)}-\frac{\mathbf{I}(j)+1}{N} ; \frac{1}{N}\right)\right].
-\end{equation*}
-此时，$\lambda_{\mathbf{I}}$ 构成了 $[0,1]^{d}$ 上的单位分解，且其支集为 $U_{\mathbf{I}}=\prod_{j}[\frac{\mathbf{I}(j)-1}{N},\frac{\mathbf{I}(j)+1}{N}]$。
-注意到 $\lambda_{\mathbf{I}}$ 是一次数至多为 $d$ 的分段多项式函数，不难推导出 $\lambda_{\mathbf{I}}$ 可由宽度为 $4d$、深度为 $\lceil \log_{2}d\rceil+3$ 的 $\mathrm{ReLU}^{2}$-神经网络精确表示。
-\end{definition}
+现在我们准备证明定理 \ref{mainthm}。
+\begin{proof}{定理\ref{mainthm}的证明}
+首先，利用损失函数 $\mathcal{L}_{k}$ 在极小值点附近的强凸性，我们有：
+$$\mathcal{L}_{k}(\widehat{\xi}_{\phi k})-\mathcal{L}_{k}(\xi_{k})\geq \frac{\delta \lambda_{k}}{2}\|\mathcal{P}_{\neq k}\widehat{\xi}_{\phi k}\|^{2}.$$
 
-基于多项式逼近理论 \cite{1984Arcangeli}，我们有如下局部误差估计：
-\begin{lemma}[局部逼近]
-设 $f\in W^{s,p}(\Omega)\cap W^{1,\infty}(\Omega)$，其中 $s\in (1,2]$。对于任意多重指标 $\mathbf{I}$，存在一个宽度为 $\{d,\frac{d^{2}+3d+2}{2},1\}$ 的 $\mathrm{ReLU}^{2}$-神经网络 $\Psi_{\mathbf{I}}[f]$，使得：
-\begin{enumerate}
-    \item $\left\|\Psi_{\mathbf{I}}[f]\right\|_{W^{1,\infty}(V_{\mathbf{I}})}\leq 2\|f\|_{W^{1,\infty}(\Omega)}$；
-    \item $\|f-\Psi_{\mathbf{I}}[f]\|_{W^{1,p}(V_{\mathbf{I}})}\leq C(s,p,d)[f]_{s,p,V_{\mathbf{I}}}N^{1-s}$；
-    \item $\|f-\Psi_{\mathbf{I}}[f]\|_{L^{p}(V_{\mathbf{I}})}\leq C(s,p,d)[f]_{s,p,V_{\mathbf{I}}}N^{-s}$。
-\end{enumerate}
+结合\ref{subsec_app}节中关于逼近误差的讨论、\ref{subsec_gen}节中的泛化误差估计，以及引理\ref{lemma:cumerror}提供的累积误差界，损失函数的误差上界可被估计为：
+$$
+\begin{aligned}
+\mathcal{L}_{k}(\widehat{\xi}_{\phi k})-\mathcal{L}_{k}(\xi_{k}) \lesssim\;& C(k,\mu_{2},m,d)\psi(\mathcal{D})^{-2(m-2) / d} \psi(\mathcal{W})^{-2(m-2) / d}\\
+&+ C(\Omega,V,\mu_{2})\mu_{1}\mathcal{D}^2 \mathcal{W} \sqrt{\mathcal{D}+\log \mathcal{W}}\sqrt{\frac{\log n}{n}}\\
+&+C(k,\mu_{2},m,d,\Omega,V)\sqrt{\mathcal{E}_{\text{app}}+\mathcal{E}_{\text{sta}}}. 
+\end{aligned}
+$$
+
+鉴于上述逼近误差与统计误差的估计关于 $k$ 具有一致性，我们可以将右侧的整体误差上界统一记为 $\upsilon$。由此立即可得特征函数的投影误差界受控于 $\upsilon$
+
+接下来，我们估计特征值的误差。根据三角不等式，有：
+$$\left|\lambda_{k}-\frac{a^{\mu_{1}}\left(\widehat{\xi}_{\phi k}, \widehat{\xi}_{\phi k}\right)}{\|\widehat{\xi}_{\phi k}\|^{2}}\right|\leq\left|\lambda_k-\lambda_k^{\mu_1}\right|+\left|\lambda_{k}^{\mu_1}-\frac{a^{\mu_{1}}\left(\widehat{\xi}_{\phi k}, \widehat{\xi}_{\phi k}\right)}{\|\widehat{\xi}_{\phi k}\|^{2}}\right|.$$
+
+值得注意的是，$\mathcal{P}_{=k} \widehat{\xi}_{\phi k}$ 对应于近似特征值 $\lambda_k^{\mu_1}$ 的特征函数。利用正交分解 $\widehat{\xi}_{\phi k} = \mathcal{P}_{=k} \widehat{\xi}_{\phi k} + \mathcal{P}_{\neq k} \widehat{\xi}_{\phi k}$，我们可以将上式右侧的第二项化简如下
+
+$$
+\begin{aligned}
+&\left|\lambda_{k}^{\mu_1}-\frac{a^{\mu_{1}}\left(\widehat{\xi}_{\phi k}, \widehat{\xi}_{\phi k}\right)}{\|\widehat{\xi}_{\phi k}\|^{2}}\right| \\
+=\;& \left|\lambda_k^{\mu_1}-\frac{a^{\mu_{1}}\left(\mathcal{P}_{\neq k} \widehat{\xi}_{\phi k}, \mathcal{P}_{\neq k} \widehat{\xi}_{\phi k}\right)+a^{\mu_{1}}\left(\mathcal{P}_{=k} \widehat{\xi}_{\phi k}, \mathcal{P}_{=k} \widehat{\xi}_{\phi k}\right)}{\|\widehat{\xi}_{\phi k}\|^{2}}\right| \\
+\leq\;& \frac{\left|\lambda_{k}^{\mu_1}\left(\|\widehat{\xi}_{\phi k}\|^2-\|\mathcal{P}_{=k}\widehat{\xi}_{\phi k}\|^2\right)-a^{\mu_{1}}\left(\mathcal{P}_{\neq k} \widehat{\xi}_{\phi k}, \mathcal{P}_{\neq k} \widehat{\xi}_{\phi k}\right)\right|}{\|\widehat{\xi}_{\phi k}\|^2}. 
+\end{aligned}
+$$
+
+为了进一步控制上述双线性形式 $a^{\mu_{1}}$，我们再次利用损失函数的定义和正交性，对 $\upsilon$ 进行下界展开：
+$$
+\begin{aligned} 
+\upsilon \geq\;& \mathcal{L}_{k}(\widehat{\xi}_{\phi k})-\mathcal{L}_{k}\left(\| \mathcal{P}_{= k}\widehat{\xi}_{\phi k}\|\frac{\xi_{k}}{\|\xi_{k}\|}\right)\\
+=\;& \frac{1}{2}a^{\mu_{1}}\left(\mathcal{P}_{\neq k} \widehat{\xi}_{\phi k}, \mathcal{P}_{\neq k} \widehat{\xi}_{\phi k}\right)+\frac{1}{2}a^{\mu_{1}}\left(\mathcal{P}_{= k} \widehat{\xi}_{\phi k}, \mathcal{P}_{= k} \widehat{\xi}_{\phi k}\right)-\frac{1}{2}\| \mathcal{P}_{= k}\widehat{\xi}_{\phi k}\|^{2}\lambda_{k}^{\mu_{1}}\\
+&+\frac{\mu_{2}}{4}\left[Q(\widehat{\xi}_{\phi k})^{2}+2\sum\limits_{i<k}\left\langle \widehat{\xi}_{\phi k},\frac{\xi_{i}}{\|\xi_{i}\|} \right\rangle^{2} \right]-\frac{\mu_{2}}{4}\left(\| \mathcal{P}_{= k}\widehat{\xi}_{\phi k}\|^{2}-1\right)^{2}\\
+\geq\;& \frac{1}{2}a^{\mu_{1}}\left(\mathcal{P}_{\neq k} \widehat{\xi}_{\phi k}, \mathcal{P}_{\neq k} \widehat{\xi}_{\phi k}\right)-\mu_{2}Q(\widehat{\xi}_{\phi k})\| \mathcal{P}_{= k}\widehat{\xi}_{\phi k}\|\| \mathcal{P}_{\neq k}\widehat{\xi}_{\phi k}\|. 
+\end{aligned} 
+$$
+由于 $\|\mathcal{P}_{\neq k}\widehat{\xi}_{\phi k}\|$ 已被证明由 $\upsilon$ 所控制，结合上式放缩，即可完成对目标特征值误差的最终界定。定理 \ref{mainthm} 证毕。
+\end{proof}
+
+通过对神经网络的结构参数（如宽度、深度）进行适当的选择，我们可以推导出估计误差关于样本量 $n$ 的定量收敛速率。下述推论是定理 \ref{mainthm} 的直接推论。
+\begin{corollary}
+在与定理 \ref{mainthm} 相同的假设条件下，若我们取网络深度、宽度以及惩罚参数满足：
+\begin{equation*}
+\mathcal{D}=\mathcal{O}(1),\quad\mathcal{W}=\widetilde{\mathcal{O}}(n^{w}),\quad \mu_{1}=\widetilde{\mathcal{O}}(n^{\beta}),
+\end{equation*}
+并记 $\alpha=\frac{m-2}{d}$。假设定理 \ref{mainthm} 中误差上界的三项具有一致的衰减速率 $\widetilde{\mathcal{O}}(n^{-r})$，可推导出如下参数关系：
+$$-\beta=-\alpha w=\frac{1}{2}\beta+\frac{1}{2}w-\frac{1}{4}$$
+求解该方程组，可得统一的衰减指数：
+$$r = \frac{\alpha}{6\alpha + 2} = \frac{m-2}{2(3m+d-6)}$$
+进一步地，若定义综合误差项 $\delta=\widetilde{\mathcal{O}}\left(n^{-r}\right) = \widetilde{\mathcal{O}}\left(n^{-\frac{\alpha}{6\alpha + 2}}\right)$，则特征函数的估计误差在期望意义下满足：
+\begin{equation*}
+\mathbb{E} |\mathcal{P}_{\neq k}\widehat{\xi}_{\phi k}|\lesssim C(k,\mu_{2},m,d,\Omega,V)\delta^{1/2},
+\end{equation*}
+且相应的特征值估计误差满足：
+\begin{equation*}
+\mathbb{E}\left|\lambda_{k}-\frac{a^{\mu_{1}}(\widehat{\xi}_{\phi k},\widehat{\xi}_{\phi k})}{|\widehat{\xi}_{\phi k}|^{2}}\right|\lesssim C(k,\mu_{2},m,d,\Omega,V)\delta.
+\end{equation*}
+特别地，考虑到在适当的边界条件下，目标特征函数通常具备较高的正则性（甚至满足完全光滑条件）。当平滑度参数 $m \to \infty$ 时，相应的指标 $\alpha \to \infty$，上述渐近衰减指数 $r$ 将极限趋近于 $\frac{1}{6}$。这意味着随着特征函数光滑性的提升，综合误差 $\delta$ 的收敛速率将渐近趋近于 $\widetilde{\mathcal{O}}(n^{-1/6})$。
+\end{corollary}
+
+\begin{remark}
+从上述推论可以看出，空间维数 $d$ 仅存在于误差上界的常数项中，而并未出现在样本量 $n$ 的收敛阶（即指数项）的分母主导项中。这意味着，与有限元方法（FEM）等网格依赖型传统数值方法相比，本方法的计算复杂度不会随空间维数呈指数级增长，从而在一定程度上缓解了”维数灾难”。然而需要指出的是，在较高维情形下，上界中的常数项 $C(k,\dots)$的膨胀仍可能对算法的实际收敛表现产生一定影响。
+\end{remark}
+
+
+\section{数值实验与超参数对解的影响}\label{sec_num} 
+为了验证我们理论的有效性与正确性，我们开展了数值实验，以在不同条件下逼近特征值及其对应的特征函数。
+
+在所有实验中，我们均使用标准的 Adam 优化器来训练网络。所有的实现与实验均基于 CentOS 系统下的 Python 3.9.12 和 PyTorch 框架，硬件环境配备 2 颗主频 2.40 GHz 的 Intel(R) Xeon(R) E5-2640 v4 x86\_64 处理器，以及一张 16 GB 显存的 Nvidia Tesla V100 GPU。
+
+\subsection{二维特征值问题和超参数的影响分析} 
+在本节中，我们考虑以下特征值问题。为了便于获取精确解，我们考虑一个变量分离形式的函数 $w$：
+\begin{equation}\label{eq:example1}
+\left\{\begin{aligned}
+-\Delta u + \left(\sum_{i=1}^d w(x_{i})\right)u&=\lambda u & & \text { in } \Omega \
+T u &=0 & & \text { on } \partial \Omega,
+\end{aligned}\right.
+\end{equation}
+其中 $\Omega=[0,1]^d$ 且 $w(t)=\exp(-\pi t)$（指数势）。\textcolor{red}{Eq.~\eqref{eq:conloss} 是一个变量分离方程，其解在每个维度上都表现出各向同性。可以通过利用有限元方法导出参考解。}
+
+在本节中，我们首先考虑几种低维情形，并研究计算误差如何随 $\varepsilon_1$、$\varepsilon_2$、神经网络规模以及样本量变化，并与理论结果相对应。本节中所有实验的默认设置如下：$d=2$，学习率 = 0.001，$\varepsilon_1=1000$，$\varepsilon_2=200$，$\mathcal{W} = 100$，$\mathcal{D} = 4$，epoch $= 10000$，样本量 $= 10000/3000$。我们将以此作为进行各种对照实验的基准
+线。
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures1/EigFig2023/under-different-lambda1.png}
+    \caption{Eigenvalue approximation under different $\varepsilon_1$}\label{lambda1}
+    \label{fig:lambda1}
+\end{figure}
+
+首先，我们选取不同的 $\mu_1$ 值并使用 DRM 进行求解。所得结果展示于图 \ref{fig:lambda1}。定理 \ref{mainthm} 指出，随着 $\mu_1$ 的增加，计算得到的特征值将趋近于真实值，实验结果验证了这一观察结论。
+
+接下来，我们将讨论 $\mu_2$ 对解的影响。我们选取了满足以下条件的 $\mu_2$ 值：小于 $2\lambda_1$，略大于 $2\lambda_1$ 但小于 $2\lambda_2$ 和 $2\lambda_3$，略大于 $2\lambda_2$ 和 $2\lambda_3$，以及显著大于 $2\lambda_2$ 和 $2\lambda_3$。相关结果呈现于图 \ref{fig:lambda2}。
+
+根据定理 \ref{mainthm}，当 $\mu_2$ 大于 $2\lambda_k$ 时，第 $k$ 个特征值是可以被计算出来的。实验结果也验证了这一论述。当 $\mu_2=10<2\lambda_1$ 时，算法无法计算出任何特征值。当 $2\lambda_1<\mu_2=62<2\lambda_2$ 时，第一个特征值能够被较好地计算出来，但无法收敛至第二个特征值。当 $\mu_2>2\lambda_2$ 时，所有对应的特征值均可被准确计算。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.6\textwidth]{figures1/EigFig2023/under-different-lambda2.png}
+    \caption{Eigenvalue approximation under different $\varepsilon_2$}
+    \label{fig:lambda2}
+\end{figure}
+
+值得注意的是，当 $\mu_2=62$ 时，第三个特征值似乎已被正确计算，这可能令人费解。为了阐明这一点，我们需要借助近似特征函数的热力图，如图 \ref{fig:heatmap} 所示。众所周知，在二维情形下，第二和第三个特征值在数值上相等，但对应于两个正交的特征函数。通过特征函数的热力图可以观察到，在计算第二个特征值时，由于 $\mu_2$ 取值较小，解退化为了第一个特征函数。然而，在计算第三个特征值时，损失函数包含了两个与第一个特征值相关的正交项。因此，这等价于使用 $2\mu_2$ 计算第二个特征值。这一观察结果与我们的理论分析保持一致。
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures1/EigFig2023/heat-map-reference.png}
+    \caption{Eigenfunction reference}
+\end{figure}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures1/EigFig2023/heat-map.png}
+    \caption{Heatmap for eigenfunction approximation for $\varepsilon_2=125$ and $\varepsilon_2=200$. }\label{fig:heatmap}
+\end{figure}
+
+最后，我们考察了网络宽度和采样大小对解的影响。正如预期的那样，通过增加网络宽度和扩大采样规模，我们通常能够获得更精确的解
+
+\begin{figure}[htbp]
+    \centering
+    % 第一个子图
+    \begin{subfigure}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/EigFig2023/under-different-width.png}
+        \caption{不同 $\mathcal{W}$ 下的特征值逼近}
+        \label{fig:width}
+    \end{subfigure}
+    \hfill % 关键：把两图撑开到两边
+    % 第二个子图
+    \begin{subfigure}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/EigFig2023/under-different-sample.png}
+        \caption{不同样本量下的特征值逼近}
+        \label{fig:sample}
+    \end{subfigure}
+    
+    \caption{网络宽度和采样大小的影响}
+    \label{fig:main}
+\end{figure}
+
+\subsection{立方体区域上的拉普拉斯特征值问题}\label{sec:10dcube}
+在本节及下一节中，我们在式\eqref{eq:conloss} 中选取了不同的函数 $w(x)$，包括常用的函数，如指数函数 $(w(x)=\exp(-\pi x))$ 和平方函数 $(w(x)=x^2)$。此外，我们探索了不同的区域，包括 10 维立方体和 10 维球体。在这些区域上，依赖于空间离散化的传统数值算法（如有限元法和有限差分法）一直无法提供令人满意的结果。实验的参数设置如下：
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{l|ccc}
+\toprule
+{\heiti 参数} & {\heiti 平方势} & \multicolumn{1}{p{2.2cm}}{{\heiti 指数势}} & \multicolumn{1}{p{3.2cm}}{{\heiti 简谐振子}}\\
+\midrule
+区域 & $[0,1]^{10}$ &  $[0,1]^{10}$ & $\mathbb{R}^{10}$ 中的单位球 \\
+学习率 & 0.001& 0.001& 0.001\\
+训练轮数 (Epoch)& 100000& 100000& 50000\\
+$\mu_1/\mu_2$& 2000/1000&  2000/500& 2000/600\\
+宽度/深度
+& 150/4 & 150/4 & 60/4 \\
+样本量 ($\Omega$)& 200000& 200000& 200000\\
+样本量 ($\partial\Omega$)& 80000& 80000& 80000\\
+\bottomrule
+\end{tabular}
+\caption{第 \ref{sec:10dcube} 节和第 \ref{sec:10dball} 节中的参数设置。}
+\end{table}
+
+\begin{figure}[htbp]
+    \centering
+    
+    % --- 第一行 ---
+    % 创建一个子图容器，宽度约为页面宽度的一半
+    \begin{subfigure}{0.48\linewidth}
+        \centering
+        % 图片宽度占满当前子图容器
+        \includegraphics[width=\linewidth]{figures1/1square/unn_rank1.eps}
+        \caption{方形势下的 $\widehat{\xi}_{\phi 1}$}
+        \label{fig:sq1}
+    \end{subfigure}
+    \hfill % 弹性填充，将两个子图推向两侧
+    \begin{subfigure}{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/1expc/unn_rank1.eps}
+        \caption{指数势下的 $\widehat{\xi}_{\phi 1}$}
+        \label{fig:exp1}
+    \end{subfigure}
+    
+    \vspace{1em} % 增加行间距
+    
+    % --- 第二行 ---
+    \begin{subfigure}{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/2square/unn_rank2.eps}
+        \caption{方形势下的 $\widehat{\xi}_{\phi 2}$}
+        \label{fig:sq2}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/2expc/unn_rank2.eps}
+        \caption{指数势下的 $\widehat{\xi}_{\phi 2}$}
+        \label{fig:exp2}
+    \end{subfigure}
+    
+    \vspace{1em} % 增加行间距
+    
+    % --- 第三行 ---
+    \begin{subfigure}{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/3square/unn_rank3.eps}
+        \caption{方形势下的 $\widehat{\xi}_{\phi 3}$}
+        \label{fig:sq3}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/3expc/unn_rank3.eps}
+        \caption{指数势下的 $\widehat{\xi}_{\phi 3}$}
+        \label{fig:exp3}
+    \end{subfigure}
+    
+    % 总标题
+    \caption{方形势和指数势在立方体区域对角线上的本征函数。}
+    \label{fig1}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    
+    % --- 第一行：lambda_1 ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/1square/eigenvalue_rank1.eps}
+        \caption{方势的 $\lambda_{1}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/1expc/eigenvalue_rank1.eps}
+        \caption{指数势的 $\lambda_{1}$}
+    \end{subfigure}
+    
+    \vspace{1em} % 增加行间距
+    
+    % --- 第二行：lambda_2 ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/2square/eigenvalue_rank2.eps}
+        \caption{方势的 $\lambda_{2}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/2expc/eigenvalue_rank2.eps}
+        \caption{指数势的 $\lambda_{2}$}
+    \end{subfigure}
+    
+    \vspace{1em} % 增加行间距
+    
+    % --- 第三行：lambda_3 ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/3square/eigenvalue_rank3.eps}
+        \caption{方势的 $\lambda_{3}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/3expc/eigenvalue_rank3.eps}
+        \caption{指数势的 $\lambda_{3}$}
+    \end{subfigure}
+    
+    % 总标题
+    % 这一段红字依赖 \usepackage{xcolor}
+    \caption{训练过程中方势与指数势的特征值逼近情况。}
+    \label{fig2}
+\end{figure}
+
+如图 \ref{fig1} 和 \ref{fig2} 所示，所有估计的特征值和特征函数均与其各自的精确值非常接近。计算得到的特征值小于精确值，这与定理 \ref{mainthm} 的结论一致。
+
+\subsection{单位球上的拉普拉斯特征值问题}\label{sec:10dball}
+在本节中，我们求解 $\mathbb{R}^{10}$ 和 $\mathbb{R}^{20}$ 空间中单位球的特征值问题。与上述情形不同，在此情形下，由于受到无限深势阱的束缚，所有的 $x_{i}$ 不再是独立运动的：
+\begin{equation*}
+V(x)=\left\{
+\begin{array}{ll}
+0&|x|<1,\\
++\infty&|x|\geq 1.
+\end{array}\right.
+\end{equation*}
+在此情形下，第一特征值 $\lambda_{1}$ 是四阶贝塞尔函数的第一根，而第二特征值 $\lambda_{2}$ 是五阶贝塞尔函数的第一根。所有对应的特征函数可表示为：
+\begin{equation*}
+\xi_{k}(x)\in\mathop{span}\left\{ \frac{1}{\left(\lambda_{k}|x|\right)^{4+l}}J_{4+l}(\lambda_{k}|x|)P_{l}(x),\quad l=0,1,2,\cdots, \quad k=1,2,3,\cdots .\right\},
+\end{equation*}
+其中 $P_{l}(x)$ 是一个 $l$ 次齐次多项式。
+
+\begin{figure}[htbp]
+    \centering
+    
+    % --- 第一行 (Rank 1) ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        % 使用 \linewidth 让图片自动适应子图容器的宽度
+        \includegraphics[width=\linewidth]{figures1/ball/ball_unn_rank1.eps}
+        \caption{单位球上的 $\widehat{\xi}_{\phi 1}$}
+    \end{subfigure}
+    \hfill % 左右推开
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/ball/ball_eigenvalue_rank1.eps}
+        \caption{单位球上的 $\lambda_{1}$}
+    \end{subfigure}
+    
+    \vspace{0.5em} % 行间距，防止上下两行太挤
+    
+    % --- 第二行 (Rank 2) ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/ball/ball_unn_rank2.eps}
+        \caption{单位球上的 $\widehat{\xi}_{\phi 2}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/ball/ball_eigenvalue_rank2.eps}
+        \caption{单位球上的 $\lambda_{2}$}
+    \end{subfigure}
+    
+    \vspace{0.5em} % 行间距
+    
+    % --- 第三行 (Rank 3) ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/ball/ball_unn_rank3.eps}
+        \caption{单位球上的 $\widehat{\xi}_{\phi 3}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/ball/ball_eigenvalue_rank3.eps}
+        \caption{单位球上的 $\lambda_{3}$}
+    \end{subfigure}
+    
+    % --- 总标题 ---
+    \caption{左图：对应于 10 维单位球对角线上的特征函数。右图：随训练轮数（epoch）变化的对应特征值演化。}
+    \label{fig3}
+\end{figure}
+
+对于 $\mathbb{R}^{10}$，结果展示在图 \ref{fig3} 中，在此设置下，所提出的方法较好地估计了特征值和特征函数。
+
+对于 $\mathbb{R}^{20}$ 的情形，使用蒙特卡洛方法计算积分面临一定的挑战。具体而言，高维空间区域中的均匀采样会导致采样点在边界附近相对集中。为了应对这一挑战，常见的策略包括增加采样点数量以及实施更高效的采样技术。作为一种解决方案，我们采用了分层采样方法。该方法将单位球划分为两个不同的区域，记为 $B_{20}(0,1/2)$ 和 $B_{20}(0,1)/B_{20}(0,1/2)$。我们对每个区域分别计算蒙特卡洛积分，随后将所得数值进行加权求和。
+
+这种采样方法确保了采样在一定程度上能够捕捉到区域内部的信息，从而提升了算法的性能。实验结果展示在附图 \ref{fig:20dball} 中。
+
+\begin{table}[h]
+\centering
+\begin{tabular}{l|c}
+\toprule
+{\heiti 参数} & {\heiti 简谐振子}\\
+\midrule
+区域 & $\mathbb{R}^{20}$ 中的单位球\\
+学习率 & 0.001\\
+第 1 个特征值的训练轮数 & 100000\\
+第 2、3 个特征值的训练轮数 & 200000\\
+$\mu_1/\mu_2$ & 5000/3000\\
+宽度/深度 & 120/4\\
+样本数量 ($B_{20}(0,0.5)$) & 50000\\
+样本数量 ($B_{20}(0,1)/B_{20}(0,0.5)$) & 500000\\
+样本数量 ($\partial B_{20}(0,1)$) & 200000\\
+\bottomrule
+\end{tabular}
+\caption{参数设置}
+\end{table}
+
+\begin{figure}[htbp]
+    \centering
+    
+    % --- 第一行：Rank 1 ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/20d/unn_rank1.eps}
+        \caption{单位球上的 $\widehat{\xi}_{\phi 1}$}
+        \label{fig:xi_rank1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/20d/eigenvalue_rank1.eps}
+        \caption{单位球上的 $\lambda_{1}$}
+        \label{fig:lambda_rank1}
+    \end{subfigure}
+    
+    \vspace{1em} % 增加行间距
+    
+    % --- 第二行：Rank 2 ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/20d/unn_rank2.eps}
+        \caption{单位球上的 $\widehat{\xi}_{\phi 2}$}
+        \label{fig:xi_rank2}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/20d/eigenvalue_rank2.eps}
+        \caption{单位球上的 $\lambda_{2}$}
+        \label{fig:lambda_rank2}
+    \end{subfigure}
+    
+    \vspace{1em} % 增加行间距
+    
+    % --- 第三行：Rank 3 ---
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/20d/unn_rank3.eps}
+        \caption{单位球上的 $\widehat{\xi}_{\phi 3}$}
+        \label{fig:xi_rank3}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures1/20d/eigenvalue_rank3.eps}
+        \caption{单位球上的 $\lambda_{3}$}
+        \label{fig:lambda_rank3}
+    \end{subfigure}
+    
+    \caption{左列：20维单位球对角线上的特征函数。右列：特征值随训练轮次（Epoch）的演变情况。}
+    \label{fig:20dball}
+\end{figure}
+
+\section{本章小结}\label{sec dis}
+本文研究了利用神经网络求解椭圆多重特征值问题。我们基于椭圆特征值问题的惩罚变分形式，提出了一种计算椭圆多重特征值的通用形式。我们利用 DRM 求解了该惩罚变分形式。我们建立了估计特征值与真实特征值之间误差的上界，该上界与网络的深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 以及训练样本量 $n$ 有关。通过探讨特征值问题的正则性并适当选择深度 $\mathcal{D}$ 和宽度 $\mathcal{W}$，我们表明该误差界在一定程度上缓解了维数灾难的影响。若干模拟结果验证了所提方法的有效性，并支持了我们的理论结果。
+
+\section{本章附录}\label{app:proofingen}
+\subsection{引理 \ref{lemma:staerr:Rad234} 的证明}
+\begin{proof}[引理 \ref{lemma:staerr:Rad234}]\label{pf:lemma:staerr:Rad234}
+
+引理的证明可分为两部分。我们首先证明后四个不等式，这主要依赖于 Rademacher 复杂度的 Lipschitz 收缩不等式：
+\begin{lemma}\label{lemma:staerr:liprad}
+假设函数 $\psi:\mathbb{R}^{d}\times\mathbb{R}\rightarrow\mathbb{R}$ 满足 $(x,y)\mapsto\psi(x,y)$，且对任意给定的 $x$，其关于 $y$ 是 $\ell$-Lipschitz 连续的。令 $\mathcal{N}$ 为定义在 $\Omega$ 上的函数类，并记 $\psi\circ\mathcal{N}=\{\psi\circ u:x\mapsto\psi(x,u(x)), u\in\mathcal{N}\}$，则有：
+$$ \mathfrak{R}(\psi\circ\mathcal{N})\leq\ell \ \mathfrak{R}(\mathcal{N}). $$
 \end{lemma}
+该引理的严谨推导可参见文献 \cite{ledoux2013probability} 中的推论 3.17。基于此推论，对于引理\ref{lemma:staerr:Rad234}的第二个不等式，由于此情形下的 Lipschitz 常数为 $2\mathcal{B}^{2}$，我们可得：
+$$ \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{k, 2}(u)-\widehat{\mathcal{L}}_{k, 2}(u)\right| \leq |\Omega|\mathfrak{R}\left(\left\{w u^{2}:u\in \mathcal{N}^{2}\right\}\right) \leq 2|\Omega|\mathcal{B}^{2}\mathfrak{R}\left(\mathcal{N}^{2}\right). $$
+
+同理，第三个不等式亦可由此得出，其对应的 Lipschitz 常数为 $2\mathcal{B}$。
+
+至于最后两个不等式，我们使用如下不等式： 
+\begin{equation*} 
+|a^{2}-b^{2}|\leq 2|a||a-b|+|a-b|^{2}. 
+\end{equation*}
+利用类似的方法即可推导得出相应结论。
+
+接下来，我们单独处理第一个不等式。由于梯度算子 $\nabla$ 不具备 Lipschitz 连续性，无法直接应用引理 \ref{lemma:staerr:liprad}。为此，我们需要证明 $\nabla u$ 的平方项（即 $|\nabla u|^2$）可由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 混合网络实现。具体而言，受 Baur-Strassen 关于多项式及其偏导数计算复杂度的理论启发 \cite{baur1983complexity}，我们提出如下引理：
+
+\begin{lemma}\label{lem:gradcomplexity}
+设 $u$ 为由深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 的 $\mathrm{ReLU}^{2}$ 神经网络所实现的函数，则其梯度的平方项 $|\nabla u|^2$ 可由一个深度不超过 $2\mathcal{D}$、宽度不超过 $(2\mathcal{D}+4)\mathcal{W} + 2d$ 的 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 混合网络精确表示。
+\end{lemma}
+
 \begin{proof}
-通过审慎选择参数 $\{a_{i},b_{i}\}$，可确保集合 $\{\mathrm{ReLU}^{2}(a_{i}^{T}x+b_{i})\}$ 构成多项式空间 $P(V_{\mathbf{I}})$ 的一组完备线性基（维数为 $\frac{d^{2}+3d+2}{2}$）。上述逼近界则是文献 \cite{1984Arcangeli} 工作的直接推论。证毕。
+为表述简便，下文将 $\mathrm{ReLU}$ 与 $\mathrm{ReLU}^{2}$ 激活函数分别记为 $\sigma_1$ 与 $\sigma_2$。容易观察到导数关系 $\sigma_2'(x)=2\sigma_1(x)$。我们将通过构造法来证明本引理。沿用定义 \ref{def:fnn} 中的记号，设 $u^{(k)}$ 为原 $\mathrm{ReLU}^{2}$ 网络第 $k$ 层的激活值，令 $z^{(k)} = W^{(k)}u^{(k-1)} + b^{(k)}$，且 $u^{(k)}=\sigma_2(z^{(k)})$。不失一般性，假设原网络具有单神经元线性输出，即 $u = z_1^{(\mathcal{D})}$。整个构造过程可划分为以下三个阶段：
+
+首先，我们利用 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络重现原网络的前向计算，并同时记录反向推导所需的全部局部导数。记第 $k$ 层的局部导数为 $c^{(k)}$，则有：
+$$c^{(k)} = \sigma_2'(z^{(k)}) = 2\sigma_1(z^{(k)})$$
+利用 $\sigma_1$ 函数的性质，恒等映射可精确表示为 $x = \sigma_1(x) - \sigma_1(-x)$。因此，在网络传播过程中传递并保留这些局部导数只需使用 $\sigma_1$ 激活函数。为了完整复现原网络的计算并缓存所有局部导数，此阶段需要深度 $\mathcal{D}$。在计算第 $k$ 层时，计算激活值 $u^{(k)}$ 至多消耗 $\mathcal{W}$ 个神经元，而缓存前 $k$ 层的局部导数至多消耗 $2k\mathcal{W}$ 个神经元。由此可知，该阶段的最大宽度受限于 $\mathcal{W} + 2\mathcal{D}\mathcal{W} = (2\mathcal{D}+1)\mathcal{W}$。
+
+第二步，计算伴随变量，这里伴随变量定义为网络输出对各层预激活值的梯度，即 $\delta^{(k)} = \nabla_{z^{(k)}} u$。初始化 $\delta^{(\mathcal{D})} = 1$。根据多元微积分的链式法则，可得如下反向递推关系：
+$$\delta_q^{(k)} = c_q^{(k)} \cdot \sum_{p=1}^{n_{k+1}} W_{pq}^{(k+1)} \delta_p^{(k+1)}$$
+令 $v_q^{(k)} = \sum_{p=1}^{n_{k+1}} W_{pq}^{(k+1)} \delta_p^{(k+1)}$。注意到 $v_q^{(k)}$ 仅为第 $k+1$ 层伴随变量的线性组合，无需消耗额外的非线性计算深度。利用极化恒等式（$xy=\frac{1}{4}\left[(x+y)^2-(x-y)^2\right]$），两个标量 $c_q^{(k)}$ 与 $v_q^{(k)}$ 的乘法操作可通过一个单隐藏层内包含 $4$ 个 $\sigma_2$ 神经元的子网络精确实现：
+$$c_q^{(k)} \cdot v_q^{(k)} = \frac{1}{4}\left[\sigma_2(c_q^{(k)}+v_q^{(k)}) + \sigma_2(-c_q^{(k)}-v_q^{(k)}) - \sigma_2(c_q^{(k)}-v_q^{(k)}) - \sigma_2(-c_q^{(k)}+v_q^{(k)})\right]$$
+我们将原网络的计算图进行反向展开，针对 $k$ 从 $\mathcal{D}-1$ 递减至 $1$，逐层构造上述乘法子网络以计算 $\delta^{(k)}$。由于 $c_q^{(k)}$ 和 $v_q^{(k)}$ 均可由已有的网络节点通过线性组合获得，每次计算 $\delta^{(k)}$ 仅需通过 $1$ 层 $\sigma_2$ 激活函数。该反向递推共需进行 $\mathcal{D}-1$ 次，因此本阶段消耗的深度为 $\mathcal{D}-1$。在每层中，至多需要并行计算 $\mathcal{W}$ 个乘法，消耗 $4\mathcal{W}$ 个神经元。同时，网络需要继续向下层传递剩余未使用的缓存变量 $c^{(1)}, \dots, c^{(k-1)}$，这部分占用至多 $2(\mathcal{D}-1)\mathcal{W}$ 个神经元。因此，此阶段的最大宽度界限为 $4\mathcal{W} + 2\mathcal{D}\mathcal{W}$
+
+第三步，计算梯度并平方求和：当递推至第一层并获得 $\delta^{(1)}$ 后，即可一次性求出针对所有 $d$ 个输入变量的偏导数：
+$$\partial_i u = \sum_{p=1}^{n_1} W_{pi}^{(1)} \delta_p^{(1)}, \quad i=1, 2, \dots, d$$
+最后，计算梯度向量模长的平方：
+$$|\nabla u|^2 = \sum_{i=1}^d (D_i u)^2 = \sum_{i=1}^d \left[ \sigma_2(D_i u) + \sigma_2(-D_i u) \right]$$
+由于求偏导数 $D_iu$ 属于线性映射，最终的平方与求和操作只需增加 $1$ 层 $\sigma_2$ 非线性层。在此最终层内，需并行计算 $d$ 个维度分量的平方展开项，共消耗 $2d$ 个神经元。
+
+将上述三个阶段级联，所构造的目标混合网络的总复杂度受限于：
+\begin{itemize}
+    \item 总深度： $\mathcal{D}\left(|\nabla u|^2\right) = \mathcal{D} + (\mathcal{D}-1) + 1 = 2\mathcal{D}$
+    \item 总宽度： 取各计算阶段宽度的最大值：
+    $$\mathcal{W}\left(|\nabla u|^2\right) \leq \max\left\{ (2\mathcal{D}+1)\mathcal{W}, \ 2d \right\} \leq (2\mathcal{D}+4)\mathcal{W} + 2d$$
+\end{itemize}
+
+
 \end{proof}
 
-将局部逼近函数通过单位分解拼接，即 $\tilde{f}=\sum_{\mathbf{I}}\lambda_{\mathbf{I}}\Psi_{\mathbf{I}}[f]$，即可得到如下全局逼近引理：
-\begin{lemma}[全局逼近]
-对于任意 $f\in W^{s,p}(\Omega)\cap W^{1,\infty}(\Omega)$ 且 $s\in (1,2]$，只要截断界 $\mathcal{B}\geq 2\|f\|_{W^{1,\infty}(\Omega)}$，深度 $\mathcal{D}\geq \lceil \log_{2}d\rceil +5$ 且宽度 $\mathcal{W}$ 足够大，则存在神经网络 $f_{\phi}\in \mathcal{N}^{2}(\mathcal{W},\mathcal{D},\mathcal{B})$ 使得：
-\begin{equation*}
-\|f-f_{\phi}\|_{W^{1,p}}\leq C(s,p,d,\Omega)[f]_{s,p,\Omega}\mathcal{W}^{(1-s)/d}.
-\end{equation*}
+\end{proof}
+
+\subsection{引理 \ref{lemma:staerr:Rad_cover} 的证明}
+\begin{proof}[引理 \ref{lemma:staerr:Rad_cover}]\label{pf:lemma:staerr:Rad_cover}
+首先，我们引入 Massart 有限类引理（Massart's finite class lemma），其详细证明可参阅文献 \cite{boucheron2013concentration}。
+
+\begin{lemma}[Massart 有限类引理 \cite{boucheron2013concentration}]\label{Mfinite}
+对于任意给定的有限集 $V\subset\mathbb{R}^{n}$，记其最大向量 $\ell_2$ 范数为 $D=\sup_{v\in V}\|v\|_{2}$。则有：
+$$ \mathbb{E}_{\Sigma_{n}}\left[ \sup_{v\in V}\frac{1}{n}\left| \sum_{i=1}^{n}\sigma_{i}v_{i} \right| \right] \leq \frac{D}{n}\sqrt{2\log(2|V|)}, $$
+其中 $\sigma_{i}$ 和 $\mathbb{E}_{\Sigma_{n}}$ 分别为定义 \ref{def:staerr:radcom} 中所述的 Rademacher 随机变量及其期望。
 \end{lemma}
-\begin{proof}
-由于 $\lambda_{\mathbf{I}}$ 和 $\Psi_{\mathbf{I}}[f]$ 均为 $\mathrm{ReLU}^{2}$ 网络，拼接后的 $\tilde{f}$ 宽度至多为 $N^{d}\left(2d^{2}+6d+2\right)$。计算全局导数误差有：
+接下来，我们采用标准的链式推导（Chaining Method）。令 $\varepsilon_{k}=2^{-k+1} B$。记 $\mathcal{F}_{k}$ 为 $\mathcal{F}$ 在无穷范数下的一个 $\varepsilon_{k}$-覆盖集，其基数满足 $\left|\mathcal{F}_{k}\right|=\mathcal{C}\left(\varepsilon_{k}, \mathcal{F},\|\cdot\|_{\infty}\right)$。这意味着，对于任意函数 $u \in \mathcal{F}$，必定存在 $u_{k} \in \mathcal{F}_{k}$ 使得 $\left\|u-u_{k}\right\|_{\infty} \leq \varepsilon_{k}$。令 $K$ 为一个待定的正整数。通过项的分解与三角不等式，我们有：
+
+$$ \begin{aligned} 
+    &\quad\; \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits_{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i} u\left(Z_{i}\right)\right|\right] \\ &= \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right) + \sum\limits_{j=1}^{K-1} \sum\limits_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right) + \sum\limits_{i=1}^{n} \sigma_{i} u_{1}\left(Z_{i}\right)\right|\right] \\ &\leq \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right)\right|\right] \\ &\quad + \sum\limits_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right] \\ &\quad + \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i} u_{1}\left(Z_{i}\right)\right|\right]. 
+\end{aligned} $$
+由于零函数 $0 \in \mathcal{F}$，我们可以无妨设定 $\mathcal{F}_{1}=\{0\}$，从而消除上述不等式中的第三项。对于第一项，应用 Rademacher 变量的性质与 Hölder 不等式：
 \begin{equation*}
 \begin{aligned}
-\left\|\partial_{i}f-\partial_{i}\tilde{f} \right\|_{L^{p}(\Omega)} &\leq \sum\limits_{\mathbf{I}}\left\|\partial_{i}\lambda_{\mathbf{I}}\left(f-\Psi_{\mathbf{I}}[f]\right)\right\|_{L^{p}(\Omega)}+\sum\limits_{\mathbf{I}}\left\|\lambda_{\mathbf{I}}\partial_{i}\left(f-\Psi_{\mathbf{I}}[f]\right)\right\|_{L^{p}(\Omega)}\\
-&\leq \sum\limits_{\mathbf{I}}2NC(s,p,d)[f]_{s,p,V_{\mathbf{I}}}N^{-s}+\sum\limits_{\mathbf{I}}C(s,p,d)[f]_{s,p,V_{\mathbf{I}}}N^{1-s}\\
-&\leq C(s,p,d)[f]_{s,p,\Omega}N^{1-s}.
+{}&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{t=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right)\right|\right]\\
+\leq&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n} \sum\limits_{i=1}^{n}\left|\sigma_{i}\right|\left\|u-u_{K}\right\|_{\infty}\right] \leq \varepsilon_{K}
 \end{aligned}
 \end{equation*}
-令 $\mathcal{W} \sim N^d$，代入上式即得证。证毕。
+对于第二项中的求和单元，定义向量 $v_{i}^{j}=u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)$，并应用引理 \ref{Mfinite}，得到：
+\begin{equation*}
+\begin{aligned}
+&\sum_{j=1}^{K-1} \mathbb{E}_{\{\sigma\}_{i=1}^{n}}\left[\sup _{u \in \mathcal{F}} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right]\\
+=&\sum_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{t}\right\}_{t=1}^{n}}\left[\sup _{v \in V_{j}} \frac{1}{n} \left| \sum_{i=1}^{n} \sigma_{i} v_{i}^{j}\right|\right] \leq \sum_{j=1}^{K-1} \frac{D_{j}}{n} \sqrt{2 \log \left(2\left|V_{j}\right|\right)}.
+\end{aligned}
+\end{equation*}
+根据集合 $V_{j}$ 的构造，其势满足界限 $\left|V_{j}\right| \leq\left|\mathcal{F}_{j}\right|\left|\mathcal{F}_{j+1}\right| \leq\left|\mathcal{F}_{j+1}\right|^{2}$。同时，向量的范数上界 $D_j$ 可被限制为：
+$$ \begin{aligned}
+     D_j &= \sup_{v \in V_j} \left(\sum_{i=1}^{n}\left|u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right|^{2}\right)^{1 / 2} \leq \sqrt{n}\left\|u_{j+1}-u_{j}\right\|_{\infty} \\ &\leq \sqrt{n}\left\|u_{j+1}-u\right\|_{\infty}+\sqrt{n}\left\|u_{j}-u\right\|_{\infty} = \sqrt{n} \varepsilon_{j+1}+\sqrt{n} \varepsilon_{j} = 3 \sqrt{n} \varepsilon_{j+1}. 
+\end{aligned} $$
+将其代入前式，有：
+\begin{equation*}
+\begin{aligned}
+&\sum_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{i}, Z_{t}\right\}_{t=1}^{n}}\left[\sup _{u \in \mathcal{F}} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right] \\
+&\leq \sum_{j=1}^{K-1} \frac{D_{j}}{n} \sqrt{2 \log \left(2\left|V_{j}\right|\right)} \leq \sum_{j=1}^{K-1} \frac{3 \varepsilon_{j+1}}{\sqrt{n}} \sqrt{2 \log \left(2\left|\mathcal{F}_{j+1}\right|^{2}\right)}
+\end{aligned}
+\end{equation*}
+结合上述所有界的估计，我们将离散求和转化为 Dudley 积分形式：
+\begin{equation*}
+\begin{aligned}
+&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup _{u \in \mathcal{F}} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i} u\left(Z_{i}\right)\right|\right] \leq \varepsilon_{K}+\sum_{j=1}^{K-1} \frac{6 \varepsilon_{j+2}}{\sqrt{n}} \sqrt{2 \log \left(2\left|\mathcal{F}_{j+1}\right|^{2}\right)} \\
+&=\varepsilon_{K}+\frac{6}{\sqrt{n}} \sum_{j=1}^{K-1}\left(\varepsilon_{j+1}-\varepsilon_{j+2}\right) \sqrt{2 \log \left(2 \mathcal{C}\left(\varepsilon_{j+1}, \mathcal{F},\|\cdot\|_{\infty}\right)^{2}\right)}\\
+&\leq \varepsilon_{K}+\frac{6}{\sqrt{n}} \int_{\varepsilon_{K+1}}^{B / 2} \sqrt{2 \log \left(2 \mathcal{C}\left(\varepsilon, \mathcal{F},\|\cdot\|_{\infty}\right)^{2}\right)} d \varepsilon.
+\end{aligned}
+\end{equation*}
+最后，对于任意给定的精度 $0<\delta<\frac{B}{2}$，我们总可以通过选取充分大的 $K$ 使得 $\varepsilon_{K+2}<\delta \leq \varepsilon_{K+1}$，从而完成引理的证明。
 \end{proof}
 
+\subsection{引理 \ref{lemma:staerr:pdim} 的证明}
+\begin{proof}[引理 \ref{lemma:staerr:pdim}]\label{pf:lemma:staerr:pdim}
+本引理的证明思路如下：首先，我们回顾打散与 VC 维的严格定义。
+
+为了估计多项式的 Pdim，我们引入以下引理（其详细证明见文献 \cite{anthony2009neural} 的定理 8.3）：
+
+\begin{lemma}\label{lemma:covering_number}
+设 $p_1,\cdots,p_m$ 为 $m$ 个具有 $n$ 个变量且最高次数不超过 $d$ 的多项式。若 $n \leq m$，则这些多项式符号组合的集合基数满足：
+\begin{equation*}
+|{(\operatorname{sign}(p_1(x)),\cdots,\operatorname{sign}(p_m(x))):x\in\mathbb{R}^n}| \leq 2\left(\frac{2emd}{n}\right)^n
+\end{equation*}
+
+\end{lemma}
+接下来的论证借鉴了文献 \cite{bartlett2019nearly} 中定理 6 的分析框架。需要指出的是，由于 $\mathrm{VCdim}(\operatorname{sign}(\mathcal{N})) \leq \mathrm{Pdim}(\mathcal{N})$，此处推导出的结论比原定理略强。
+
+我们构造一个新的示性函数族： 
+\begin{equation*}
+\mathcal{\widetilde{N}}={\widetilde{u}(x,y)=\operatorname{sign}(u(x)-y): u\in\mathcal{N}}
+\end{equation*}
+
+根据定义，显然有 $\mathrm{Pdim}(\mathcal{N}) \leq \mathrm{VCdim}(\widetilde{\mathcal{N}})$。因此，问题转化为界定 $\widetilde{\mathcal{N}}$ 的 VC 维。设 $\mathcal{M}$ 为实现 $\mathcal{N}$ 中函数的神经网络的参数（权重与偏置）总数。对于任意给定的点集 $\{x_i\}_{i=1}^{m}\subset X$ 和 $\{y_i\}_{i=1}^{m}\subset\mathbb{R}$，我们考察由网络参数 $a \in \mathbb{R}^{\mathcal{M}}$ 诱导的二分法（dichotomies）数量：
+\begin{equation*}
+K_{{x_i},{y_i}}(m):=|{(\operatorname{sign}(u(x_{1}, a)-y_1), \ldots, \operatorname{sign}(u(x_{m}, a)-y_m)): a \in \mathbb{R}^{\mathcal{M}}}|
+\end{equation*}
+由定义可知，$K_{\{x_i\},\{y_i\}}(m)$ 在所有可能的 $\{x_i\}_{i=1}^{m}$ 与 $\{y_i\}_{i=1}^{m}$ 上的上确界，即为函数族 $\widetilde{\mathcal{N}}$ 的增长函数（Growth function） $\mathcal{G}_{\widetilde{\mathcal{N}}}(m)$。
+
+为了能够应用引理 \ref{lemma:covering_number}，我们需要将参数空间 $\mathbb{R}^{\mathcal{M}}$ 划分为若干子区域，使得在每一个子区域内，网络输出 $u(x_i,a)-y_i$ 关于参数 $a$ 均表现为无断点（breakpoints）的多项式。沿用文献 \cite{bartlett2019nearly} 中的划分策略，我们将参数空间划分为 $\{P_1,P_2,\cdots,P_N\}$，其中区域总数 $N$ 满足：
+\begin{equation} \label{pdimb1}
+N\leq\prod_{i=1}^{\mathcal{D}-1}2\left(\frac{2emk_i(1+(i-1)2^{i-1})}{\mathcal{M}i}\right)^{\mathcal{M}i}
+\end{equation}
+上式中，$k_i$ 表示神经网络第 $i$ 层的神经元数量，而 $\mathcal{M}_i$ 表示截至第 $i$ 层（包含第 $i$ 层）所有神经元输入的参数总数。基于此划分，二分法总数可由各子区域内的二分法数量之和控制：
+\begin{equation} \label{pdimb2}
+K_{{x_i},{y_i}}(m)\leq\sum_{i=1}^{N}|{(\operatorname{sign}(u(x_{1}, a)-y_1), \cdots, \operatorname{sign}(u(x_{m}, a)-y_m)): a\in P_i}|
+\end{equation}
+
+注意到在每个子区域 $P_i$ 内，$u(x_i,a)-y_i$ 是关于 $a$ 的多项式。如文献 \cite{bartlett2019nearly} 所证，该多项式的次数与其自身次数一致，且上界为 $1 + (\mathcal{D}-1)2^{\mathcal{D}-1}$。因此，直接应用引理 \ref{lemma:covering_number} 可得每个子区域的界：
+\begin{align}
+& |{(\operatorname{sign}(u(x_{1}, a)-y_1), \cdots, \operatorname{sign}(u(x_{m}, a)-y_m)): a\in P_i}|\nonumber \\
+& \leq2\left(\frac{2em(1+(\mathcal{D}-1)2^{\mathcal{D}-1})}{\mathcal{M}{\mathcal{D}}}\right)^{\mathcal{M}{\mathcal{D}}}\label{pdimb3}.
+\end{align}
+将式 (\ref{pdimb1}) 和 (\ref{pdimb3}) 代入式 (\ref{pdimb2}) 中，可推导出：
+\begin{equation*}
+K_{{x_i},{y_i}}(m)\leq\prod_{i=1}^{\mathcal{D}}2\left(\frac{2emk_i(1+(i-1)2^{i-1})}{\mathcal{M}_i}\right)^{\mathcal{M}i}.
+\end{equation*}
+由于该上界对所有样本点集均一致成立，故增长函数满足：
+\begin{equation*}
+\mathcal{G}_{\widetilde{\mathcal{N}}}(m)\leq\prod_{i=1}^{\mathcal{D}}2\left(\frac{2emk_i(1+(i-1)2^{i-1})}{\mathcal{M}_i}\right)^{\mathcal{M}_i},
+\end{equation*}
+最终，通过类似于文献 \cite{bartlett2019nearly} 中定理 6 的代数化简（令 $\mathcal{G}_{\widetilde{\mathcal{N}}}(m) < 2^m$ 并求解 $m$ 的界），我们可得：
+\begin{equation*}
+\mathrm{Pdim}(\mathcal{N})\lesssim C\left(\mathcal{D}^2\mathcal{W}^2 \log \mathcal{U}+\mathcal{D}^3\mathcal{W}^2\right)
+\lesssim C\left(\mathcal{D}^2\mathcal{W}^2\left( \mathcal{D}+\log \mathcal{W}\right)\right)
+\end{equation*}
+其中常数 $C$ 与网络架构无关，$\mathcal{U}$ 为实现函数族 $\mathcal{N}$ 的神经网络中包含的神经元总数。至此，引理得证。
+\end{proof}
+
+
+
+%%%%==========================================================%%%
