@@ -67,7 +67,7 @@ $$\int_{\Omega} \nabla u \cdot \nabla \varphi \, dx \le \int_{\Omega} a(x)u\varp
 本节将建立全连接深度神经网络的数学框架并引入相关记号。
 
 \begin{definition}[全连接神经网络，Fully Connected Neural Network, FNN]\label{def:fnn}
-我们将全连接深度神经网络表示为参数化函数$v_{\phi}: \mathbb{R}^{d} \to \mathbb{R}$。该网络通过层级递归的方式定义如下：
+我们将全连接深度神经网络表示为参数化函数 $v_{\phi}: \mathbb{R}^{d} \to \mathbb{R}$。该网络通过层级递归的方式定义如下：
 \begin{equation}\label{eq:nn:fcnetwork}
 \begin{aligned}
 v_{0}(x) &= x, \\
@@ -77,11 +77,11 @@ v_{\phi}(x) &= v_{L}(x) = A_{L} v_{L-1} + b_{L},
 \end{equation}
 其中，$L$ 表示网络的层数（即深度）。对于第 $\ell$ 层，$\boldsymbol{A}_{\ell} \in \mathbb{R}^{N_{\ell} \times N_{\ell-1}}$ 为权重矩阵，$b_{\ell} \in \mathbb{R}^{N_{\ell}}$ 为偏置向量，$N_{\ell}$ 表示该层的神经元个数（其中 $N_0 = d$ 为输入维数， $N_L=1$ 为输出维数）。
 
-函数 $\sigma_{\ell}$ 为按分量的激活函数。在本文中主要用到的激活函数包括：
+函数 $\sigma_{\ell}$ 为逐分量激活函数。在本文中主要用到的激活函数包括：
 \begin{itemize}
   \item 线性整流单元（Rectified Linear Unit, ReLU），定义为：
   $$\sigma(x) = \mathrm{ReLU}(x) = \max\{0, x\},$$
-  \item $k$次幂次整流单元（Rectified Power Unit, RePU）定义为 
+  \item $k$ 次幂次整流单元（Rectified Power Unit, RePU）定义为 
   $$\sigma(x) = \mathrm{ReLU}^{k}(x) = \max\{0, x\}^k,$$
   其中 $k \in \mathbb{N}^{+}$。
   \item Tanh函数：定义为 $\sigma(x) = \tanh(x) = \frac{e^{x} - e^{-x}}{e^{x} + e^{-x}}$。
@@ -89,7 +89,7 @@ v_{\phi}(x) &= v_{L}(x) = A_{L} v_{L-1} + b_{L},
 \end{definition}
 
 \begin{definition}[神经网络的参数]
-网络的深度$\mathcal{D}$ 和宽度$\mathcal{W}$ 定义为：
+网络的深度 $\mathcal{D}$ 和宽度 $\mathcal{W}$ 定义为：
 \begin{equation*}
 \mathcal{D} = L, \quad \mathcal{W} = \max_{\ell=1, \dots, L} N_{\ell}.
 \end{equation*}
@@ -119,7 +119,7 @@ v_{\phi}(x) &= v_{L}(x) = A_{L} v_{L-1} + b_{L},
 
 尽管全连接神经网络具有普适逼近性质，但在处理深层结构时，往往面临梯度消失或梯度爆炸的问题，导致训练困难。为了克服这一挑战，本文在实际计算中采用了残差神经网络（Residual Neural Network, ResNet）。
 
-与方程\eqref{eq:nn:fcnetwork}定义的标准前馈结构不同，残差网络引入了“跳跃连接”，使得网络学习的是恒等映射的残差。
+与方程 \eqref{eq:nn:fcnetwork} 定义的标准前馈结构不同，残差网络引入了“跳跃连接”，使得网络学习的是恒等映射的残差。
 
 \begin{definition}[残差神经网络]
 一个包含 $L$ 个残差块的深度残差网络 $v_{\phi}: \mathbb{R}^{d} \to \mathbb{R}$ 定义如下：
@@ -149,25 +149,25 @@ v_{\phi}(x) = A_{out} v_{L}(x) + b_{out},
 
 式 \eqref{eq:resnet:block} 中的 $v_{\ell-1}(x)$ 项通常被称为跳跃连接。这一架构设计的优势在于，它为反向传播过程中的梯度提供了一条无损流通的”短路”路径，缓解了深层网络中常见的梯度消失问题，从而提升了模型的训练稳定性与拟合复杂函数的表达能力。
 
-在后续的数值实验中，我们主要采用基于 $\mathrm{ReLU}^{2}$ 激活函数的残差神经网络来最小化损失函数。现有文献与实证结果均表明，在求解复杂的偏微分方程时，该架构往往表现出优于标准 FNN 的精度与收敛速度。然而，需要指出的是，本文前述的部分理论结果（例如定理 \ref{th4.3} 中的误差估计）是在 FNN 的假设框架下推导得出的。这就引出了一个自然的问题：针对 FNN 建立的理论边界是否能够推广至实验中所使用的 ResNet 架构？
+在后续的数值实验中，我们主要采用基于 $\mathrm{ReLU}^{2}$ 激活函数的残差神经网络来最小化损失函数。现有文献与实证结果均表明，在求解复杂的偏微分方程时，该架构往往表现出优于标准 FNN 的精度与收敛速度。然而，需要指出的是，本文前述的部分理论结果（例如定理 \ref{th4.3} 中的误差估计）是在 FNN 的假设框架下推导得出的。这就引出了一个自然的问题：针对 FNN 建立的理论结果是否能够推广至实验中所使用的 ResNet 架构？
 
 只要注意到恒等映射可以被特定激活函数的线性组合精确表示，ResNet 中的任何一个残差块就可以被等价地重构为具有相同深度的 FNN 结构。具体而言，对于 $\mathrm{ReLU}$ 和 $\mathrm{ReLU}^{2}$ 激活函数，我们拥有以下代数恒等式：
 \begin{align}
 x &= \mathrm{ReLU}(x) - \mathrm{ReLU}(-x), \\
 x &= \frac{1}{2}\left[\mathrm{ReLU}^{2}(x+1) + \mathrm{ReLU}^{2}(-x-1) - \mathrm{ReLU}^{2}(x) - \mathrm{ReLU}^{2}(-x) - 1\right]. \label{eq:relu2_identity}
 \end{align}
-利用上述恒等式，式 \eqref{eq:resnet:block} 中的恒等路径 $v_{\ell-1}(x)$ 可以被转化为隐藏层的激活输出与线性偏置的组合（如式 \eqref{eq:relu2_identity} 中的常数项 $-1/2$ 可被直接吸收到下一层的偏置向量 $b$ 中）。因此，通过适当扩大网络每一层的宽度，ResNet 的前向传播过程可以等价于一个 FNN。基于这一等价性，前文针对 FNN 所建立的逼近与误差分析理论，只需经过代数推导与常数放缩，即可平移至 ResNet 之中。
+利用上述恒等式，式 \eqref{eq:resnet:block} 中的恒等路径 $v_{\ell-1}(x)$ 可以被转化为隐藏层的激活输出与线性偏置的组合（如式 \eqref{eq:relu2_identity} 中的常数项 $-1/2$ 可被直接吸收到下一层的偏置向量 $b$ 中）。因此，通过适当扩大网络每一层的宽度，ResNet 的前向传播过程可以等价于一个 FNN。基于这一等价性，前文针对 FNN 所建立的逼近与误差分析理论，只需经过代数推导与常数放缩，即可推广至 ResNet。
 
 \subsection{范数与内积}
-接下来，我们介绍一些常用范数的符号。
+接下来，我们介绍常用的范数符号。
 \begin{definition}[范数与内积]
 设 $\Omega \subset \mathbb{R}^d$ 为有界区域。对于定义在 $\Omega$ 上的函数 $u\in L^2(\Omega)$，其 $L^2$-范数定义为：
 \begin{equation*}
 \|u\|_{L^2(\Omega)} = \left( \int_{\Omega} |u(x)|^2 \text{dx} \right)^{1/2}.
 \end{equation*}
-为简便起见，若无特殊说明，下文常将 $L^2$-范数简记为 $\|\cdot\|_{L^2}$ 或 $\|\cdot\|$。
+为简便起见，若无特殊说明，下文将 $L^2$-范数简记为 $\|\cdot\|_{L^2}$ 或 $\|\cdot\|$。
 
-对于任意正整数 $m \in \mathbb{N}^+$ 与 $1 \le p < \infty$，Sobolev 空间 $W^{m,p}(\Omega)$由所有阶数不超过 $m$ 的弱导数均属于 $L^p(\Omega)$ 的函数组成。借助多重指标 $\alpha$，其 $W^{m,p}$-范数定义为：
+对于任意正整数 $m \in \mathbb{N}^+$ 与 $1 \le p < \infty$，Sobolev 空间 $W^{m,p}(\Omega)$ 由所有阶数不超过 $m$ 的弱导数均属于 $L^p(\Omega)$ 的函数组成。借助多重指标 $\alpha$，其 $W^{m,p}$-范数定义为：
 $$\|u\|_{W^{m,p}(\Omega)} = \left( \sum_{|\alpha| \le m} \|D^\alpha u\|_{L^p(\Omega)}^p \right)^{1/p}.$$
 作为 $W^{m,p}$ 范数的特例，当 $p=2$ 时，$W^{m,2}(\Omega)$ 构成一个 Hilbert 空间，习惯上将其记为 $H^m(\Omega)$。
 \begin{equation*}
@@ -202,18 +202,18 @@ $$\|u\|_{W^{m,p}(\Omega)} = \left( \sum_{|\alpha| \le m} \|D^\alpha u\|_{L^p(\Om
 \end{definition}
 
 \subsection{统计机器学习相关定义}
-给定来自均匀分布的 $n$ 个独立同分布 (i.i.d) 样本 $\mathbf{Z}_{n}=\left\{Z_{i}\right\}_{i=1}^{n}$，我们可以利用 Rademacher 复杂度来评估给定函数类 $\mathcal{N}$ 在 $n$ 个随机样本 $\mathbf{Z}_{n}$ 上的限制容量。
+给定来自均匀分布的 $n$ 个独立同分布 (i.i.d.) 样本 $\mathbf{Z}_{n}=\left\{Z_{i}\right\}_{i=1}^{n}$，我们可以利用 Rademacher 复杂度来评估给定函数类 $\mathcal{N}$ 在 $n$ 个随机样本 $\mathbf{Z}_{n}$ 上的限制容量。
 \begin{definition}[Rademacher复杂度，Rademacher Complexity]\label{def:staerr:radcom}
-设集合 $A \subseteq \mathbb{R}^{n}$，该{\heiti 集合}经验Rademacher复杂度定义为：
+设集合 $A \subseteq \mathbb{R}^{n}$，该{\heiti 集合}的经验 Rademacher 复杂度定义为：
 $$\mathfrak{R}(A)=\mathbb{E}_{\mathbf{\sigma}}\left[\sup _{a \in A} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i} a_{i}\right|\right]$$
 其中 $\{\sigma_{i}\}_{i=1}^{n}$ 是 $n$ 个独立同分布的拉德马赫随机变量，满足 $\mathbb{P}(\sigma_{i}=1)=\mathbb{P}(\sigma_{i}=-1)=1/2$。
 
-进一步地，给定包含 $n$ 个独立同分布样本的随机向量 $\mathbf{Z}_{n}=(Z_1, \dots, Z_n)$，{\heiti 函数类} $\mathcal{N}$ 关于该样本的经验Rademacher复杂度定义为：
+进一步地，给定包含 $n$ 个独立同分布样本的随机向量 $\mathbf{Z}_{n}=(Z_1, \dots, Z_n)$，{\heiti 函数类} $\mathcal{N}$ 关于该样本的经验 Rademacher 复杂度定义为：
 $$\mathfrak{R}(\mathcal{N})=\mathbb{E}_{\mathbf{Z}_{n}, \mathbf{\sigma}}\left[\sup _{u \in \mathcal{N}} \frac{1}{n} \left| \sum_{i=1}^{n} \sigma_{i} u(Z_{i}) \right|\right].$$
 \end{definition}
 
 \begin{definition}[覆盖与覆盖数，Covering Number]\label{def:staerr:cover}
-假设 $U \subset \mathbb{R}^{n}$。对于任意 $\varepsilon>0$，称集合 $V \subset \mathbb{R}^{n}$ 为 $U$ 关于无穷范数距离 $d_{\infty}$ 的一个 $\varepsilon$-覆盖（$\varepsilon$-cover），若对于任意 $u \in U$，均存在 $v \in V$ 使得 $d_{\infty}(u, v)<\varepsilon$，其中距离 $d_{\infty}$ 定义为：
+假设 $U \subset \mathbb{R}^{n}$。对于任意 $\varepsilon > 0$，称集合 $V \subset \mathbb{R}^{n}$ 为 $U$ 关于无穷范数距离 $d_{\infty}$ 的一个 $\varepsilon$-覆盖（$\varepsilon$-cover），若对于任意 $u \in U$，均存在 $v \in V$ 使得 $d_{\infty}(u, v)<\varepsilon$，其中距离 $d_{\infty}$ 定义为：
 $$d_{\infty}(u, v):=\|u-v\|_{\infty}.$$
 集合 $U$ 关于距离 $d_{\infty}$ 的覆盖数记为 $\mathcal{C}(\varepsilon, U, d_{\infty})$，定义为所有可能的 $\varepsilon$-覆盖中基数最小的覆盖所包含的元素个数。
 \end{definition}
@@ -238,9 +238,9 @@ u\left(x_{i}\right)=b_{i}, \quad i=1,2, \ldots, n.
 \end{definition}
 
 \begin{definition}[伪打散，Pseudo-shattering]\label{def:staerr:pseshatter}
-令 $\mathcal{N}$ 为从空间 $\mathcal{X}$ 到 $\mathbb{R}$ 的函数族。设存在样本子集 $S=\left\{x_{1}, x_{2}, \cdots, x_{n}\right\} \subset \mathcal{X}$。若存在一组实数界限 $y_{1},\cdots,y_{n} \in \mathbb{R}$，使得对于任意的符号分配向量 $b \in\{-1, 1\}^{n}$，都至少存在一个函数 $u \in \mathcal{N}$ 满足：
+令 $\mathcal{N}$ 为从空间 $\mathcal{X}$ 到 $\mathbb{R}$ 的函数族。设存在样本子集 $S=\left\{x_{1}, x_{2}, \cdots, x_{n}\right\} \subset \mathcal{X}$。若存在一组实数界限 $y_{1}, \cdots, y_{n} \in \mathbb{R}$，使得对于任意符号分配向量 $b \in \{-1, 1\}^{n}$，都至少存在一个函数 $u \in \mathcal{N}$ 满足：
 $$\operatorname{sign}\left(u(x_{i})-y_{i}\right)=b_{i}, \quad \forall i=1,2, \ldots, n,$$
-则称集合 $S$ 被函数类 $\mathcal{N}$ 伪打散，且称向量 $\mathbf{y} = (y_{1}, \cdots, y_{n})$ 是该打散的见证
+则称集合 $S$ 被函数类 $\mathcal{N}$ 伪打散，且称向量 $\mathbf{y} = (y_{1}, \cdots, y_{n})$ 是该打散的见证。
 %TODO: 见证这个词不太好，后续可以考虑替换为witness
 \end{definition}
 

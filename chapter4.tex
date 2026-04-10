@@ -6,7 +6,7 @@
 
 近年来，以 DRM 为代表的无网格深度学习算法为突破高维 PDE 的算力瓶颈提供了新的思路，并在纯线性或低阶方程域建立了较为完善的误差分析体系。然而，将 DRM 推广至半线性体系时，非线性项的引入从根本上改变了问题的变分结构与解的正则性。一方面，非线性特征往往导致解场存在多重分支甚至奇异性；另一方面，高阶或指数形式的非线性增长会使得能量泛函高度非凸，且失去全局 Lipschitz 连续性，导致神经网络的经验风险极易陷入发散或局部陷阱。当前理论框架尚未能从严格数学角度完全量化并控制由”非线性诱导的统计与逼近误差”，这构成了当前科学机器学习领域有待研究的重要课题。
 
-鉴于当前非线性 DRM 理论的缺失，本章针对高维半线性椭圆方程开展了系统的算法改良与非渐近误差分析。主要做出了以下贡献：
+鉴于当前非线性 DRM 理论的缺失，本章针对高维半线性椭圆方程开展了系统的算法改良与非渐近误差分析。主要做出了如下贡献：
 \begin{itemize}
 \item 针对半线性项引发的泛函发散风险，本章提出了一种引入截断界 $\mathcal{B}$ 的修正能量泛函极小化问题。在合理的正则性与次临界增长假设下，证明了该修正变分问题的解与原方程在 Robin 及 Dirichlet 边界条件下的弱解具有等价性，有利于稳定非凸优化过程。
 \item 突破了传统线性分析的局限，建立了一套全新的非渐近误差分析框架。本章将深度神经求解器的总误差精确解耦为逼近误差、统计误差（泛化误差）与截断误差，并利用 Rademacher 复杂度理论，推导了由网络深度、宽度以及样本量显式表达的泛化边界。
@@ -21,11 +21,11 @@
  u(x) + \frac{1}{\mu}\frac{\partial u(x)}{\partial n} &=h(x) & & \text { on } \partial \Omega
 \end{aligned}\right.
 \end{equation}
-其中参数 $\mu \in (0,+\infty]$。当 $\mu < +\infty$ 时，该条件为 Robin 边界条件；当 $\mu = +\infty$ 时，边界条件中的导数项系数趋于零，从而退化为 Dirichlet 边界条件
+其中参数 $\mu \in (0,+\infty]$。当 $\mu < +\infty$ 时，该条件为 Robin 边界条件；当 $\mu = +\infty$ 时，边界条件中的导数项系数趋于零，从而退化为 Dirichlet 边界条件。
 
 为了确保神经网络能够进行有效的函数逼近，PDE 的解需要具备充分的正则性。为此，我们需对方程 \eqref{eq:maineq} 的求解区域、源项以及非线性项施加适当的假设，以从理论上保证解的存在性、唯一性及高阶可导性。后续分析均基于以下基本假设：
 \begin{assumption}[正则性条件]\label{ass:f}
-对于方程\ref{eq:maineq}，我们作如下假设
+对于方程 \ref{eq:maineq}，我们作如下假设：
 \begin{enumerate}
 \item[(a)] 区域 $\Omega \subset \mathbb{R}^N$ 为有界开集，且其边界 $\partial \Omega$ 具有 $C^{1,1}$ 正则性，或 $\Omega$ 为凸多面体。
 \item[(b)] 内部源项满足 $g \in L^2(\Omega)$，边界函数满足 $h \in H^{1/2}(\partial \Omega)\cap L^{\infty}(\partial \Omega)$。
@@ -38,7 +38,7 @@ $$|V(s)| \le C(1 + |s|^p)$$
 \end{enumerate}
 \end{assumption}
 
-值得强调的是，假设\ref{ass:f}(d)的增长性条件实际上保证了$V(s)\in L^{\infty}(\Omega)$。而假设 \ref{ass:f}(d) 中对 $V(u)$ 的限制主要是为了确保能量泛函的严格凸性。若仅考察弱解的存在性，该条件可被适当弱化。
+值得强调的是，假设 \ref{ass:f}(d) 的增长性条件实际上保证了 $V(s)\in L^{\infty}(\Omega)$。而假设 \ref{ass:f}(d) 中对 $V(u)$ 的限制主要是为了确保能量泛函的严格凸性。若仅考察弱解的存在性，该条件可被适当弱化。
 
 基于变分法（Variational Methods），我们可以将方程 \eqref{eq:maineq} 的强形式转化为能量泛函的极小化问题。定义能量泛函 $J: H^1(\Omega) \to \mathbb{R}$ 如下：
 \begin{equation}\label{eq:ch3loss}
@@ -51,9 +51,160 @@ J(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial
 在假设 \ref{ass:f} 成立的条件下，方程 \eqref{eq:maineq} 存在唯一的解 $u \in H^2(\Omega)$，且满足如下正则性估计：
 $$\|u\|_{H^2(\Omega)} \le C \left( \|g - V(u)\|_{L^2(\Omega)} + \|h\|_{H^{1/2}(\partial \Omega)} + \|u\|_{H^1(\Omega)} \right)$$
 \end{theorem}
-\begin{proof}
-本定理的证明参考了 \cite{2013Roubiek}（第二节）、\cite{evans2010partial}（第八章） 以及 \cite{brezis2011functional}（第八、九章）中关于椭圆方程经典正则性理论的结论。为保持行文流畅，详细的推导过程参见附录 \ref{pf:th:ch3reg}。
+本定理的证明参考了 \cite{2013Roubiek}（第二节）、\cite{evans2010partial}（第八章） 以及 \cite{brezis2011functional}（第八、九章）中关于椭圆方程经典正则性理论的结论。
+\begin{proof}[Robin边界条件]
+定义泛函 $J: H^1(\Omega) \to \mathbb{R}$ 为：
+$$J(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} u^2 \, dS + \int_{\Omega} W(u) \, dx - \int_{\Omega} gu \, dx - \mu \int_{\partial \Omega} hu \, dS$$
+其中 $W(s) = \int_0^s V(t) \, dt$。我们将泛函分为二次项 $Q(u)$、非线性项 $N(u)$ 以及线性项 $L(u)$。通过计算 $J(u)$ 的 Gâteaux 变分可知，$J(u)$ 的驻点即为方程 \eqref{eq:maineq} 的弱解。下文将基于变分法直接法分步证明解的存在性、唯一性与正则性。
+
+第一步：证明泛函 $J(u)$ 的强制性。
+即证明当 $\|u\|_{H^1} \to \infty$ 时，$J(u) \to \infty$。
+首先，考察泛函的二次项。在 $H^1(\Omega)$ 空间中，由于 $\mu > 0$，根据广义 Poincaré 不等式，存在常数 $C_1 > 0$ 使得：
+$$\frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} u^2 \, dS \ge C_1 \|u\|_{H^1(\Omega)}^2$$
+记 $\lambda_1$ 为对应拉普拉斯算子的第一特征值，由 Rayleigh 商的定义可知：
+\begin{equation*}
+Q(u) \ge \frac{\lambda_1}{2} \int_{\Omega} u^2 \, dx.
+\end{equation*}
+其次，对于非线性势能项，由假设 $V'(u) \ge -\gamma$ 且积分下限条件，可得 $W(u) \ge -\frac{\gamma}{2} u^2$。由于 $\gamma < \lambda_1$，可以取 $\varepsilon = 1 - \frac{\gamma}{\lambda_1} > 0$。通过配凑，可将二次项与非线性项合并放缩为：
+\begin{equation*}
+\begin{aligned}
+Q(u) + N(u) &\ge (1-\varepsilon)Q(u) + \varepsilon Q(u) - \frac{\gamma}{2}\|u\|_{L^2}^2\\
+&\ge \varepsilon Q(u) + \left( \frac{\gamma}{\lambda_1} \frac{\lambda_1}{2} \|u\|_{L^2}^2 - \frac{\gamma}{2} \|u\|_{L^2}^2 \right) \\
+&= \varepsilon Q(u)
+\end{aligned}
+\end{equation*}
+最后，利用 Cauchy-Schwarz 不等式及迹定理，线性项 $L(u)$ 可被控制为：
+$$\left| \int_{\Omega} gu \, dx + \mu \int_{\partial \Omega} hu \, dS \right| \le \|g\|_{L^2}\|u\|_{L^2} + \mu \|h\|_{L^2(\partial\Omega)}\|u\|_{L^2(\partial\Omega)} \le C_2 \|u\|_{H^1(\Omega)}$$
+综上可得 $J(u) \ge \varepsilon C_1 \|u\|_{H^1(\Omega)}^2 - C_2 \|u\|_{H^1(\Omega)}$。由于二次项的增长占优，当 $\|u\|_{H^1} \to \infty$ 时，$J(u) \to \infty$，强制性得证。
+
+第二步：提取极小化序列的弱收敛子列。
+由强制性可知 $J(u)$ 存在下界，记 $m = \inf_{u \in H^1(\Omega)} J(u)$。由下确界定义，存在极小化序列 $\{u_k\} \subset H^1(\Omega)$ 使得 $\lim_{k \to \infty} J(u_k) = m$。
+由于 $\{J(u_k)\}$ 收敛，故其必定有界。结合强制性可知，序列的范数 $\|u_k\|_{H^1(\Omega)}$ 一致有界。根据 Banach-Alaoglu 定理，自反的 Hilbert 空间中的有界序列必存在弱收敛子列。不妨仍记该子列为 $\{u_k\}$，则存在 $u^* \in H^1(\Omega)$ 使得：
+$$u_k \rightharpoonup u^* \quad \text{in } H^1(\Omega)$$
+
+第三步，证明泛函的弱下半连续性（w.l.s.c.）。
+我们需要证明 $J(u^*) \le \liminf_{k \to \infty} J(u_k)$。我们将分别考察泛函的各项：
+\begin{itemize}
+\item {\heiti 梯度项：}在 Hilbert 空间中范数具有弱下半连续性，故：
+$$\int_{\Omega} |\nabla u^*|^2 dx \le \liminf_{k \to \infty} \int_{\Omega} |\nabla u_k|^2 dx$$
+\item {\heiti 边界项：}根据 Rellich-Kondrachov 紧嵌入定理的边界版本，$H^1(\Omega)$ 紧嵌入到 $L^2(\partial \Omega)$ 中。因此 $H^1$ 中的弱收敛蕴含 $L^2(\partial \Omega)$ 中的强收敛，即 
+$$\int_{\partial \Omega} (u^*)^2 \, dS = \lim_{k \to \infty} \int_{\partial \Omega} u_k^2 \, dS$$
+\item {\heiti 线性项：}对于连续线性泛函，弱收敛直接保证了极限的交换性：
+$$\int_{\Omega} gu_k dx \to \int_{\Omega} gu^* dx \quad \text{且} \quad \int_{\partial \Omega} hu_k dS \to \int_{\partial \Omega} hu^* dS$$
+\item {\heiti 非线性项：}同样由紧嵌入定理，$H^1(\Omega)$ 紧嵌入到 $L^2(\Omega)$，故 $u_k \to u^*$ 在 $L^2(\Omega)$ 中强收敛。进一步可提取子列使得 $u_k(x) \to u^*(x)$ 几乎处处成立。
+由假设 $V'(s) \ge -\gamma$（不妨设 $W(0)=0$ 以及 $V(0)=0$），可知辅助函数 $\tilde{W}(s) = W(s) + \frac{\gamma}{2}s^2 \ge 0$。由于 $\tilde{W}(s)$ 非负且连续，我们可以合法地对其应用 Fatou 引理：
+$$\int_{\Omega} \tilde{W}(u^*) \, dx \le \liminf_{k \to \infty} \int_{\Omega} \tilde{W}(u_k) \, dx$$
+即：
+$$\int_{\Omega} \left( W(u^*) + \frac{\gamma}{2}(u^*)^2 \right) \, dx \le \liminf_{k \to \infty} \int_{\Omega} \left( W(u_k) + \frac{\gamma}{2}u_k^2 \right) \, dx$$
+由于 $\frac{\gamma}{2} \int_{\Omega} u_k^2 \, dx$ 是一个存在确定极限的强收敛序列，我们可以利用下极限的性质 $\liminf (a_k + b_k) = \liminf a_k + \lim b_k$ 将其分离并抵消：
+$$\int_{\Omega} W(u^*) \, dx + \frac{\gamma}{2} \int_{\Omega} (u^*)^2 \, dx \le \liminf_{k \to \infty} \int_{\Omega} W(u_k) \, dx + \frac{\gamma}{2} \int_{\Omega} (u^*)^2 \, dx$$
+两边同时减去 $\frac{\gamma}{2} \int_{\Omega} (u^*)^2 \, dx$，得到：
+$$\int_{\Omega} W(u^*) \, dx \le \liminf_{k \to \infty} \int_{\Omega} W(u_k) \, dx$$
+\end{itemize}
+
+综合上述四项，严格得出结论：
+$$J(u^*) \le \liminf_{k \to \infty} J(u_k)$$
+
+第四步，证明解的存在性。结合第二、三步的结论，我们有：
+$$J(u^*) \le \liminf_{k \to \infty} J(u_k) = \lim_{k \to \infty} J(u_k) = m$$
+又因 $m = \inf_{u \in H^1(\Omega)} J(u)$，必有 $J(u^*) \ge m$。故 $J(u^*) = m$，这表明 $u^{*} \in H^1(\Omega)$ 为能量泛函的全局极小值点，即弱解存在。
+
+第五步，证明解的唯一性。唯一性等价于泛函的严格凸性。由于线性项 $L(u)$ 是仿射的，不影响凸性。对于二次项 $Q(u)$，由于 $\mu > 0$，其满足对任意 $u \neq v$ 及 $t \in (0, 1)$：
+\begin{equation}\label{eq:Qu}
+Q(tu + (1-t)v) = tQ(u) + (1-t)Q(v) - \frac{1}{2}t(1-t)\left( \int_{\Omega} |\nabla(u-v)|^2 \, dx + \mu \int_{\partial \Omega} (u-v)^2 \, dS \right)
+\end{equation}
+对于非线性项 $N(u)$，考虑辅助函数 $W_s(s) = W(s) + \frac{\gamma}{2}s^2$。因其二阶导数：$W_s''(s) = W''(s) + \gamma \ge -\gamma + \gamma = 0$，$W_s(s)$ 是凸函数。将其代入积分，得到：
+\begin{equation}\label{eq:Nu}
+N(tu + (1-t)v) \le tN(u) + (1-t)N(v) + \frac{\gamma}{2}t(1-t)\int_{\Omega} (u-v)^2 \, dx
+\end{equation}
+将 \eqref{eq:Qu} 与 \eqref{eq:Nu} 相加，并利用 Rayleigh 商定义（令 $w = u - v$）:
+$$\int_{\Omega} |\nabla w|^2 \, dx + \mu \int_{\partial \Omega} w^2 \, dS \ge \lambda_1 \int_{\Omega} w^2 \, dx$$
+由于 $\gamma < \lambda_1$，不等式 \eqref{eq:Qu} 尾项产生的负贡献严格大于 \eqref{eq:Nu} 尾项产生的正贡献。因此：
+$$J(tu + (1-t)v) < tJ(u) + (1-t)J(v)$$
+这证明了 $J(u)$ 的严格凸性，从而全局极小值点唯一。
+
+最后一步，证明解的正则性。将原方程视作以 $g(x) - V(u(x))$ 为源项的线性椭圆边值问题：
+\begin{equation}\label{eq:linearized}
+\left\{\begin{aligned}
+-\Delta u+ &=f & & \text { in } \Omega \\
+ \mu u + \frac{\partial u}{\partial n} &=h & & \text { on } \partial \Omega
+\end{aligned}\right.
+\end{equation}  
+
+要应用经典的 $L^2$ 椭圆正则性理论得出 $u \in H^2(\Omega)$，我们需要证明右端项 $f \in L^2(\Omega)$。由于已知 $g \in L^2(\Omega)$，问题归结为证明非线性项 $V(u) \in L^2(\Omega)$。根据假设 (c) 的增长性条件 $|V(s)| \le C(1 + |s|^p)$，这等价于证明 $u \in L^{2p}(\Omega)$。
+
+已知 $u \in H^1(\Omega)$，我们将根据空间维度 $N$ 分情况讨论：
+
+{\heiti 情形一：低维情形 ($N = 1, 2$)}
+
+根据 Sobolev 嵌入定理，当 $N=1$ 时，$H^1(\Omega) \hookrightarrow L^\infty(\Omega)$；当 $N=2$ 时，对于任意有限的 $q \in [1, +\infty)$，均有 $H^1(\Omega) \hookrightarrow L^q(\Omega)$。因此，无论 $p$ 为何有限值，我们直接有 $u \in L^{2p}(\Omega)$，从而 $V(u) \in L^2(\Omega)$ 自动成立。
+
+{\heiti 情形二：高维情形 ($N \ge 3$)}
+
+由 Sobolev 临界嵌入定理知 $u \in L^{2^*}(\Omega)$，其中临界指数 $2^* = \frac{2N}{N-2}$。
+我们将非线性项进行代数重写，令 $V(u) = a(x)u + b(x)$，其中
+$$a(x) = \begin{cases} \frac{V(u(x))}{u(x)}, & u(x) \neq 0 \\ 0, & u(x) = 0 \end{cases}$$
+由假设 (c) $|V(s)| \le C(1 + |s|^p)$ 可知，存在常数 $C' > 0$，使得：
+$$|a(x)| \le C'(1 + |u(x)|^{p-1})$$
+由于我们假设 $p \le \frac{N+2}{N-2}$，故 $p-1 \le \frac{4}{N-2}$。因为 $u \in L^{\frac{2N}{N-2}}(\Omega)$，所以 $|u|^{p-1}$ 最高具有 $\frac{2N}{(N-2)(p-1)} \ge \frac{N}{2}$ 的可积性。这意味着系数 $a(x) \in L^{N/2}(\Omega)$。
+此时，方程 \eqref{eq:linearized} 可以改写为：
+$$-\Delta u = a(x)u + \tilde{g}(x)$$
+其中 $\tilde{g}(x) = g(x) - b(x) \in L^2(\Omega)$。
+这是一个带有 $L^{N/2}$ 奇异系数的线性方程。根据经典的 Brezis-Kato 定理 \ref{lem:Brezis}，由于 $a \in L^{N/2}(\Omega)$，弱解 $u$ 的可积性可以被提升至任意有限指数空间，即对于任意 $q < \infty$，都有：
+$$u \in L^q(\Omega)$$
+取 $q \ge 2p$，我们立即得到 $u \in L^{2p}(\Omega)$，进而严格推导出 $V(u) \in L^2(\Omega)$。
+
+综上所述，无论是哪种维度，我们均证明了源项 $f(x) = g(x) - V(u(x)) \in L^2(\Omega)$。
+再结合边界条件 $h \in H^{1/2}(\partial \Omega)$ 以及 $\partial \Omega$ 的 $C^{1,1}$（或凸多面体）正则性，根据标准的线性椭圆方程 $H^2$ 正则性理论，弱解自动提升为强解，即 $u \in H^2(\Omega)$，且满足先验估计：
+$$\|u\|_{H^2(\Omega)} \le C \left( \|g - V(u)\|_{L^2(\Omega)} + \|h\|_{H^{1/2}(\partial \Omega)} + \|u\|_{H^1(\Omega)} \right)$$
+定理得证。
 \end{proof}
+
+\begin{proof}[Dirichlet边界条件]
+Dirichlet 边界条件下解的适定性证明与 Robin 边界条件的情形类似，此处主要阐述两者的差异部分。
+首先，定义可容许的函数空间 $\mathcal{A}$ 为满足 Dirichlet 边界条件的 $H^1$ 函数集合：
+$$\mathcal{A} = \left\{ u \in H^1(\Omega) \mid u = h \text{ on } \partial \Omega  \right\}$$
+定义能量泛函 $J: \mathcal{A} \to \mathbb{R}$ 如下：
+$$J(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \int_{\Omega} W(u) \, dx - \int_{\Omega} gu \, dx$$
+其中势函数满足 $W(s) = \int_0^s V(t) \, dt$。与 Robin 边界条件相比，该泛函的二次项 $Q(u)$ 与线性项 $L(u)$ 均不包含与惩罚参数 $\mu$ 相关的边界积分项。
+令 $u^{*} = \arg\min_{u \in \mathcal{A}} J(u)$，通过计算 $J(u)$ 的 Gâteaux 变分可知，$u^{*}$ 即为方程 \eqref{eq:maineq} 在 Dirichlet 边界条件下的弱解。下面分步证明该极小值点的存在性、唯一性与正则性。
+
+第一步：证明泛函 $J(u)$ 的强制性。 
+对于任意 $u \in \mathcal{A}$，引入固定函数 $\bar{h} \in H^1(\Omega)$ 且使得在迹意义下 $\bar{h}|_{\partial \Omega} = h$。令 $v = u - \bar{h}$，显然在边界上 $v=0$，即 $v \in H^1_0(\Omega)$
+根据 $H^1_0$ 空间上的庞加莱不等式：
+$$\int_{\Omega} |\nabla v|^2 \, dx \ge C_P \int_{\Omega} v^2 \, dx$$
+由于 $\bar{h}$ 是固定的，在 $H^1_0(\Omega)$ 空间中，梯度的 $L^2$ 范数 $\|\nabla v\|_{L^2}$ 等价于完整的 $H^1$ 范数。因此存在常数 $C_1 > 0$ 与依赖于 $h$ 的常数 $C(h)$，使得：
+$$\frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx \ge C_1 \|u\|_{H^1(\Omega)}^2 + C(h)$$
+进一步，记 $\lambda_1$ 为 Dirichlet 拉普拉斯算子的第一特征值，则对于二次项有放缩：$Q(u) \ge \frac{\lambda_1}{2} \int_{\Omega} u^2 \, dx$。
+对于非线性项 $N(u)$，与 Robin 边界条件的证明类似，通过适当的积分放缩，可将其与二次项合并并控制为下界 $\varepsilon Q(u)$。
+对于线性项 $L(u)$，利用 Cauchy-Schwarz 不等式及 Poincaré 不等式，有：
+$$\begin{aligned}
+-\int_{\Omega} gu \, dx &= -\int_{\Omega} gv \, dx - \int_{\Omega} g\bar{h} \, dx \\
+&\ge -|g|_{L^2(\Omega)} |v|_{L^2(\Omega)} - |g|_{L^2(\Omega)} |\bar{h}|_{L^2(\Omega)} \\
+&\ge -|g|_{L^2(\Omega)} \sqrt{C_P} |\nabla v|_{L^2(\Omega)} - C_2
+\end{aligned}$$
+综合上述估计可得：
+$$J(u) \ge \varepsilon C_1 \|u\|_{H^1(\Omega)}^2 - C_3 \|u\|_{H^1(\Omega)} - C_4.$$
+由于二次项的增长速率占优，当 $\|u\|_{H^1} \to \infty$ 时，必有 $J(u) \to \infty$，泛函的强制性得证。
+
+第二步：极小化序列与弱收敛。设 $m = \inf_{u \in \mathcal{A}} J(u)$，并选取极小化序列 $\{u_k\} \subset \mathcal{A}$。由泛函的强制性可知，该序列在 $H^1(\Omega)$ 中是一致有界的。依据弱紧性定理，存在子列（仍记为 $\{u_k\}$）在 $H^1(\Omega)$ 中弱收敛：
+$$u_k \rightharpoonup u^* \quad \text{in } H^1(\Omega)$$
+由于迹算子 $T: H^1(\Omega) \to L^2(\partial \Omega)$ 是连续的线性算子，它保持弱收敛性，即 $Tu_k \rightharpoonup Tu^*$。又因对所有 $k$ 均有 $Tu_k = h$，故极限函数同样满足 $Tu^* = h$，从而 $u^* \in \mathcal{A}$。
+
+第三与第四步：弱下半连续性与解的存在性。泛函中 $Q(u)$ 和 $N(u)$ 的弱下半连续性证明与 Robin 边界条件完全一致。基于此性质，可得：
+$$J(u^*) \le \liminf_{k \to \infty} J(u_k)$$
+由于 $u^* \in \mathcal{A}$，必然有 $J(u^*) = m$，这证明了全局极小值点（即弱解）的存在性。
+
+第五步：解的唯一性。
+为证明 $J(u)$ 在 $\mathcal{A}$ 上的严格凸性，计算其二阶 Gâteaux 导数。对于任意给定的 $u \in \mathcal{A}$ 以及任意非零的测试方向 $v \in H^1_0(\Omega)$，泛函的二阶变分为：
+$$J''(u)[v, v] = \left. \frac{d^2}{dt^2} J(u + tv) \right|_{t=0} = \int_{\Omega} |\nabla v|^2 \, dx + \int_{\Omega} V'(u)v^2 \, dx$$
+将势函数条件 $V'(u) \ge -\gamma$ 代入，并结合第一特征值的 Rayleigh 商定义 $\int_{\Omega} |\nabla v|^2 \, dx \ge \lambda_1 \int_{\Omega} v^2 \, dx$，可得：
+$$J''(u)[v, v] \ge (\lambda_1 - \gamma) \int_{\Omega} v^2 \, dx > 0$$
+泛函的严格凸性保证了该极小值点在可容许空间 $\mathcal{A}$ 中是唯一的。
+
+第六步：解的正则性。与 Robin 边界条件的情形同理，原方程可等价视作以 $g(x) - V(u(x))$ 为源项的线性椭圆 Dirichlet 边值问题。由经典的线性椭圆正则性理论，相关的先验估计不等式依然成立，定理得证。
+\end{proof}
+
 
 
 \section{模型构建}\label{sec:mod}
@@ -97,12 +248,12 @@ J^{\mu}(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\p
 \end{equation}
 由 $w^{\mu}$ 与 $u^{\mu}$ 所满足的弱形式相减，并选取测试函数为 $e^{\mu}=w^{\mu} - u^{\mu}$，结合边界条件可直接推得：
 $$\int_{\Omega} |\nabla e^{\mu}|^2 \,dx + \mu \int_{\partial \Omega} (e^{\mu})^2 \,dS = \int_{\Omega} -\left( V(u^{D}) - V(u^{\mu}) \right) e^{\mu} \,dx$$
-根据 $H^{-1}$ 空间（$H^1_0$ 或 $H^1$ 的对偶空间）的性质以及广义的 Cauchy-Schwarz 不等式，右侧可以被放缩为$\left| \int_{\Omega} \left( V(u^{D}) - V(u^{\mu}) \right) e^{\mu} \,dx \right| \leq \|V(u^{D}) - V(u^{\mu})\|_{H^{-1}} \|e^{\mu}\|_{H^{1}}$。
-利用 $ab \leq \frac{1}{2}a^2 + \frac{1}{2}b^2$ 并把 $\|e^{\mu}\|_{H^1}$ 吸收进左侧，我们最终就可以推导得出：
+根据 $H^{-1}$ 空间（$H^1_0$ 或 $H^1$ 的对偶空间）的性质以及广义的 Cauchy-Schwarz 不等式，右侧可以被放缩为 $\left| \int_{\Omega} \left( V(u^{D}) - V(u^{\mu}) \right) e^{\mu} \,dx \right| \leq \|V(u^{D}) - V(u^{\mu})\|_{H^{-1}} \|e^{\mu}\|_{H^{1}}$。
+利用 $ab \leq \frac{1}{2}a^2 + \frac{1}{2}b^2$ 并把 $\|e^{\mu}\|_{H^1}$ 吸收进左侧，我们最终可推导得出：
 $$\|e^{\mu}\|_{H^{1}}^2\leq C \|V(u^{D}) - V(u^{\mu})\|^2_{H^{-1}}\leq C(\Omega,V)$$
-结合上式和式\eqref{eq:fuzhu}，可以推知$\|u^{\mu}\|_{H^{1}}\leq C(\Omega,V,g,h)$，这表明 $\{u^{\mu}\}$ 在 $H^{1}$ 空间中是一致有界的。
+结合上式和式 \eqref{eq:fuzhu}，可以推知 $\|u^{\mu}\|_{H^{1}}\leq C(\Omega,V,g,h)$，这表明 $\{u^{\mu}\}$ 在 $H^{1}$ 空间中是一致有界的。
 
-下面，我们着手估计误差项$e^{\mu}$的$H^1$ 半范数误差。利用格林公式以及边界条件 $u^D = h$，可得如下展开：
+下面，我们着手估计误差项 $e^{\mu}$ 的 $H^1$ 半范数误差。利用格林公式以及边界条件 $u^D = h$，可得如下展开：
 \begin{equation}\label{eq:seminormcontrol}
 \begin{aligned}
 \int_{\Omega}|\nabla(u^{D}-u^{\mu})|^{2}\,dx &= \int_{\Omega}\nabla (u^{D}-u^{\mu}) \cdot \nabla u^{D}\,dx - \int_{\Omega}\nabla (u^{D}-u^{\mu}) \cdot \nabla u^{\mu}\,dx\\
@@ -118,7 +269,7 @@ $$\|e^{\mu}\|_{H^{1}}^2\leq C \|V(u^{D}) - V(u^{\mu})\|^2_{H^{-1}}\leq C(\Omega,
 
 然后考虑边界项的控制，记
 $$E(u)=\frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \int_{\Omega} W(u) \, dx - \int_{\Omega} g\, dx$$
-由于 $u^{\mu}$ 为泛函 $J^{\mu}$ 全局极小值点，利用在边界上有 $u^{D}=h$，将精确解 $u^{D}$ 代入$J^{\mu}(u)$可得：
+由于 $u^{\mu}$ 为泛函 $J^{\mu}$ 全局极小值点，利用在边界上有 $u^{D}=h$，将精确解 $u^{D}$ 代入 $J^{\mu}(u)$ 可得：
 $$J^{\mu}(u^{\mu})=E(u^{\mu}) + \frac{\mu}{2}\int_{\partial \Omega} (u^{\mu} - h)^2 \, dS - \frac{\mu}{2}\int_{\partial \Omega} h^2 \, dS \leq E(u^{D})- \frac{\mu}{2}\int_{\partial \Omega} h^2 \, dS$$
 由于前面已经证明了序列 $\{u^{\mu}\}$ 在 $H^1(\Omega)$ 中是一致有界的，内部能量泛函 $E(u^{\mu})$ 必然存在一个不依赖于 $\mu$ 的下界，因此可以推导出：
 \begin{equation}\label{eq:bdcontrol}
@@ -202,7 +353,7 @@ u_{\text{nn}}= \underset{u \in \mathcal{N}^{2}}{\operatorname{argmin}}\,J^{\mu}(
 \caption{DRM求解半线性偏微分方程}
 \label{alg:DRM_semilinear}
 \begin{algorithmic}[1]
-\Require 区域 $\Omega$ 及其边界 $\partial \Omega$。源项 $g(x)$，边界函数 $h(x)$。非线性项 $V(u)$ 及其原函数 $W(s) = \int_0^s V(t) \, dt$。配点 $\{X_i\}_{i=1}^N \sim U(\Omega)$和$\{Y_j\}_{j=1}^M \sim U(\partial \Omega)$
+\Require 区域 $\Omega$ 及其边界 $\partial \Omega$。源项 $g(x)$，边界函数 $h(x)$。非线性项 $V(u)$ 及其原函数 $W(s) = \int_0^s V(t) \, dt$。配点 $\{X_i\}_{i=1}^N \sim U(\Omega)$ 和 $\{Y_j\}_{j=1}^M \sim U(\partial \Omega)$。
 \State 初始化参数 $\theta$ 及神经网络 $u(\theta)$。
 \State 构造截断源项 $g^K(x) = \min\{g(x), K\}$ 。
 
@@ -285,7 +436,93 @@ J^{\mu}\left(\widehat{u}_{\text{nn}}^{K}\right)-J^{\mu}(u^{*}) = &\left[J^{\mu}\
 \|u-u_{\text{nn}}\|_{W^{1,p}}\leq C(s,p,d,\Omega)[u]_{s,p,\Omega}\mathcal{W}^{(1-s)/d}.
 \end{equation*}
 \end{lemma}
-引理的证明详见附录 \ref{pf:lemma:totalapp}。
+\begin{proof}
+为了建立主定理的逼近误差界，我们首先需要引入几个关于函数磨光与神经网络逼近的辅助引理。
+首先，引入标准的磨光核$\rho\in C_{0}^{\infty}(\mathbb{R}^d)$，满足如下性质：$\int \rho\,dx=1$ 且 $\rho \geq 0$；当 $\|x\|> 1$ 时 $\rho(x) = 0$；$\|\rho(x)\|_{\infty}=2V_{d}$，其中 $V_{d}$ 为 $d$ 维单位球的体积。取 $q$ 为索伯列夫指数，当 $d\geq3$ 时，$q = \frac{2d}{d-2}$；当 $d=1,2$ 时，$q$ 取为任意大的有限数。定义卷积平滑后的函数为：
+\begin{equation*}
+u^{\varepsilon}_{\mathcal{B}}(x)=\int \mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)u^{\varepsilon}(x+y)\,dy.
+\end{equation*}
+
+关于该平滑函数，我们有如下界限估计：
+\begin{lemma}[截断与平滑估计]\label{lemma:modifier} 设 $u^{\varepsilon}_{\mathcal{B}}$ 如上定义，则有以下结论成立：
+\begin{enumerate}
+    \item $\|u^{\varepsilon}_{\mathcal{B}}\|_{W^{1,\infty}(\Omega)}\leq \left(2V_{d}\|u^{\varepsilon}\|_{W^{2,2}(\Omega)}^{q}+2\right)\mathcal{B}$；
+    \item $\|u^{\varepsilon}_{\mathcal{B}}-u^{\varepsilon}\|_{H^{1}(\Omega)}\leq 2\|u^{\varepsilon}\|_{W^{2,2}(\Omega)}\mathcal{B}^{-q/d}$;
+    \item $\|u^{\varepsilon}_{\mathcal{B}}\|_{W^{2,2}(\Omega)}\leq \|u^{\varepsilon}\|_{W^{2,2}(\Omega)}$
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+对于结论 1，令 $E_{\mathcal{B}}=\{x:|u^{\varepsilon}(x)|>\mathcal{B}\}$。根据引理 \ref{lemma:truerr}，可知 $\|u^{\varepsilon}1_{E_{\mathcal{B}}}\|_{L^{1}}\leq 2\|u^{\varepsilon}\|_{L^{q}}^{q}\mathcal{B}^{1-q}$。因此：
+\begin{equation*}
+\begin{aligned}
+|u^{\varepsilon}_{\mathcal{B}}(x)|&\leq \int \mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)|u^{\varepsilon}(x+y)|\,dy\\
+&= \int_{E_{\mathcal{B}}}\mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)|u^{\varepsilon}(x+y)|\,dy+\int_{E_{\mathcal{B}}^{c}}\mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)|u^{\varepsilon}(x+y)|\,dy\\
+&\leq \left\|\mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)\right\|_{L^{\infty}}\|u^{\varepsilon}1_{E_{\mathcal{B}}}\|_{L^{1}}+\left\|\mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)\right\|_{L^{1}}\|u^{\varepsilon}1_{E_{\mathcal{B}}^{c}}\|_{L^{\infty}}\\
+&\leq \left(2V_{d}\|u^{\varepsilon}\|_{L^{q}}^{q}+1\right)\mathcal{B}.
+\end{aligned}
+\end{equation*}
+由于 $\nabla u^{\varepsilon}\in L^{q}$，且微分算子与卷积操作可交换，上述论证对 $\nabla u^{\varepsilon}_{\mathcal{B}}$ 同样成立。
+
+对于结论 2，利用积分的 Minkowski 不等式进行放缩：
+\begin{equation*}
+\begin{aligned}
+\|u^{\varepsilon}_{\mathcal{B}}-u^{\varepsilon}\|_{L^{2}}&\leq \left[\int_{x}\left(\int_{y}\rho(y)\left|u^{\varepsilon}(x+\mathcal{B}^{-q/d}y)-u^{\varepsilon}(x)\right|\,dy\right)^{2}\,dx\right]^{1/2}\\
+&\leq \left[\int_{x}\left(\int_{y}\int_{t=0}^{\mathcal{B}^{-q/d}}\rho(y)\left|y^{T}\nabla u^{\varepsilon}(x+ty)\right|\,dtdy\right)^{2}\,dx\right]^{1/2}\\
+&\leq \int_{y}\int_{t=0}^{\mathcal{B}^{-q/d}}\rho(y)\|y\|_{2}\|\nabla u^{\varepsilon}(x+ty)\|_{L_{x}^{2}}\,dtdy\\
+&\leq \|\nabla u^{\varepsilon}\|_{L^{2}}\mathcal{B}^{-q/d}.
+\end{aligned}
+\end{equation*}
+鉴于 $\nabla u^{\varepsilon}\in W^{1,2}$，该界限对 $\nabla u^{\varepsilon}$ 同样适用。结论 3 则是 Fubini 定理的直接推论。证毕。
+\end{proof}
+
+接下来，为了证明 $W^{s,p}(\Omega)$ 空间中的函数可被神经网络逼近，我们引入基于单位分解的局部逼近引理。不失一般性，假设 $\Omega\subset [0,1]^{d}$。我们可构造如下的一组单位分解。
+\begin{definition}[单位分解 $\lambda_{\mathbf{I}}(x)$]
+定义辅助函数：
+\begin{equation*}
+\psi(x;\delta) = \frac{2}{\delta^{2}}\left[\mathrm{ReLU}^{2}(x)+\mathrm{ReLU}^{2}(x+\delta)-2\mathrm{ReLU}^{2}(x+\frac{\delta}{2})\right].
+\end{equation*}
+易知 $\psi$ 是一个结构为 $\{1,3,1\}$ 的 $\mathrm{ReLU}^{2}$-神经网络。对于任意多重指标 $\mathbf{I}\in \{1,2,3,\cdots,N\}^{d}$，定义：
+\begin{equation*}
+\lambda_{\mathbf{I}}(x)=\prod_{j=1}^d\left[\psi\left(x^{(j)}-\frac{\mathbf{I}(j)}{N} ; \frac{1}{N}\right)-\psi\left(x^{(j)}-\frac{\mathbf{I}(j)+1}{N} ; \frac{1}{N}\right)\right].
+\end{equation*}
+此时，$\lambda_{\mathbf{I}}$ 构成了 $[0,1]^{d}$ 上的单位分解，且其支集为 $U_{\mathbf{I}}=\prod_{j}[\frac{\mathbf{I}(j)-1}{N},\frac{\mathbf{I}(j)+1}{N}]$。
+注意到 $\lambda_{\mathbf{I}}$ 是一次数至多为 $d$ 的分段多项式函数，不难推导出 $\lambda_{\mathbf{I}}$ 可由宽度为 $4d$、深度为 $\lceil \log_{2}d\rceil+3$ 的 $\mathrm{ReLU}^{2}$-神经网络精确表示。
+\end{definition}
+
+基于多项式逼近理论 \cite{1984Arcangeli}，我们有如下局部误差估计：
+\begin{lemma}[局部逼近]
+设 $f\in W^{s,p}(\Omega)\cap W^{1,\infty}(\Omega)$，其中 $s\in (1,2]$。对于任意多重指标 $\mathbf{I}$，存在一个宽度为 $\{d,\frac{d^{2}+3d+2}{2},1\}$ 的 $\mathrm{ReLU}^{2}$-神经网络 $\Psi_{\mathbf{I}}[f]$，使得：
+\begin{enumerate}
+    \item $\left\|\Psi_{\mathbf{I}}[f]\right\|_{W^{1,\infty}(V_{\mathbf{I}})}\leq 2\|f\|_{W^{1,\infty}(\Omega)}$；
+    \item $\|f-\Psi_{\mathbf{I}}[f]\|_{W^{1,p}(V_{\mathbf{I}})}\leq C(s,p,d)[f]_{s,p,V_{\mathbf{I}}}N^{1-s}$；
+    \item $\|f-\Psi_{\mathbf{I}}[f]\|_{L^{p}(V_{\mathbf{I}})}\leq C(s,p,d)[f]_{s,p,V_{\mathbf{I}}}N^{-s}$。
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+通过审慎选择参数 $\{a_{i},b_{i}\}$，可确保集合 $\{\mathrm{ReLU}^{2}(a_{i}^{T}x+b_{i})\}$ 构成多项式空间 $P(V_{\mathbf{I}})$ 的一组完备线性基（维数为 $\frac{d^{2}+3d+2}{2}$）。上述逼近界则是文献 \cite{1984Arcangeli} 工作的直接推论。证毕。
+\end{proof}
+
+将局部逼近函数通过单位分解拼接，即 $\tilde{f}=\sum_{\mathbf{I}}\lambda_{\mathbf{I}}\Psi_{\mathbf{I}}[f]$，即可得到如下全局逼近引理：
+\begin{lemma}[全局逼近]
+对于任意 $f\in W^{s,p}(\Omega)\cap W^{1,\infty}(\Omega)$ 且 $s\in (1,2]$，只要截断界 $\mathcal{B}\geq 2\|f\|_{W^{1,\infty}(\Omega)}$，深度 $\mathcal{D}\geq \lceil \log_{2}d\rceil +5$ 且宽度 $\mathcal{W}$ 足够大，则存在神经网络 $f_{\phi}\in \mathcal{N}^{2}(\mathcal{W},\mathcal{D},\mathcal{B})$ 使得：
+\begin{equation*}
+\|f-f_{\phi}\|_{W^{1,p}}\leq C(s,p,d,\Omega)[f]_{s,p,\Omega}\mathcal{W}^{(1-s)/d}.
+\end{equation*}
+\end{lemma}
+\begin{proof}
+由于 $\lambda_{\mathbf{I}}$ 和 $\Psi_{\mathbf{I}}[f]$ 均为 $\mathrm{ReLU}^{2}$ 网络，拼接后的 $\tilde{f}$ 宽度至多为 $N^{d}\left(2d^{2}+6d+2\right)$。计算全局导数误差有：
+\begin{equation*}
+\begin{aligned}
+\left\|\partial_{i}f-\partial_{i}\tilde{f} \right\|_{L^{p}(\Omega)} &\leq \sum\limits_{\mathbf{I}}\left\|\partial_{i}\lambda_{\mathbf{I}}\left(f-\Psi_{\mathbf{I}}[f]\right)\right\|_{L^{p}(\Omega)}+\sum\limits_{\mathbf{I}}\left\|\lambda_{\mathbf{I}}\partial_{i}\left(f-\Psi_{\mathbf{I}}[f]\right)\right\|_{L^{p}(\Omega)}\\
+&\leq \sum\limits_{\mathbf{I}}2NC(s,p,d)[f]_{s,p,V_{\mathbf{I}}}N^{-s}+\sum\limits_{\mathbf{I}}C(s,p,d)[f]_{s,p,V_{\mathbf{I}}}N^{1-s}\\
+&\leq C(s,p,d)[f]_{s,p,\Omega}N^{1-s}.
+\end{aligned}
+\end{equation*}
+令 $\mathcal{W} \sim N^d$，代入上式即得证。证毕。
+\end{proof}
+\end{proof}
+
+
 
 基于上述全局逼近引理，我们可以推导出如下关于逼近误差的定理：
 \begin{theorem}[逼近误差]\label{thm:apperr}
@@ -339,7 +576,7 @@ J_{5}^{\mu}(u)&=-\mu |\partial \Omega|\mathop{\mathbb{E}}_{Y\sim U(\partial\Omeg
 \end{aligned} 
 \end{equation}
 
-这里，$U(\Omega)$ 和 $U(\partial\Omega)$ 分别表示在 $\Omega$ 和 $\partial\Omega$ 上的均匀分布。上式的离散经验形式与特征值问题中的式\eqref{eq:dispartloss}非常相似，但是由于方程 \eqref{eq:maineq} 的非线性特征和非齐次边界条件，导致式子\eqref{eq:ch3dispartloss}多出了两项 $J_{2}^{\mu}$ 和 $J_{5}^{\mu}$。但由于不存在归一化和正交误差，因此不需要式\eqref{eq:dispartloss}中的$\mathcal{L}_4$和$\mathcal{L}_5$项。
+这里，$U(\Omega)$ 和 $U(\partial\Omega)$ 分别表示在 $\Omega$ 和 $\partial\Omega$ 上的均匀分布。上式的离散经验形式与特征值问题中的式 \eqref{eq:dispartloss} 非常相似，但是由于方程 \eqref{eq:maineq} 的非线性特征和非齐次边界条件，导致式 \eqref{eq:ch3dispartloss} 多出了两项 $J_{2}^{\mu}$ 和 $J_{5}^{\mu}$。但由于不存在归一化和正交误差，因此不需要式 \eqref{eq:dispartloss} 中的 $\mathcal{L}_4$ 和 $\mathcal{L}_5$ 项。
 
 
 采用与引理 \ref{lemma:staerr:Rad234} 相似的推导过程，我们可以证明引理 \ref{lemma:staerr:ch3Rad234}。
@@ -408,7 +645,7 @@ J_{5}^{\mu}(u)&=-\mu |\partial \Omega|\mathop{\mathbb{E}}_{Y\sim U(\partial\Omeg
 \end{theorem}
 
 \begin{proof}
-首先，由泛函 $J^{\mu}$ 稳定性估计\eqref{thm:staerr}：存在常数 $C_4(\Omega,\mu)>0$，使得
+首先，由泛函 $J^{\mu}$ 的稳定性估计（定理 \ref{thm:staerr}）：存在常数 $C_4(\Omega,\mu)>0$，使得
 \begin{equation}\label{eq:stability1}
 \|\widehat{u}_{\text{nn}}^K-u^*\|_{H^{1}}^2 \leq C_4(\Omega,\mu) \left( J^{\mu}(\widehat{u}_{\text{nn}}^K)-J^{\mu}(u^*) \right).
 \end{equation}
@@ -603,7 +840,7 @@ Tu& = h_3(x) & \text{on }  & \partial\Omega.\\
 \end{equation}
 
 % 在$[0,1]^2$上的拉普拉斯算子的基态特征值为$2\pi^2$
-这里$\Omega=[0,1]^2$，$h_3(x) = -2 \ln(1 + x_1^2+x_2^2) $通常情况下，受指数型非线性项的影响，Liouville方程的解并不具备唯一性。然而存在一个特殊情形：当临界参数 $\lambda = 8$ 时，方程 \eqref{eq:eq3} 存在唯一的精确解，其解析形式为 $ u_3 = -2 \ln(1 + x_1^2+x_2^2) $。在解的正则性得到保证的前提下，本文后续章节所提出的定理依然适用。
+这里 $\Omega=[0,1]^2$，$h_3(x) = -2 \ln(1 + x_1^2+x_2^2)$。通常情况下，受指数型非线性项的影响，Liouville方程的解并不具备唯一性。然而存在一个特殊情形：当临界参数 $\lambda = 8$ 时，方程 \eqref{eq:eq3} 存在唯一的精确解，其解析形式为 $ u_3 = -2 \ln(1 + x_1^2+x_2^2) $。在解的正则性得到保证的前提下，本文后续章节所提出的定理依然适用。
 
 本节采用 DRM 对该方程进行数值求解。我们在区域边界与内部区域分别采样了 200,000 个和 500,000 个配点。模型训练采用 Adam 优化器，设定初始学习率为 $ 6\times 10^{-4} $，共迭代训练 10,000 步。训练过程中的损失函数与验证误差下降曲线如图 \ref{fig:loss_curveeq3} 所示。
 \begin{figure}[htbp]
@@ -727,250 +964,12 @@ g_5(x)=8\sum_{\stackrel{1\leq i\leq d}{i\neq j}}\prod_{j=1}^{d}x_{j}(1-x_{j})+\f
 \end{figure}
 
 \section{本章小结}\label{sec:dis}
-在本文中，我们研究了利用具有 $\mathrm{ReLU}^2$ 激活函数的 ResNet 求解半线性椭圆问题。我们提出了一种基于惩罚变分形式的通用公式，用于计算半线性椭圆方程的解。随后，我们使用 DRM对该惩罚变分形式进行求解。我们根据 $\mathrm{ReLU}^2$ ResNet 的深度 $\mathcal{D}$ 和宽度 $\mathcal{W}$ 以及训练样本数量 $n$，推导了估计解与真解之间误差的上界。我们的数值模拟结果验证了所提方法在缓解维数灾难方面的有效性，并支持了我们的理论结果。
+在本文中，我们研究了利用具有 $\mathrm{ReLU}^2$ 激活函数的 ResNet 求解半线性椭圆问题。我们提出了一种基于惩罚变分形式的通用公式，用于计算半线性椭圆方程的解。随后，我们使用 DRM对该惩罚变分形式进行求解。我们根据 $\mathrm{ReLU}^2$ ResNet 的深度 $\mathcal{D}$ 和宽度 $\mathcal{W}$ 以及训练样本数量 $n$，推导了估计解与真解之间误差的上界。我们的数值模拟结果证明了所提方法在克服维数灾难方面的有效性，并验证了我们的理论结果。
 
-\section{本章附录}\label{sec:appd}
-\subsection{定理\ref{th:ch3reg}的证明}\label{pf:th:ch3reg}
-\begin{theorem}[先验估计]
-在假设 \ref{ass:f} 成立的条件下，方程 \eqref{eq:maineq} 存在唯一的解 $u \in H^2(\Omega)$，且满足如下正则性估计：
-$$\|u\|_{H^2(\Omega)} \le C \left( \|g - V(u)\|_{L^2(\Omega)} + \|h\|_{H^{1/2}(\partial \Omega)} + \|u\|_{H^1(\Omega)} \right)$$
-\end{theorem}
-\begin{proof}[Robin边界条件]
-定义泛函 $J: H^1(\Omega) \to \mathbb{R}$ 为：
-$$J(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} u^2 \, dS + \int_{\Omega} W(u) \, dx - \int_{\Omega} gu \, dx - \mu \int_{\partial \Omega} hu \, dS$$
-其中 $W(s) = \int_0^s V(t) \, dt$。我们将泛函分为二次项 $Q(u)$、非线性项 $N(u)$ 以及线性项 $L(u)$。通过计算 $J(u)$ 的 Gâteaux 变分可知，$J(u)$ 的驻点即为方程 \eqref{eq:maineq} 的弱解。下文将基于变分法直接法分步证明解的存在性、唯一性与正则性。
-
-第一步：证明泛函 $J(u)$ 的强制性。
-即证明当 $\|u\|_{H^1} \to \infty$ 时，$J(u) \to \infty$。
-首先，考察泛函的二次项。在 $H^1(\Omega)$ 空间中，由于 $\mu > 0$，根据广义 Poincaré 不等式，存在常数 $C_1 > 0$ 使得：
-$$\frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} u^2 \, dS \ge C_1 \|u\|_{H^1(\Omega)}^2$$
-记 $\lambda_1$ 为对应拉普拉斯算子的第一特征值，由 Rayleigh 商的定义可知：
-\begin{equation*}
-Q(u) \ge \frac{\lambda_1}{2} \int_{\Omega} u^2 \, dx.
-\end{equation*}
-其次，对于非线性势能项，由假设 $V'(u) \ge -\gamma$ 且积分下限条件，可得 $W(u) \ge -\frac{\gamma}{2} u^2$。由于 $\gamma < \lambda_1$，可以取 $\varepsilon = 1 - \frac{\gamma}{\lambda_1} > 0$。通过配凑，可将二次项与非线性项合并放缩为：
-\begin{equation*}
-\begin{aligned}
-Q(u) + N(u) &\ge (1-\varepsilon)Q(u) + \varepsilon Q(u) - \frac{\gamma}{2}\|u\|_{L^2}^2\\
-&\ge \varepsilon Q(u) + \left( \frac{\gamma}{\lambda_1} \frac{\lambda_1}{2} \|u\|_{L^2}^2 - \frac{\gamma}{2} \|u\|_{L^2}^2 \right) \\
-&= \varepsilon Q(u)
-\end{aligned}
-\end{equation*}
-最后，利用 Cauchy-Schwarz 不等式及迹定理，线性项 $L(u)$ 可被控制为：
-$$\left| \int_{\Omega} gu \, dx + \mu \int_{\partial \Omega} hu \, dS \right| \le \|g\|_{L^2}\|u\|_{L^2} + \mu \|h\|_{L^2(\partial\Omega)}\|u\|_{L^2(\partial\Omega)} \le C_2 \|u\|_{H^1(\Omega)}$$
-综上可得 $J(u) \ge \varepsilon C_1 \|u\|_{H^1(\Omega)}^2 - C_2 \|u\|_{H^1(\Omega)}$。由于二次项的增长占优，当 $\|u\|_{H^1} \to \infty$ 时，$J(u) \to \infty$，强制性得证。
-
-第二步：提取极小化序列的弱收敛子列。
-由强制性可知 $J(u)$ 存在下界，记 $m = \inf_{u \in H^1(\Omega)} J(u)$。由下确界定义，存在极小化序列 $\{u_k\} \subset H^1(\Omega)$ 使得 $\lim_{k \to \infty} J(u_k) = m$。
-由于 $\{J(u_k)\}$ 收敛，故其必定有界。结合强制性可知，序列的范数 $\|u_k\|_{H^1(\Omega)}$ 一致有界。根据 Banach-Alaoglu 定理，自反的 Hilbert 空间中的有界序列必存在弱收敛子列。不妨仍记该子列为 $\{u_k\}$，则存在 $u^* \in H^1(\Omega)$ 使得：
-$$u_k \rightharpoonup u^* \quad \text{in } H^1(\Omega)$$
-
-第三步，证明泛函的弱下半连续性（w.l.s.c.）。
-我们需要证明 $J(u^*) \le \liminf_{k \to \infty} J(u_k)$。我们将分别考察泛函的各项：
-\begin{itemize}
-\item {\heiti 梯度项：}在 Hilbert 空间中范数具有弱下半连续性，故：
-$$\int_{\Omega} |\nabla u^*|^2 dx \le \liminf_{k \to \infty} \int_{\Omega} |\nabla u_k|^2 dx$$
-\item {\heiti 边界项：}根据 Rellich-Kondrachov 紧嵌入定理的边界版本，$H^1(\Omega)$ 紧嵌入到 $L^2(\partial \Omega)$ 中。因此 $H^1$ 中的弱收敛蕴含 $L^2(\partial \Omega)$ 中的强收敛，即 
-$$\int_{\partial \Omega} (u^*)^2 \, dS = \lim_{k \to \infty} \int_{\partial \Omega} u_k^2 \, dS$$
-\item {\heiti 线性项：}对于连续线性泛函，弱收敛直接保证了极限的交换性：
-$$\int_{\Omega} gu_k dx \to \int_{\Omega} gu^* dx \quad \text{且} \quad \int_{\partial \Omega} hu_k dS \to \int_{\partial \Omega} hu^* dS$$
-\item {\heiti 非线性项：}同样由紧嵌入定理，$H^1(\Omega)$ 紧嵌入到 $L^2(\Omega)$，故 $u_k \to u^*$ 在 $L^2(\Omega)$ 中强收敛。进一步可提取子列使得 $u_k(x) \to u^*(x)$ 几乎处处成立。
-由假设 $V'(s) \ge -\gamma$（不妨设 $W(0)=0$ 以及 $V(0)=0$），可知辅助函数 $\tilde{W}(s) = W(s) + \frac{\gamma}{2}s^2 \ge 0$。由于 $\tilde{W}(s)$ 非负且连续，我们可以合法地对其应用 Fatou 引理：
-$$\int_{\Omega} \tilde{W}(u^*) \, dx \le \liminf_{k \to \infty} \int_{\Omega} \tilde{W}(u_k) \, dx$$
-即：
-$$\int_{\Omega} \left( W(u^*) + \frac{\gamma}{2}(u^*)^2 \right) \, dx \le \liminf_{k \to \infty} \int_{\Omega} \left( W(u_k) + \frac{\gamma}{2}u_k^2 \right) \, dx$$
-由于 $\frac{\gamma}{2} \int_{\Omega} u_k^2 \, dx$ 是一个存在确定极限的强收敛序列，我们可以利用下极限的性质 $\liminf (a_k + b_k) = \liminf a_k + \lim b_k$ 将其分离并抵消：
-$$\int_{\Omega} W(u^*) \, dx + \frac{\gamma}{2} \int_{\Omega} (u^*)^2 \, dx \le \liminf_{k \to \infty} \int_{\Omega} W(u_k) \, dx + \frac{\gamma}{2} \int_{\Omega} (u^*)^2 \, dx$$
-两边同时减去 $\frac{\gamma}{2} \int_{\Omega} (u^*)^2 \, dx$，得到：
-$$\int_{\Omega} W(u^*) \, dx \le \liminf_{k \to \infty} \int_{\Omega} W(u_k) \, dx$$
-\end{itemize}
-
-综合上述四项，严格得出结论：
-$$J(u^*) \le \liminf_{k \to \infty} J(u_k)$$
-
-第四步，证明解的存在性。结合第二、三步的结论，我们有：
-$$J(u^*) \le \liminf_{k \to \infty} J(u_k) = \lim_{k \to \infty} J(u_k) = m$$
-又因 $m = \inf_{u \in H^1(\Omega)} J(u)$，必有 $J(u^*) \ge m$。故 $J(u^*) = m$，这表明 $u^{*} \in H^1(\Omega)$ 为能量泛函的全局极小值点，即弱解存在。
-
-第五步，证明解的唯一性。唯一性等价于泛函的严格凸性。由于线性项 $L(u)$ 是仿射的，不影响凸性。对于二次项 $Q(u)$，由于 $\mu > 0$，其满足对任意 $u \neq v$ 及 $t \in (0, 1)$：
-\begin{equation}\label{eq:Qu}
-Q(tu + (1-t)v) = tQ(u) + (1-t)Q(v) - \frac{1}{2}t(1-t)\left( \int_{\Omega} |\nabla(u-v)|^2 \, dx + \mu \int_{\partial \Omega} (u-v)^2 \, dS \right)
-\end{equation}
-对于非线性项 $N(u)$，考虑辅助函数 $W_s(s) = W(s) + \frac{\gamma}{2}s^2$。因其二阶导数：$W_s''(s) = W''(s) + \gamma \ge -\gamma + \gamma = 0$，$W_s(s)$ 是凸函数。将其代入积分，得到：
-\begin{equation}\label{eq:Nu}
-N(tu + (1-t)v) \le tN(u) + (1-t)N(v) + \frac{\gamma}{2}t(1-t)\int_{\Omega} (u-v)^2 \, dx
-\end{equation}
-将 \eqref{eq:Qu} 与 \eqref{eq:Nu} 相加，并利用 Rayleigh 商定义（令 $w = u - v$）:
-$$\int_{\Omega} |\nabla w|^2 \, dx + \mu \int_{\partial \Omega} w^2 \, dS \ge \lambda_1 \int_{\Omega} w^2 \, dx$$
-由于 $\gamma < \lambda_1$，不等式 \eqref{eq:Qu} 尾项产生的负贡献严格大于 \eqref{eq:Nu} 尾项产生的正贡献。因此：
-$$J(tu + (1-t)v) < tJ(u) + (1-t)J(v)$$
-这证明了 $J(u)$ 的严格凸性，从而全局极小值点唯一。
-
-最后一步，证明解的正则性。将原方程视作以 $g(x) - V(u(x))$ 为源项的线性椭圆边值问题：
-\begin{equation}\label{eq:linearized}
-\left\{\begin{aligned}
--\Delta u+ &=f & & \text { in } \Omega \\
- \mu u + \frac{\partial u}{\partial n} &=h & & \text { on } \partial \Omega
-\end{aligned}\right.
-\end{equation}  
-
-要应用经典的 $L^2$ 椭圆正则性理论得出 $u \in H^2(\Omega)$，我们需要证明右端项 $f \in L^2(\Omega)$。由于已知 $g \in L^2(\Omega)$，问题归结为证明非线性项 $V(u) \in L^2(\Omega)$。根据假设 (c) 的增长性条件 $|V(s)| \le C(1 + |s|^p)$，这等价于证明 $u \in L^{2p}(\Omega)$。
-
-已知 $u \in H^1(\Omega)$，我们将根据空间维度 $N$ 分情况讨论：
-
-{\heiti 情形一：低维情形 ($N = 1, 2$)}
-
-根据 Sobolev 嵌入定理，当 $N=1$ 时，$H^1(\Omega) \hookrightarrow L^\infty(\Omega)$；当 $N=2$ 时，对于任意有限的 $q \in [1, +\infty)$，均有 $H^1(\Omega) \hookrightarrow L^q(\Omega)$。因此，无论 $p$ 为何有限值，我们直接有 $u \in L^{2p}(\Omega)$，从而 $V(u) \in L^2(\Omega)$ 自动成立。
-
-{\heiti 情形二：高维情形 ($N \ge 3$)}
-
-由 Sobolev 临界嵌入定理知 $u \in L^{2^*}(\Omega)$，其中临界指数 $2^* = \frac{2N}{N-2}$。
-我们将非线性项进行代数重写，令 $V(u) = a(x)u + b(x)$，其中
-$$a(x) = \begin{cases} \frac{V(u(x))}{u(x)}, & u(x) \neq 0 \\ 0, & u(x) = 0 \end{cases}$$
-由假设 (c) $|V(s)| \le C(1 + |s|^p)$ 可知，存在常数 $C' > 0$，使得：
-$$|a(x)| \le C'(1 + |u(x)|^{p-1})$$
-由于我们假设 $p \le \frac{N+2}{N-2}$，故 $p-1 \le \frac{4}{N-2}$。因为 $u \in L^{\frac{2N}{N-2}}(\Omega)$，所以 $|u|^{p-1}$ 最高具有 $\frac{2N}{(N-2)(p-1)} \ge \frac{N}{2}$ 的可积性。这意味着系数 $a(x) \in L^{N/2}(\Omega)$。
-此时，方程 \eqref{eq:linearized} 可以改写为：
-$$-\Delta u = a(x)u + \tilde{g}(x)$$
-其中 $\tilde{g}(x) = g(x) - b(x) \in L^2(\Omega)$。
-这是一个带有 $L^{N/2}$ 奇异系数的线性方程。根据经典的 Brezis-Kato 定理\ref{lem:Brezis}，由于 $a \in L^{N/2}(\Omega)$，弱解 $u$ 的可积性可以被提升至任意有限指数空间，即对于任意 $q < \infty$，都有：
-$$u \in L^q(\Omega)$$
-取 $q \ge 2p$，我们立即得到 $u \in L^{2p}(\Omega)$，进而严格推导出 $V(u) \in L^2(\Omega)$。
-
-综上所述，无论是哪种维度，我们均证明了源项 $f(x) = g(x) - V(u(x)) \in L^2(\Omega)$。
-再结合边界条件 $h \in H^{1/2}(\partial \Omega)$ 以及 $\partial \Omega$ 的 $C^{1,1}$（或凸多面体）正则性，根据标准的线性椭圆方程 $H^2$ 正则性理论，弱解自动提升为强解，即 $u \in H^2(\Omega)$，且满足先验估计：
-$$\|u\|_{H^2(\Omega)} \le C \left( \|g - V(u)\|_{L^2(\Omega)} + \|h\|_{H^{1/2}(\partial \Omega)} + \|u\|_{H^1(\Omega)} \right)$$
-定理得证。
-\end{proof}
-
-\begin{proof}[Dirichlet边界条件]
-Dirichlet 边界条件下解的适定性证明与 Robin 边界条件的情形类似，此处主要阐述两者的差异部分。
-首先，定义可容许的函数空间 $\mathcal{A}$ 为满足 Dirichlet 边界条件的 $H^1$ 函数集合：
-$$\mathcal{A} = \left\{ u \in H^1(\Omega) \mid u = h \text{ on } \partial \Omega  \right\}$$
-定义能量泛函 $J: \mathcal{A} \to \mathbb{R}$ 如下：
-$$J(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \int_{\Omega} W(u) \, dx - \int_{\Omega} gu \, dx$$
-其中势函数满足 $W(s) = \int_0^s V(t) \, dt$。与 Robin 边界条件相比，该泛函的二次项 $Q(u)$ 与线性项 $L(u)$ 均不包含与惩罚参数 $\mu$ 相关的边界积分项。
-令 $u^{*} = \arg\min_{u \in \mathcal{A}} J(u)$，通过计算 $J(u)$ 的 Gâteaux 变分可知，$u^{*}$ 即为方程\eqref{eq:maineq} 在 Dirichlet 边界条件下的弱解。下面分步证明该极小值点的存在性、唯一性与正则性。
-
-第一步：证明泛函 $J(u)$ 的强制性 
-对于任意 $u \in \mathcal{A}$，引入固定函数 $\bar{h} \in H^1(\Omega)$ 且使得在迹意义下 $\bar{h}|_{\partial \Omega} = h$。令 $v = u - \bar{h}$，显然在边界上 $v=0$，即 $v \in H^1_0(\Omega)$
-根据 $H^1_0$ 空间上的庞加莱不等式：
-$$\int_{\Omega} |\nabla v|^2 \, dx \ge C_P \int_{\Omega} v^2 \, dx$$
-由于 $\bar{h}$ 是固定的，在 $H^1_0(\Omega)$ 空间中，梯度的 $L^2$ 范数 $\|\nabla v\|_{L^2}$ 等价于完整的 $H^1$ 范数。因此存在常数 $C_1 > 0$ 与依赖于 $h$ 的常数 $C(h)$，使得：
-$$\frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx \ge C_1 \|u\|_{H^1(\Omega)}^2 + C(h)$$
-进一步，记 $\lambda_1$ 为 Dirichlet 拉普拉斯算子的第一特征值，则对于二次项有放缩：$Q(u) \ge \frac{\lambda_1}{2} \int_{\Omega} u^2 \, dx$。
-对于非线性项 $N(u)$，与 Robin 边界条件的证明类似，通过适当的积分放缩，可将其与二次项合并并控制为下界 $\varepsilon Q(u)$。
-对于线性项 $L(u)$，利用 Cauchy-Schwarz 不等式及 Poincaré 不等式，有：
-$$\begin{aligned}
--\int_{\Omega} gu \, dx &= -\int_{\Omega} gv \, dx - \int_{\Omega} g\bar{h} \, dx \\
-&\ge -|g|_{L^2(\Omega)} |v|_{L^2(\Omega)} - |g|_{L^2(\Omega)} |\bar{h}|_{L^2(\Omega)} \\
-&\ge -|g|_{L^2(\Omega)} \sqrt{C_P} |\nabla v|_{L^2(\Omega)} - C_2
-\end{aligned}$$
-综合上述估计可得：
-$$J(u) \ge \varepsilon C_1 \|u\|_{H^1(\Omega)}^2 - C_3 \|u\|_{H^1(\Omega)} - C_4.$$
-由于二次项的增长速率占优，当 $\|u\|_{H^1} \to \infty$ 时，必有 $J(u) \to \infty$，泛函的强制性得证。
-
-第二步：极小化序列与弱收敛。设 $m = \inf_{u \in \mathcal{A}} J(u)$，并选取极小化序列 $\{u_k\} \subset \mathcal{A}$。由泛函的强制性可知，该序列在 $H^1(\Omega)$ 中是一致有界的。依据弱紧性定理，存在子列（仍记为 $\{u_k\}$）在 $H^1(\Omega)$ 中弱收敛：
-$$u_k \rightharpoonup u^* \quad \text{in } H^1(\Omega)$$
-由于迹算子 $T: H^1(\Omega) \to L^2(\partial \Omega)$ 是连续的线性算子，它保持弱收敛性，即 $Tu_k \rightharpoonup Tu^*$。又因对所有 $k$ 均有 $Tu_k = h$，故极限函数同样满足 $Tu^* = h$，从而 $u^* \in \mathcal{A}$。
-
-第三与第四步：弱下半连续性与解的存在性.泛函中 $Q(u)$ 和 $N(u)$ 的弱下半连续性证明与 Robin 边界条件完全一致。基于此性质，可得：
-$$J(u^*) \le \liminf_{k \to \infty} J(u_k)$$
-由于 $u^* \in \mathcal{A}$，必然有 $J(u^*) = m$，这证明了全局极小值点（即弱解）的存在性。
-
-第五步：解的唯一性。
-为证明 $J(u)$ 在 $\mathcal{A}$ 上的严格凸性，计算其二阶 Gâteaux 导数。对于任意给定的 $u \in \mathcal{A}$ 以及任意非零的测试方向 $v \in H^1_0(\Omega)$，泛函的二阶变分为：
-$$J''(u)[v, v] = \left. \frac{d^2}{dt^2} J(u + tv) \right|_{t=0} = \int_{\Omega} |\nabla v|^2 \, dx + \int_{\Omega} V'(u)v^2 \, dx$$
-将势函数条件 $V'(u) \ge -\gamma$ 代入，并结合第一特征值的 Rayleigh 商定义 $\int_{\Omega} |\nabla v|^2 \, dx \ge \lambda_1 \int_{\Omega} v^2 \, dx$，可得：
-$$J''(u)[v, v] \ge (\lambda_1 - \gamma) \int_{\Omega} v^2 \, dx>0$$
-泛函的严格凸性保证了该极小值点在可容许空间 $\mathcal{A}$ 中是唯一的。
-
-第六步：解的正则性。与 Robin 边界条件的情形同理，原方程可等价视作以 $g(x) - V(u(x))$ 为源项的线性椭圆 Dirichlet 边值问题。由经典的线性椭圆正则性理论，相关的先验估计不等式依然成立，定理得证。
-\end{proof}
+% \section{本章附录}\label{sec:appd}
+% \subsection{定理\ref{th:ch3reg}的证明}\label{pf:th:ch3reg}
 
 
-\subsection{引理\ref{lemma:totalapp}的证明}\label{pf:lemma:totalapp}
-为了建立主定理的逼近误差界，我们首先需要引入几个关于函数磨光与神经网络逼近的辅助引理。
-首先，引入标准的磨光核（mollifier）$\rho\in C_{0}^{\infty}(\mathbb{R}^d)$，满足如下性质：$\int \rho\,dx=1$ 且 $\rho \geq 0$；当 $\|x\|> 1$ 时 $\rho(x) = 0$；$\|\rho(x)\|_{\infty}=2V_{d}$，其中 $V_{d}$ 为 $d$ 维单位球的体积。取 $q$ 为索伯列夫指数，当$d\geq3$时，$q = \frac{2d}{d-2}$，当$d-1,2$时，$q$取为任意大的有限数。定义卷积平滑后的函数为：
-\begin{equation*}
-u^{\varepsilon}_{\mathcal{B}}(x)=\int \mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)u^{\varepsilon}(x+y)\,dy.
-\end{equation*}
+% \subsection{引理\ref{lemma:totalapp}的证明}\label{pf:lemma:totalapp}
 
-关于该平滑函数，我们有如下界限估计：
-\begin{lemma}[截断与平滑估计]\label{lemma:modifier} 设 $u^{\varepsilon}_{\mathcal{B}}$ 如上定义，则有以下结论成立：
-\begin{enumerate}
-    \item $\|u^{\varepsilon}_{\mathcal{B}}\|_{W^{1,\infty}(\Omega)}\leq \left(2V_{d}\|u^{\varepsilon}\|_{W^{2,2}(\Omega)}^{q}+2\right)\mathcal{B}$；
-    \item $\|u^{\varepsilon}_{\mathcal{B}}-u^{\varepsilon}\|_{H^{1}(\Omega)}\leq 2\|u^{\varepsilon}\|_{W^{2,2}(\Omega)}\mathcal{B}^{-q/d}$;
-    \item $\|u^{\varepsilon}_{\mathcal{B}}\|_{W^{2,2}(\Omega)}\leq \|u^{\varepsilon}\|_{W^{2,2}(\Omega)}$
-\end{enumerate}
-\end{lemma}
-\begin{proof}
-对于结论 1，令 $E_{\mathcal{B}}=\{x:|u^{\varepsilon}(x)|>\mathcal{B}\}$。根据引理 \ref{lemma:truerr}，可知 $\|u^{\varepsilon}1_{E_{\mathcal{B}}}\|_{L^{1}}\leq 2\|u^{\varepsilon}\|_{L^{q}}^{q}\mathcal{B}^{1-q}$。因此：
-\begin{equation*}
-\begin{aligned}
-|u^{\varepsilon}_{\mathcal{B}}(x)|&\leq \int \mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)|u^{\varepsilon}(x+y)|\,dy\\
-&= \int_{E_{\mathcal{B}}}\mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)|u^{\varepsilon}(x+y)|\,dy+\int_{E_{\mathcal{B}}^{c}}\mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)|u^{\varepsilon}(x+y)|\,dy\\
-&\leq \left\|\mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)\right\|_{L^{\infty}}\|u^{\varepsilon}1_{E_{\mathcal{B}}}\|_{L^{1}}+\left\|\mathcal{B}^{q}\rho\left(\frac{y}{\mathcal{B}^{q/d}}\right)\right\|_{L^{1}}\|u^{\varepsilon}1_{E_{\mathcal{B}}^{c}}\|_{L^{\infty}}\\
-&\leq \left(2V_{d}\|u^{\varepsilon}\|_{L^{q}}^{q}+1\right)\mathcal{B}.
-\end{aligned}
-\end{equation*}
-由于 $\nabla u^{\varepsilon}\in L^{q}$，且微分算子与卷积操作可交换，上述论证对 $\nabla u^{\varepsilon}_{\mathcal{B}}$ 同样成立。
-
-对于结论 2，利用积分的 Minkowski 不等式进行放缩：
-\begin{equation*}
-\begin{aligned}
-\|u^{\varepsilon}_{\mathcal{B}}-u^{\varepsilon}\|_{L^{2}}&\leq \left[\int_{x}\left(\int_{y}\rho(y)\left|u^{\varepsilon}(x+\mathcal{B}^{-q/d}y)-u^{\varepsilon}(x)\right|\,dy\right)^{2}\,dx\right]^{1/2}\\
-&\leq \left[\int_{x}\left(\int_{y}\int_{t=0}^{\mathcal{B}^{-q/d}}\rho(y)\left|y^{T}\nabla u^{\varepsilon}(x+ty)\right|\,dtdy\right)^{2}\,dx\right]^{1/2}\\
-&\leq \int_{y}\int_{t=0}^{\mathcal{B}^{-q/d}}\rho(y)\|y\|_{2}\|\nabla u^{\varepsilon}(x+ty)\|_{L_{x}^{2}}\,dtdy\\
-&\leq \|\nabla u^{\varepsilon}\|_{L^{2}}\mathcal{B}^{-q/d}.
-\end{aligned}
-\end{equation*}
-鉴于 $\nabla u^{\varepsilon}\in W^{1,2}$，该界限对 $\nabla u^{\varepsilon}$ 同样适用。结论 3 则是 Fubini 定理的直接推论。证毕。
-\end{proof}
-
-接下来，为了证明 $W^{s,p}(\Omega)$ 空间中的函数可被神经网络逼近，我们引入基于单位分解的局部逼近引理。不失一般性，假设 $\Omega\subset [0,1]^{d}$。我们可构造如下的一组单位分解。
-\begin{definition}[单位分解 $\lambda_{\mathbf{I}}(x)$]
-定义辅助函数：
-\begin{equation*}
-\psi(x;\delta) = \frac{2}{\delta^{2}}\left[\mathrm{ReLU}^{2}(x)+\mathrm{ReLU}^{2}(x+\delta)-2\mathrm{ReLU}^{2}(x+\frac{\delta}{2})\right].
-\end{equation*}
-易知 $\psi$ 是一个结构为 $\{1,3,1\}$ 的 $\mathrm{ReLU}^{2}$-神经网络。对于任意多重指标 $\mathbf{I}\in \{1,2,3,\cdots,N\}^{d}$，定义：
-\begin{equation*}
-\lambda_{\mathbf{I}}(x)=\prod_{j=1}^d\left[\psi\left(x^{(j)}-\frac{\mathbf{I}(j)}{N} ; \frac{1}{N}\right)-\psi\left(x^{(j)}-\frac{\mathbf{I}(j)+1}{N} ; \frac{1}{N}\right)\right].
-\end{equation*}
-此时，$\lambda_{\mathbf{I}}$ 构成了 $[0,1]^{d}$ 上的单位分解，且其支集为 $U_{\mathbf{I}}=\prod_{j}[\frac{\mathbf{I}(j)-1}{N},\frac{\mathbf{I}(j)+1}{N}]$。
-注意到 $\lambda_{\mathbf{I}}$ 是一次数至多为 $d$ 的分段多项式函数，不难推导出 $\lambda_{\mathbf{I}}$ 可由宽度为 $4d$、深度为 $\lceil \log_{2}d\rceil+3$ 的 $\mathrm{ReLU}^{2}$-神经网络精确表示。
-\end{definition}
-
-基于多项式逼近理论 \cite{1984Arcangeli}，我们有如下局部误差估计：
-\begin{lemma}[局部逼近]
-设 $f\in W^{s,p}(\Omega)\cap W^{1,\infty}(\Omega)$，其中 $s\in (1,2]$。对于任意多重指标 $\mathbf{I}$，存在一个宽度为 $\{d,\frac{d^{2}+3d+2}{2},1\}$ 的 $\mathrm{ReLU}^{2}$-神经网络 $\Psi_{\mathbf{I}}[f]$，使得：
-\begin{enumerate}
-    \item $\left\|\Psi_{\mathbf{I}}[f]\right\|_{W^{1,\infty}(V_{\mathbf{I}})}\leq 2\|f\|_{W^{1,\infty}(\Omega)}$；
-    \item $\|f-\Psi_{\mathbf{I}}[f]\|_{W^{1,p}(V_{\mathbf{I}})}\leq C(s,p,d)[f]_{s,p,V_{\mathbf{I}}}N^{1-s}$；
-    \item $\|f-\Psi_{\mathbf{I}}[f]\|_{L^{p}(V_{\mathbf{I}})}\leq C(s,p,d)[f]_{s,p,V_{\mathbf{I}}}N^{-s}$。
-\end{enumerate}
-\end{lemma}
-\begin{proof}
-通过审慎选择参数 $\{a_{i},b_{i}\}$，可确保集合 $\{\mathrm{ReLU}^{2}(a_{i}^{T}x+b_{i})\}$ 构成多项式空间 $P(V_{\mathbf{I}})$ 的一组完备线性基（维数为 $\frac{d^{2}+3d+2}{2}$）。上述逼近界则是文献 \cite{1984Arcangeli} 工作的直接推论。证毕。
-\end{proof}
-
-将局部逼近函数通过单位分解拼接，即 $\tilde{f}=\sum_{\mathbf{I}}\lambda_{\mathbf{I}}\Psi_{\mathbf{I}}[f]$，即可得到如下全局逼近引理：
-\begin{lemma}[全局逼近]
-对于任意 $f\in W^{s,p}(\Omega)\cap W^{1,\infty}(\Omega)$ 且 $s\in (1,2]$，只要截断界 $\mathcal{B}\geq 2\|f\|_{W^{1,\infty}(\Omega)}$，深度 $\mathcal{D}\geq \lceil \log_{2}d\rceil +5$ 且宽度 $\mathcal{W}$ 足够大，则存在神经网络 $f_{\phi}\in \mathcal{N}^{2}(\mathcal{W},\mathcal{D},\mathcal{B})$ 使得：
-\begin{equation*}
-\|f-f_{\phi}\|_{W^{1,p}}\leq C(s,p,d,\Omega)[f]_{s,p,\Omega}\mathcal{W}^{(1-s)/d}.
-\end{equation*}
-\end{lemma}
-\begin{proof}
-由于 $\lambda_{\mathbf{I}}$ 和 $\Psi_{\mathbf{I}}[f]$ 均为 $\mathrm{ReLU}^{2}$ 网络，拼接后的 $\tilde{f}$ 宽度至多为 $N^{d}\left(2d^{2}+6d+2\right)$。计算全局导数误差有：
-\begin{equation*}
-\begin{aligned}
-\left\|\partial_{i}f-\partial_{i}\tilde{f} \right\|_{L^{p}(\Omega)} &\leq \sum\limits_{\mathbf{I}}\left\|\partial_{i}\lambda_{\mathbf{I}}\left(f-\Psi_{\mathbf{I}}[f]\right)\right\|_{L^{p}(\Omega)}+\sum\limits_{\mathbf{I}}\left\|\lambda_{\mathbf{I}}\partial_{i}\left(f-\Psi_{\mathbf{I}}[f]\right)\right\|_{L^{p}(\Omega)}\\
-&\leq \sum\limits_{\mathbf{I}}2NC(s,p,d)[f]_{s,p,V_{\mathbf{I}}}N^{-s}+\sum\limits_{\mathbf{I}}C(s,p,d)[f]_{s,p,V_{\mathbf{I}}}N^{1-s}\\
-&\leq C(s,p,d)[f]_{s,p,\Omega}N^{1-s}.
-\end{aligned}
-\end{equation*}
-令 $\mathcal{W} \sim N^d$，代入上式即得证。证毕。
-\end{proof}
 

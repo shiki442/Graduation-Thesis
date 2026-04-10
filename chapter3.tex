@@ -1,7 +1,7 @@
 \chapter{DRM求解椭圆多特征值问题}\label{chap:eigen}
 本章聚焦于高维空间下椭圆型多重特征值问题的深度学习求解方法。针对传统数值方法在高维困境下的局限性，本章开发了一种基于DRM的系统求解算法。该算法不仅致力于实现多重特征值与特征函数的求解，还建立了一套独立于空间维数的先验误差分析理论，从数学本质上论证该方法克服“维数灾难”的潜力。
-\section{特征值问题概述}\label{sec_pre}
-\subsection{问题背景与物理意义}
+\section{问题背景与预备知识}\label{sec_pre}
+\subsection{特征值问题概述}
 椭圆型特征值问题在数学物理中占据核心地位，是描述微观量子能级概率分布与宏观结构振动模态的基石。然而，当物理模型向复杂高维空间拓展时，诸如有限元法等传统网格离散方法会遭遇明显的”维数灾难”，其计算成本显著增长且逼近精度急剧下降。为突破这一计算瓶颈，本章基于该问题的惩罚变分原理，构造了一种适用于同步求解多重特征对的通用无约束优化泛函，并采用DRM对其进行高效逼近。
 
 在理论层面，本章严格推导了网络输出特征值与真实值之间误差的非渐近上界。该理论界限由前馈神经网络的深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 以及无网格训练样本量 $n$ 共同显式表达，为深度神经求解器的收敛性提供了理论支撑。
@@ -32,7 +32,7 @@ T u(x) &=0 & & \text { on } \partial \Omega,
 \end{enumerate}
 \end{theorem}
 
-基于谱定理，方程\eqref{eq:eigendiriproblem}的特征值与特征函数具有如下基本性质：
+基于谱定理，方程 \eqref{eq:eigendiriproblem} 的特征值与特征函数具有如下基本性质：
 
 \begin{lemma}\label{lemma:eigen_properties}
 对于椭圆型特征值问题\eqref{eq:eigendiriproblem}，结论如下成立：
@@ -99,12 +99,12 @@ a(u,v)\triangleq\langle \nabla u,\nabla v\rangle+\int_{\Omega}w uv \text{d}x, u\
 R(u) = \frac{a(u,u)}{\langle u, u \rangle}
 \end{equation*}
 
-基于瑞利-里兹变分原理，椭圆算子的基态特征值$\lambda_1$ 可通过在容许函数空间内极小化瑞利商（Rayleigh Quotient）来刻画。具体而言，$\lambda_1$ 及其对应的特征函数 $\xi_1$ 满足：
+基于瑞利-里兹变分原理，椭圆算子的基态特征值 $\lambda_1$ 可通过在容许函数空间内极小化瑞利商（Rayleigh Quotient）来刻画。具体而言，$\lambda_1$ 及其对应的特征函数 $\xi_1$ 满足：
 \begin{equation}\label{eq:first_eigen}
 \lambda_1 = \min_{\substack{u \in H_0^1(\Omega) \ u \neq 0}} \frac{a(u,u)}{\langle u, u \rangle}, \quad \xi_1 \in \mathop{\arg\min}_{\substack{u \in H_0^1(\Omega) \ u \neq 0}} \frac{a(u,u)}{\langle u, u \rangle}.
 \end{equation}
 
-对于高阶特征值，我们可以采用递归变分法进行定义。第 $k$ 个特征值 $\lambda_k$ 对应于瑞利商在与前 $k-1$ 个特征特征函数正交的子空间上的最小值。即：
+对于高阶特征值，我们可以采用递归变分法进行定义。第 $k$ 个特征值 $\lambda_k$ 对应于瑞利商在与前 $k-1$ 个特征函数正交的子空间上的最小值。即：
 \begin{equation}\label{eq:ktheigenvalue}
 \lambda_k = \min_{\substack{u \in H_0^1(\Omega), u \neq 0 \\ \langle u,\xi_j\rangle=0, 1 \le j < k}} \frac{a(u,u)}{\langle u, u \rangle}, \quad \xi_k \in \mathop{\arg\min}_{\substack{u \in H_0^1(\Omega), u \neq 0 \\ \langle u,\xi_j\rangle=0, 1 \le j < k}} \frac{a(u,u)}{\langle u, u \rangle}.
 \end{equation}
@@ -118,7 +118,7 @@ R(u) = \frac{a(u,u)}{\langle u, u \rangle}
 \begin{equation}\label{eq:penalty_bilinear}
 a^{\mu_1}(u,v) = a(u,v) + \mu_1\int_{\partial \Omega}uv \text{d}s,
   \end{equation}
-其中 $\mu_1 > 0$ 为惩罚项参数。实际上，罚函数形式\ref{eq:penalty_bilinear}严格对应于如下 Robin 边值问题的变分形式：
+其中 $\mu_1 > 0$ 为惩罚项参数。实际上，罚函数形式 \ref{eq:penalty_bilinear} 严格对应于如下 Robin 边值问题的变分形式：
 \begin{equation*}
 \left\{\begin{aligned}
 -\Delta u + V u &= \lambda u & \text{ in } \Omega, \\
@@ -146,7 +146,7 @@ a^{\mu_1}(u,v) = a(u,v) + \mu_1\int_{\partial \Omega}uv \text{d}s,
 \begin{equation*}
 \xi_{k}\in \mathop{\text{argmin}}_{v\in H^{1}}\ \mathcal{L}_{k}(v).
 \end{equation*}
-若惩罚参数满足 $\mu_{2}>2\lambda_{k}$，并记$\varepsilon_1=\frac{1}{\mu_1}$，则如下误差估计成立：
+若惩罚参数满足 $\mu_{2}>2\lambda_{k}$，并记 $\varepsilon_1=\frac{1}{\mu_1}$，则如下误差估计成立：
 \begin{equation*}
 0<\lambda_{k}-\frac{a^{\mu_{1}}(\xi_{k},\xi_{k})}{\langle \xi_{k},\xi_{k}\rangle}\lesssim C(\Omega,w)\varepsilon_1.
 \end{equation*}
@@ -164,14 +164,14 @@ a^{\mu_1}(u,v) = a(u,v) + \mu_1\int_{\partial \Omega}uv \text{d}s,
 \end{aligned}\right.
 \end{equation}
 
-具体而言，其特征值$\lambda^{\mu_1}$和Dirichlet问题的特征值$\lambda$满足如下误差估计：
+具体而言，其特征值 $\lambda^{\mu_1}$ 和 Dirichlet 问题的特征值 $\lambda$ 满足如下误差估计：
 \begin{equation*}
 0<\lambda-\lambda^{\mu_{1}}\lesssim C(\Omega,w)\frac{1}{\mu_{1}},
 \end{equation*}
 
 随后，我们将证明损失函数 $\mathcal{L}_k$ 的极小化项 $\xi_{k}$ 恰为Robin边值问题 \eqref{eq:eigenrobinproblem} 的特征向量。
 
-我首先给出第一部分的证明。为此，我们定义算子 $A: L^{2}(\Omega) \to L^{2}(\Omega)$为 Dirichlet 边值问题的源项到解的映射，即：
+我们首先给出第一部分的证明。为此，我们定义算子 $A: L^{2}(\Omega) \to L^{2}(\Omega)$ 为 Dirichlet 边值问题的源项到解的映射，即：
 \begin{equation}\label{eq:Adef2}
 \left\{\begin{aligned}
 (-\Delta+w) Af &= f & &\text{in } \Omega, \\
@@ -199,7 +199,7 @@ TAf &= 0 & &\text{on } \partial\Omega.
 
 其对应的先验估计和迹定理同样成立。
 
-文献 \cite{Maury2009Numerical}（命题 2.3 的证明）已确立了 $A^{\mu_{1}}$ 强收敛于 $A$ 这一结论。尽管该结果对于求解椭圆方程已足够，但尚不足以直接证明特征值问题的收敛性。我们需要证明对于一列特征值序列$\{\xi_k\}_{k=1}^{\infty}$，都有$A^{\mu_1}\xi_k$在 $H^1(\Omega)$ 中收敛于 $A\xi_k$。因此，需要将进一步证明 $A^{\mu_{1}}$ 在算子范数意义下收敛于 $A$。
+文献 \cite{Maury2009Numerical}（命题 2.3 的证明）已确立了 $A^{\mu_{1}}$ 强收敛于 $A$ 这一结论。尽管该结果对于求解椭圆方程已足够，但尚不足以直接证明特征值问题的收敛性。我们需要证明对于一列特征函数序列 $\{\xi_k\}_{k=1}^{\infty}$，都有$A^{\mu_1}\xi_k$在 $H^1(\Omega)$ 中收敛于 $A\xi_k$。因此，需要将进一步证明 $A^{\mu_{1}}$ 在算子范数意义下收敛于 $A$。
 
 我们首先沿用 \cite{Maury2009Numerical} 中的方法建立 $A^{\mu_{1}}$ 的强收敛性，该估计为应用一致有界原理提供了必要的一致有界性条件。为此，我们定义如下的残差泛函：
 
@@ -303,7 +303,7 @@ $$\begin{aligned}
 &\geq\frac{1}{2}\delta\lambda_{1}|\mathcal{P}_{>1}\delta u|^{2}>0,
 \end{aligned}$$
 
-注意到 $\mathcal{P}_{\leq 1}\delta u$ 满足 Eq.~\eqref{eq:3.16}，我们有：
+注意到 $\mathcal{P}_{\leq 1}\delta u$ 满足方程\eqref{eq:3.16}，我们有：
 \begin{equation}\label{eq:3.20}
 \delta^{2} \mathcal{L}_{1}(\xi_1;\mathcal{P}_{\leq 1}\delta u)=\frac{\mu_2}{2}\langle\xi_1, \mathcal{P}_{\leq1}\delta u\rangle^{2}\geq\frac{1}{2}(\mu_2-\lambda_{1})|\mathcal{P}_{\leq 1}\delta u|^{2}>0.
 \end{equation}
@@ -324,7 +324,7 @@ $$\begin{aligned}
 \delta^{2} \mathcal{L}_{1}(\xi_1;\delta u)=\frac{1}{2}\left[a^{\mu_{1}}(\delta u,\delta u)-\mu_{2}|\delta u|^{2}\right].
 \end{equation*}
 
-若 $\mu_{2}\geq \lambda_{1}$，显然$\vec{0}$ 是鞍点。综上所述，结论对 $k=1$ 成立。
+若 $\mu_{2}\geq \lambda_{1}$，显然 $\vec{0}$ 是鞍点。综上所述，结论对 $k=1$ 成立。
 
 假设结论对 $i<k$ 成立。对于第 $k$ 步，我们有方程组：
 $$\left\{\begin{array}{rcl}
@@ -355,7 +355,7 @@ $$\delta^{2} \mathcal{L}_{k}(\xi_k;\delta u)=\frac{1}{2}(\lambda_{k}-\lambda_{l_
 \end{proof}
 
 \subsection{数值算法实现}
-在众多基于神经网络求解偏微分方程的数值策略中，DRM\cite{Weinan2017The} 建立了一套基于变分原理的求解框架。该方法在执行上可概括为以下四个关键步骤：
+在众多基于神经网络求解偏微分方程的数值策略中，DRM \cite{Weinan2017The} 建立了一套基于变分原理的求解框架。该方法在执行上可概括为以下四个关键步骤：
 \begin{enumerate}
     \item 将原PDE特征值问题转化为等价的变分问题，即能量泛函最小化问题；
     \item 利用参数化的深度神经网络构造合适的试探函数空间以逼近真实解；
@@ -558,7 +558,7 @@ W\leq \psi(\frac{1}{16s^{d+1}d}\mathcal{W})\leq\psi(\mathcal{W}),
 \mathcal{E}_{sta}=2 \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{k}(u)-\widehat{\mathcal{L}}_{k}(u)\right|+2 \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{\phi k}(u)-\widehat{\mathcal{L}}_{\phi k}(u)\right|.
 \end{equation*}
 
-如前节所述，由于所有特征函数均具备 Holder 连续性，其必然是本质有界的。基于此，本节假设所有相关函数在 $L^{\infty}(\Omega)$ 空间内一致有界，且上界为 $\mathcal{B}$。鉴于 $\mathcal{L}_{k}$ 与 $\mathcal{L}_{\phi k}$ 具有相同的推导逻辑，下文将着重针对 $\mathcal{L}_{k}$ 的误差进行界定
+如前节所述，由于所有特征函数均具备 Holder 连续性，其必然是本质有界的。基于此，本节假设所有相关函数在 $L^{\infty}(\Omega)$ 空间内一致有界，且上界为 $\mathcal{B}$。鉴于 $\mathcal{L}_{k}$ 与 $\mathcal{L}_{\phi k}$ 具有相同的推导逻辑，下文将着重针对 $\mathcal{L}_{k}$ 的误差进行界定。
 
 首先，利用三角不等式，我们将统计误差分解为五个子项以便分别进行处理：
 \begin{equation}\label{lemma:staerr:dec}
@@ -601,14 +601,119 @@ W\leq \psi(\frac{1}{16s^{d+1}d}\mathcal{W})\leq\psi(\mathcal{W}),
 \end{aligned}
 \end{equation*}
 \end{lemma}
-证明详见附录。
+\begin{proof}[引理 \ref{lemma:staerr:Rad234}]\label{pf:lemma:staerr:Rad234}
 
-为了利用定义 \ref{def:staerr:pdim} 中定义的覆盖数来界定 Rademacher 复杂度，我们参考 Dudley 的经典结果。
+引理的证明可分为两部分。我们首先证明后四个不等式，这主要依赖于 Rademacher 复杂度的 Lipschitz 收缩不等式：
+\begin{lemma}[Lipschitz 收缩不等式]\label{lemma:staerr:liprad}
+假设函数 $\psi:\mathbb{R}^{d}\times\mathbb{R}\rightarrow\mathbb{R}$ 满足 $(x,y)\mapsto\psi(x,y)$，且对任意给定的 $x$，其关于 $y$ 是 $\ell$-Lipschitz 连续的。令 $\mathcal{N}$ 为定义在 $\Omega$ 上的函数类，并记 $\psi\circ\mathcal{N}=\{\psi\circ u:x\mapsto\psi(x,u(x)), u\in\mathcal{N}\}$，则有：
+$$ \mathfrak{R}(\psi\circ\mathcal{N})\leq\ell \ \mathfrak{R}(\mathcal{N}). $$
+\end{lemma}
+该引理的严谨推导可参见文献 \cite{ledoux2013probability} 中的推论 3.17。基于此推论，对于引理\ref{lemma:staerr:Rad234}的第二个不等式，由于此情形下的 Lipschitz 常数为 $2\mathcal{B}^{2}$，我们可得：
+$$ \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{k, 2}(u)-\widehat{\mathcal{L}}_{k, 2}(u)\right| \leq |\Omega|\mathfrak{R}\left(\left\{w u^{2}:u\in \mathcal{N}^{2}\right\}\right) \leq 2|\Omega|\mathcal{B}^{2}\mathfrak{R}\left(\mathcal{N}^{2}\right). $$
+
+同理，第三个不等式亦可由此得出，其对应的 Lipschitz 常数为 $2\mathcal{B}$。
+
+至于最后两个不等式，我们使用如下不等式： 
+\begin{equation*} 
+|a^{2}-b^{2}|\leq 2|a||a-b|+|a-b|^{2}. 
+\end{equation*}
+利用类似的方法即可推导得出相应结论。
+
+接下来，我们单独处理第一个不等式。由于梯度算子 $\nabla$ 不具备 Lipschitz 连续性，无法直接应用引理 \ref{lemma:staerr:liprad}。为此，我们需要证明 $\nabla u$ 的平方项（即 $|\nabla u|^2$）可由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 混合网络实现。具体而言，受 Baur-Strassen 关于多项式及其偏导数计算复杂度的理论启发 \cite{baur1983complexity}，我们提出如下引理：
+
+\begin{lemma}\label{lem:gradcomplexity}
+设 $u$ 为由深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 的 $\mathrm{ReLU}^{2}$ 神经网络所实现的函数，则其梯度的平方项 $|\nabla u|^2$ 可由一个深度不超过 $2\mathcal{D}$、宽度不超过 $(2\mathcal{D}+4)\mathcal{W} + 2d$ 的 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 混合网络精确表示。
+\end{lemma}
+
+\begin{proof}
+为表述简便，下文将 $\mathrm{ReLU}$ 与 $\mathrm{ReLU}^{2}$ 激活函数分别记为 $\sigma_1$ 与 $\sigma_2$。容易观察到导数关系 $\sigma_2'(x)=2\sigma_1(x)$。我们将通过构造法来证明本引理。沿用定义 \ref{def:fnn} 中的记号，设 $u^{(k)}$ 为原 $\mathrm{ReLU}^{2}$ 网络第 $k$ 层的激活值，令 $z^{(k)} = W^{(k)}u^{(k-1)} + b^{(k)}$，且 $u^{(k)}=\sigma_2(z^{(k)})$。不失一般性，假设原网络具有单神经元线性输出，即 $u = z_1^{(\mathcal{D})}$。整个构造过程可划分为以下三个阶段：
+
+首先，我们利用 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络重现原网络的前向计算，并同时记录反向推导所需的全部局部导数。记第 $k$ 层的局部导数为 $c^{(k)}$，则有：
+$$c^{(k)} = \sigma_2'(z^{(k)}) = 2\sigma_1(z^{(k)})$$
+利用 $\sigma_1$ 函数的性质，恒等映射可精确表示为 $x = \sigma_1(x) - \sigma_1(-x)$。因此，在网络传播过程中传递并保留这些局部导数只需使用 $\sigma_1$ 激活函数。为了完整复现原网络的计算并缓存所有局部导数，此阶段需要深度 $\mathcal{D}$。在计算第 $k$ 层时，计算激活值 $u^{(k)}$ 至多消耗 $\mathcal{W}$ 个神经元，而缓存前 $k$ 层的局部导数至多消耗 $2k\mathcal{W}$ 个神经元。由此可知，该阶段的最大宽度受限于 $\mathcal{W} + 2\mathcal{D}\mathcal{W} = (2\mathcal{D}+1)\mathcal{W}$。
+
+第二步，计算伴随变量，这里伴随变量定义为网络输出对各层预激活值的梯度，即 $\delta^{(k)} = \nabla_{z^{(k)}} u$。初始化 $\delta^{(\mathcal{D})} = 1$。根据多元微积分的链式法则，可得如下反向递推关系：
+$$\delta_q^{(k)} = c_q^{(k)} \cdot \sum_{p=1}^{n_{k+1}} W_{pq}^{(k+1)} \delta_p^{(k+1)}$$
+令 $v_q^{(k)} = \sum_{p=1}^{n_{k+1}} W_{pq}^{(k+1)} \delta_p^{(k+1)}$。注意到 $v_q^{(k)}$ 仅为第 $k+1$ 层伴随变量的线性组合，无需消耗额外的非线性计算深度。利用极化恒等式（$xy=\frac{1}{4}\left[(x+y)^2-(x-y)^2\right]$），两个标量 $c_q^{(k)}$ 与 $v_q^{(k)}$ 的乘法操作可通过一个单隐藏层内包含 $4$ 个 $\sigma_2$ 神经元的子网络精确实现：
+$$c_q^{(k)} \cdot v_q^{(k)} = \frac{1}{4}\left[\sigma_2(c_q^{(k)}+v_q^{(k)}) + \sigma_2(-c_q^{(k)}-v_q^{(k)}) - \sigma_2(c_q^{(k)}-v_q^{(k)}) - \sigma_2(-c_q^{(k)}+v_q^{(k)})\right]$$
+我们将原网络的计算图进行反向展开，针对 $k$ 从 $\mathcal{D}-1$ 递减至 $1$，逐层构造上述乘法子网络以计算 $\delta^{(k)}$。由于 $c_q^{(k)}$ 和 $v_q^{(k)}$ 均可由已有的网络节点通过线性组合获得，每次计算 $\delta^{(k)}$ 仅需通过 $1$ 层 $\sigma_2$ 激活函数。该反向递推共需进行 $\mathcal{D}-1$ 次，因此本阶段消耗的深度为 $\mathcal{D}-1$。在每层中，至多需要并行计算 $\mathcal{W}$ 个乘法，消耗 $4\mathcal{W}$ 个神经元。同时，网络需要继续向下层传递剩余未使用的缓存变量 $c^{(1)}, \dots, c^{(k-1)}$，这部分占用至多 $2(\mathcal{D}-1)\mathcal{W}$ 个神经元。因此，此阶段的最大宽度界限为 $4\mathcal{W} + 2\mathcal{D}\mathcal{W}$
+
+第三步，计算梯度并平方求和：当递推至第一层并获得 $\delta^{(1)}$ 后，即可一次性求出针对所有 $d$ 个输入变量的偏导数：
+$$\partial_i u = \sum_{p=1}^{n_1} W_{pi}^{(1)} \delta_p^{(1)}, \quad i=1, 2, \dots, d$$
+最后，计算梯度向量模长的平方：
+$$|\nabla u|^2 = \sum_{i=1}^d (D_i u)^2 = \sum_{i=1}^d \left[ \sigma_2(D_i u) + \sigma_2(-D_i u) \right]$$
+由于求偏导数 $D_iu$ 属于线性映射，最终的平方与求和操作只需增加 $1$ 层 $\sigma_2$ 非线性层。在此最终层内，需并行计算 $d$ 个维度分量的平方展开项，共消耗 $2d$ 个神经元。
+
+将上述三个阶段级联，所构造的目标混合网络的总复杂度受限于：
+\begin{itemize}
+    \item 总深度： $\mathcal{D}\left(|\nabla u|^2\right) = \mathcal{D} + (\mathcal{D}-1) + 1 = 2\mathcal{D}$
+    \item 总宽度： 取各计算阶段宽度的最大值：
+    $$\mathcal{W}\left(|\nabla u|^2\right) \leq \max\left\{ (2\mathcal{D}+1)\mathcal{W}, \ 2d \right\} \leq (2\mathcal{D}+4)\mathcal{W} + 2d$$
+\end{itemize}
+\end{proof}
+从而第一个不等式成立，定理得证。
+\end{proof}
+
+
+
+
+为了利用定义 \ref{def:staerr:pdim} 中定义的覆盖数来界定 Rademacher 复杂度，我们参考 Dudley 的经典结果，即如下定理：
 
 \begin{lemma}[Dudley 熵公式 \cite{dudley}]\label{lemma:staerr:Rad_cover}
 假设 $0\in \mathcal{N}$，且函数族 $\mathcal{N}$ 一致有界。则该函数族的经验 Rademacher 复杂度满足如下 Dudley 积分界：
 $$\mathfrak{R}(\mathcal{N}) \leq  \inf_{0<\delta<\mathcal{B}}\left(4 \delta+\frac{12}{\sqrt{n}} \int_{\delta}^{\mathcal{B}} \sqrt{\log (2\mathcal{C}\left( \varepsilon, \mathcal{N}, n\right))}\mathrm{d}\varepsilon\right).$$
-\end{lemma} 该证明在附录的证明 \ref{pf:lemma:staerr:Rad_cover} 中给出。
+\end{lemma} 
+\begin{proof}[引理 \ref{lemma:staerr:Rad_cover}]\label{pf:lemma:staerr:Rad_cover}
+首先，我们引入 Massart 有限类引理（Massart's finite class lemma），其详细证明可参阅文献 \cite{boucheron2013concentration}。
+
+\begin{lemma}[Massart 有限类引理 \cite{boucheron2013concentration}]\label{Mfinite}
+对于任意给定的有限集 $V\subset\mathbb{R}^{n}$，记其最大向量 $\ell_2$ 范数为 $D=\sup_{v\in V}\|v\|_{2}$。则有：
+$$ \mathbb{E}_{\Sigma_{n}}\left[ \sup_{v\in V}\frac{1}{n}\left| \sum_{i=1}^{n}\sigma_{i}v_{i} \right| \right] \leq \frac{D}{n}\sqrt{2\log(2|V|)}, $$
+其中 $\sigma_{i}$ 和 $\mathbb{E}_{\Sigma_{n}}$ 分别为定义 \ref{def:staerr:radcom} 中所述的 Rademacher 随机变量及其期望。
+\end{lemma}
+接下来，我们采用标准的链式推导（Chaining Method）。令 $\varepsilon_{k}=2^{-k+1} B$。记 $\mathcal{F}_{k}$ 为 $\mathcal{F}$ 在无穷范数下的一个 $\varepsilon_{k}$-覆盖集，其基数满足 $\left|\mathcal{F}_{k}\right|=\mathcal{C}\left(\varepsilon_{k}, \mathcal{F},\|\cdot\|_{\infty}\right)$。这意味着，对于任意函数 $u \in \mathcal{F}$，必定存在 $u_{k} \in \mathcal{F}_{k}$ 使得 $\left\|u-u_{k}\right\|_{\infty} \leq \varepsilon_{k}$。令 $K$ 为一个待定的正整数。通过项的分解与三角不等式，我们有：
+
+$$ \begin{aligned} 
+    &\quad\; \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits_{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i} u\left(Z_{i}\right)\right|\right] \\ &= \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right) + \sum\limits_{j=1}^{K-1} \sum\limits_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right) + \sum\limits_{i=1}^{n} \sigma_{i} u_{1}\left(Z_{i}\right)\right|\right] \\ &\leq \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right)\right|\right] \\ &\quad + \sum\limits_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right] \\ &\quad + \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i} u_{1}\left(Z_{i}\right)\right|\right]. 
+\end{aligned} $$
+由于零函数 $0 \in \mathcal{F}$，我们可以无妨设定 $\mathcal{F}_{1}=\{0\}$，从而消除上述不等式中的第三项。对于第一项，应用 Rademacher 变量的性质与 Hölder 不等式：
+\begin{equation*}
+\begin{aligned}
+{}&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{t=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right)\right|\right]\\
+\leq&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n} \sum\limits_{i=1}^{n}\left|\sigma_{i}\right|\left\|u-u_{K}\right\|_{\infty}\right] \leq \varepsilon_{K}
+\end{aligned}
+\end{equation*}
+对于第二项中的求和单元，定义向量 $v_{i}^{j}=u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)$，并应用引理 \ref{Mfinite}，得到：
+\begin{equation*}
+\begin{aligned}
+&\sum_{j=1}^{K-1} \mathbb{E}_{\{\sigma\}_{i=1}^{n}}\left[\sup _{u \in \mathcal{F}} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right]\\
+=&\sum_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{t}\right\}_{t=1}^{n}}\left[\sup _{v \in V_{j}} \frac{1}{n} \left| \sum_{i=1}^{n} \sigma_{i} v_{i}^{j}\right|\right] \leq \sum_{j=1}^{K-1} \frac{D_{j}}{n} \sqrt{2 \log \left(2\left|V_{j}\right|\right)}.
+\end{aligned}
+\end{equation*}
+根据集合 $V_{j}$ 的构造，其势满足界限 $\left|V_{j}\right| \leq\left|\mathcal{F}_{j}\right|\left|\mathcal{F}_{j+1}\right| \leq\left|\mathcal{F}_{j+1}\right|^{2}$。同时，向量的范数上界 $D_j$ 可被限制为：
+$$ \begin{aligned}
+     D_j &= \sup_{v \in V_j} \left(\sum_{i=1}^{n}\left|u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right|^{2}\right)^{1 / 2} \leq \sqrt{n}\left\|u_{j+1}-u_{j}\right\|_{\infty} \\ &\leq \sqrt{n}\left\|u_{j+1}-u\right\|_{\infty}+\sqrt{n}\left\|u_{j}-u\right\|_{\infty} = \sqrt{n} \varepsilon_{j+1}+\sqrt{n} \varepsilon_{j} = 3 \sqrt{n} \varepsilon_{j+1}. 
+\end{aligned} $$
+将其代入前式，有：
+\begin{equation*}
+\begin{aligned}
+&\sum_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{i}, Z_{t}\right\}_{t=1}^{n}}\left[\sup _{u \in \mathcal{F}} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right] \\
+&\leq \sum_{j=1}^{K-1} \frac{D_{j}}{n} \sqrt{2 \log \left(2\left|V_{j}\right|\right)} \leq \sum_{j=1}^{K-1} \frac{3 \varepsilon_{j+1}}{\sqrt{n}} \sqrt{2 \log \left(2\left|\mathcal{F}_{j+1}\right|^{2}\right)}
+\end{aligned}
+\end{equation*}
+结合上述所有界的估计，我们将离散求和转化为 Dudley 积分形式：
+\begin{equation*}
+\begin{aligned}
+&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup _{u \in \mathcal{F}} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i} u\left(Z_{i}\right)\right|\right] \leq \varepsilon_{K}+\sum_{j=1}^{K-1} \frac{6 \varepsilon_{j+2}}{\sqrt{n}} \sqrt{2 \log \left(2\left|\mathcal{F}_{j+1}\right|^{2}\right)} \\
+&=\varepsilon_{K}+\frac{6}{\sqrt{n}} \sum_{j=1}^{K-1}\left(\varepsilon_{j+1}-\varepsilon_{j+2}\right) \sqrt{2 \log \left(2 \mathcal{C}\left(\varepsilon_{j+1}, \mathcal{F},\|\cdot\|_{\infty}\right)^{2}\right)}\\
+&\leq \varepsilon_{K}+\frac{6}{\sqrt{n}} \int_{\varepsilon_{K+1}}^{B / 2} \sqrt{2 \log \left(2 \mathcal{C}\left(\varepsilon, \mathcal{F},\|\cdot\|_{\infty}\right)^{2}\right)} d \varepsilon.
+\end{aligned}
+\end{equation*}
+最后，对于任意给定的精度 $0<\delta<\frac{B}{2}$，我们总可以通过选取充分大的 $K$ 使得 $\varepsilon_{K+2}<\delta \leq \varepsilon_{K+1}$，从而完成引理的证明。
+\end{proof}
+
+
+
 
 随后的引理揭示了覆盖数与伪维数 (Pdim) 之间的相互关系。为了寻求分段多项式函数的伪维数的上界，我们参考了 \cite{bartlett2019nearly} 中提出的结论，这些结论适用于我们公式中定义的函数类。
 
@@ -628,7 +733,7 @@ $$\mathcal{C}(\varepsilon, \mathcal{N}, n) \leq \left(\frac{en\mathcal{B}}{\vare
 该引理的证明见 \cite{anthony2009neural} 中的定理 12.2。
 
 \begin{lemma}\label{lemma:staerr:pdim}
-设 $\mathcal{N}$ 为满足以下条件的函数族：
+设 $\mathcal{N}$ 为满足以下条件的函数族\ref{pf:lemma:staerr:pdim}：
 \begin{itemize}
 \item[(i)] 可由深度不超过 $\mathcal{D}$ 且宽度不超过 $\mathcal{W}$ 的神经网络实现；
 \item[(ii)] 网络中各隐藏层的激活函数均为 $\mathrm{ReLU}$ 或 $\mathrm{ReLU}^{2}$。
@@ -638,13 +743,69 @@ $$\mathcal{C}(\varepsilon, \mathcal{N}, n) \leq \left(\frac{en\mathcal{B}}{\vare
 \operatorname{Pdim}(\mathcal{N})\lesssim C_1\mathcal{D}^2\mathcal{W}^2(\mathcal{D}+\log\mathcal{W}).
 \end{equation*}
 \end{lemma}
-证明在附录中给出，参见 \ref{pf:lemma:staerr:pdim}
+\begin{proof}[引理 \ref{lemma:staerr:pdim}]\label{pf:lemma:staerr:pdim}
+本引理的证明思路如下：首先，我们回顾打散与 VC 维的严格定义。
 
-基于上述引理，不妨记$\mathcal{N}^{1,2}$表示用于逼近梯度$\nabla u$的$ReLU$-$ReLU^2$神经网络函数类。结合引理\ref{lem:gradcomplexity}中给出的神经网络导数复杂度界，我们可以直接推导出该假设空间的伪维度上界为：
+为了估计多项式的 Pdim，我们引入以下引理（其详细证明见文献 \cite{anthony2009neural} 的定理 8.3）：
+
+\begin{lemma}\label{lemma:covering_number}
+设 $p_1,\cdots,p_m$ 为 $m$ 个具有 $n$ 个变量且最高次数不超过 $d$ 的多项式。若 $n \leq m$，则这些多项式符号组合的集合基数满足：
+\begin{equation*}
+|{(\operatorname{sign}(p_1(x)),\cdots,\operatorname{sign}(p_m(x))):x\in\mathbb{R}^n}| \leq 2\left(\frac{2emd}{n}\right)^n
+\end{equation*}
+
+\end{lemma}
+接下来的论证借鉴了文献 \cite{bartlett2019nearly} 中定理 6 的分析框架。需要指出的是，由于 $\mathrm{VCdim}(\operatorname{sign}(\mathcal{N})) \leq \mathrm{Pdim}(\mathcal{N})$，此处推导出的结论比原定理略强。
+
+我们构造一个新的示性函数族： 
+\begin{equation*}
+\mathcal{\widetilde{N}}={\widetilde{u}(x,y)=\operatorname{sign}(u(x)-y): u\in\mathcal{N}}
+\end{equation*}
+
+根据定义，显然有 $\mathrm{Pdim}(\mathcal{N}) \leq \mathrm{VCdim}(\widetilde{\mathcal{N}})$。因此，问题转化为界定 $\widetilde{\mathcal{N}}$ 的 VC 维。设 $\mathcal{M}$ 为实现 $\mathcal{N}$ 中函数的神经网络的参数（权重与偏置）总数。对于任意给定的点集 $\{x_i\}_{i=1}^{m}\subset X$ 和 $\{y_i\}_{i=1}^{m}\subset\mathbb{R}$，我们考察由网络参数 $a \in \mathbb{R}^{\mathcal{M}}$ 诱导的二分法（dichotomies）数量：
+\begin{equation*}
+K_{{x_i},{y_i}}(m):=|{(\operatorname{sign}(u(x_{1}, a)-y_1), \ldots, \operatorname{sign}(u(x_{m}, a)-y_m)): a \in \mathbb{R}^{\mathcal{M}}}|
+\end{equation*}
+由定义可知，$K_{\{x_i\},\{y_i\}}(m)$ 在所有可能的 $\{x_i\}_{i=1}^{m}$ 与 $\{y_i\}_{i=1}^{m}$ 上的上确界，即为函数族 $\widetilde{\mathcal{N}}$ 的增长函数（Growth function） $\mathcal{G}_{\widetilde{\mathcal{N}}}(m)$。
+
+为了能够应用引理 \ref{lemma:covering_number}，我们需要将参数空间 $\mathbb{R}^{\mathcal{M}}$ 划分为若干子区域，使得在每一个子区域内，网络输出 $u(x_i,a)-y_i$ 关于参数 $a$ 均表现为无断点（breakpoints）的多项式。沿用文献 \cite{bartlett2019nearly} 中的划分策略，我们将参数空间划分为 $\{P_1,P_2,\cdots,P_N\}$，其中区域总数 $N$ 满足：
+\begin{equation} \label{pdimb1}
+N\leq\prod_{i=1}^{\mathcal{D}-1}2\left(\frac{2emk_i(1+(i-1)2^{i-1})}{\mathcal{M}i}\right)^{\mathcal{M}i}
+\end{equation}
+上式中，$k_i$ 表示神经网络第 $i$ 层的神经元数量，而 $\mathcal{M}_i$ 表示截至第 $i$ 层（包含第 $i$ 层）所有神经元输入的参数总数。基于此划分，二分法总数可由各子区域内的二分法数量之和控制：
+\begin{equation} \label{pdimb2}
+K_{{x_i},{y_i}}(m)\leq\sum_{i=1}^{N}|{(\operatorname{sign}(u(x_{1}, a)-y_1), \cdots, \operatorname{sign}(u(x_{m}, a)-y_m)): a\in P_i}|
+\end{equation}
+
+注意到在每个子区域 $P_i$ 内，$u(x_i,a)-y_i$ 是关于 $a$ 的多项式。如文献 \cite{bartlett2019nearly} 所证，该多项式的次数与其自身次数一致，且上界为 $1 + (\mathcal{D}-1)2^{\mathcal{D}-1}$。因此，直接应用引理 \ref{lemma:covering_number} 可得每个子区域的界：
+\begin{align}
+& |{(\operatorname{sign}(u(x_{1}, a)-y_1), \cdots, \operatorname{sign}(u(x_{m}, a)-y_m)): a\in P_i}|\nonumber \\
+& \leq2\left(\frac{2em(1+(\mathcal{D}-1)2^{\mathcal{D}-1})}{\mathcal{M}{\mathcal{D}}}\right)^{\mathcal{M}{\mathcal{D}}}\label{pdimb3}.
+\end{align}
+将式 (\ref{pdimb1}) 和 (\ref{pdimb3}) 代入式 (\ref{pdimb2}) 中，可推导出：
+\begin{equation*}
+K_{{x_i},{y_i}}(m)\leq\prod_{i=1}^{\mathcal{D}}2\left(\frac{2emk_i(1+(i-1)2^{i-1})}{\mathcal{M}_i}\right)^{\mathcal{M}i}.
+\end{equation*}
+由于该上界对所有样本点集均一致成立，故增长函数满足：
+\begin{equation*}
+\mathcal{G}_{\widetilde{\mathcal{N}}}(m)\leq\prod_{i=1}^{\mathcal{D}}2\left(\frac{2emk_i(1+(i-1)2^{i-1})}{\mathcal{M}_i}\right)^{\mathcal{M}_i},
+\end{equation*}
+最终，通过类似于文献 \cite{bartlett2019nearly} 中定理 6 的代数化简（令 $\mathcal{G}_{\widetilde{\mathcal{N}}}(m) < 2^m$ 并求解 $m$ 的界），我们可得：
+\begin{equation*}
+\mathrm{Pdim}(\mathcal{N})\lesssim C\left(\mathcal{D}^2\mathcal{W}^2 \log \mathcal{U}+\mathcal{D}^3\mathcal{W}^2\right)
+\lesssim C\left(\mathcal{D}^2\mathcal{W}^2\left( \mathcal{D}+\log \mathcal{W}\right)\right)
+\end{equation*}
+其中常数 $C$ 与网络架构无关，$\mathcal{U}$ 为实现函数族 $\mathcal{N}$ 的神经网络中包含的神经元总数。至此，引理得证。
+\end{proof}
+
+
+
+
+基于上述引理，不妨记 $\mathcal{N}^{1,2}$ 表示用于逼近梯度 $\nabla u$ 的 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 神经网络函数类。结合引理\ref{lem:gradcomplexity}中给出的神经网络导数复杂度界，我们可以直接推导出该假设空间的伪维度上界为：
 \begin{equation*}
 \operatorname{Pdim}(\mathcal{N}^{1,2})\lesssim C_2 \mathcal{D}^4\mathcal{W}^2(\mathcal{D}+\log\mathcal{W}).
 \end{equation*}
-其中，$C_2$ 为不依赖于输入维度 $d$ 的绝对常数
+其中，$C_2$ 为不依赖于输入维度 $d$ 的绝对常数。
 
 基于前文的理论准备，本节将通过严格的推导建立统计误差的上界。
 \begin{theorem}\label{thm:staerr:finalthm}
@@ -655,7 +816,7 @@ $$\mathcal{C}(\varepsilon, \mathcal{N}, n) \leq \left(\frac{en\mathcal{B}}{\vare
 \end{theorem}
 
 \begin{proof}[定理 \ref{thm:staerr:finalthm} 的证明]
-综合引理 \ref{lemma:staerr:Rad234} 至引理 \ref{lemma:staerr:pdim} 的结果，我们可以对经验损失与期望损失的绝对误差进行一致界定
+综合引理 \ref{lemma:staerr:Rad234} 至引理 \ref{lemma:staerr:pdim} 的结果，我们可以对经验损失与期望损失的绝对误差进行一致界定：
 $$\begin{aligned}
 \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{k}(u)-\widehat{\mathcal{L}}_{k}(u)\right| \leq\;& \frac{|\Omega|}{2}\mathfrak{N}\left(\mathcal{N}^{1,2}\right) +
 \left(\frac{|\Omega|\mathcal{B}^{2}}{2}+\frac{\mu_{1}|\partial\Omega|\mathcal{B}}{2}+\frac{3\mu_{2}|\Omega|^{2}\mathcal{B}^{3}}{2}\right)\mathfrak{N}\left(\mathcal{N}^{2}\right)\\
@@ -800,7 +961,7 @@ $$r = \frac{\alpha}{6\alpha + 2} = \frac{m-2}{2(3m+d-6)}$$
 \end{remark}
 
 
-\section{数值实验与超参数对解的影响}\label{sec_num} 
+\section{数值实验}\label{sec_num} 
 为了验证我们理论的有效性与正确性，我们开展了数值实验，以在不同条件下逼近特征值及其对应的特征函数。
 
 在所有实验中，我们均使用标准的 Adam 优化器来训练网络。所有的实现与实验均基于 CentOS 系统下的 Python 3.9.12 和 PyTorch 框架，硬件环境配备 2 颗主频 2.40 GHz 的 Intel(R) Xeon(R) E5-2640 v4 x86\_64 处理器，以及一张 16 GB 显存的 Nvidia Tesla V100 GPU。
@@ -813,10 +974,9 @@ $$r = \frac{\alpha}{6\alpha + 2} = \frac{m-2}{2(3m+d-6)}$$
 T u &=0 & & \text { on } \partial \Omega,
 \end{aligned}\right.
 \end{equation}
-其中 $\Omega=[0,1]^d$ 且 $w(t)=\exp(-\pi t)$（指数势）。\textcolor{red}{Eq.~\eqref{eq:conloss} 是一个变量分离方程，其解在每个维度上都表现出各向同性。可以通过利用有限元方法导出参考解。}
+其中 $\Omega=[0,1]^d$ 且 $w(t)=\exp(-\pi t)$（指数势）。方程 \eqref{eq:conloss} 是一个变量分离方程，其解在每个维度上都表现出各向同性。可以通过利用有限元方法导出参考解。
 
-在本节中，我们首先考虑几种低维情形，并研究计算误差如何随 $\varepsilon_1$、$\varepsilon_2$、神经网络规模以及样本量变化，并与理论结果相对应。本节中所有实验的默认设置如下：$d=2$，学习率 = 0.001，$\varepsilon_1=1000$，$\varepsilon_2=200$，$\mathcal{W} = 100$，$\mathcal{D} = 4$，epoch $= 10000$，样本量 $= 10000/3000$。我们将以此作为进行各种对照实验的基准
-线。
+在本节中，我们首先考虑几种低维情形，并研究计算误差如何随 $\varepsilon_1$、$\varepsilon_2$、神经网络规模以及样本量变化，并与理论结果相对应。本节中所有实验的默认设置如下：$d=2$，学习率 = 0.001，$\varepsilon_1=1000$，$\varepsilon_2=200$，$\mathcal{W} = 100$，$\mathcal{D} = 4$，epoch $= 10000$，样本量 $= 10000/3000$。我们将以此作为各种对照实验的基准线。
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.7\textwidth]{figures1/EigFig2023/under-different-lambda1.png}
@@ -849,7 +1009,7 @@ T u &=0 & & \text { on } \partial \Omega,
     \caption{Heatmap for eigenfunction approximation for $\varepsilon_2=125$ and $\varepsilon_2=200$. }\label{fig:heatmap}
 \end{figure}
 
-最后，我们考察了网络宽度和采样大小对解的影响。正如预期的那样，通过增加网络宽度和扩大采样规模，我们通常能够获得更精确的解
+最后，我们考察了网络宽度和采样大小对解的影响。正如预期的那样，通过增加网络宽度和扩大采样规模，我们通常能够获得更精确的解。
 
 \begin{figure}[htbp]
     \centering
@@ -1160,168 +1320,15 @@ $\mu_1/\mu_2$ & 5000/3000\\
 \section{本章小结}\label{sec dis}
 本文研究了利用神经网络求解椭圆多重特征值问题。我们基于椭圆特征值问题的惩罚变分形式，提出了一种计算椭圆多重特征值的通用形式。我们利用 DRM 求解了该惩罚变分形式。我们建立了估计特征值与真实特征值之间误差的上界，该上界与网络的深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 以及训练样本量 $n$ 有关。通过探讨特征值问题的正则性并适当选择深度 $\mathcal{D}$ 和宽度 $\mathcal{W}$，我们表明该误差界在一定程度上缓解了维数灾难的影响。若干模拟结果验证了所提方法的有效性，并支持了我们的理论结果。
 
-\section{本章附录}\label{app:proofingen}
-\subsection{引理 \ref{lemma:staerr:Rad234} 的证明}
-\begin{proof}[引理 \ref{lemma:staerr:Rad234}]\label{pf:lemma:staerr:Rad234}
-
-引理的证明可分为两部分。我们首先证明后四个不等式，这主要依赖于 Rademacher 复杂度的 Lipschitz 收缩不等式：
-\begin{lemma}\label{lemma:staerr:liprad}
-假设函数 $\psi:\mathbb{R}^{d}\times\mathbb{R}\rightarrow\mathbb{R}$ 满足 $(x,y)\mapsto\psi(x,y)$，且对任意给定的 $x$，其关于 $y$ 是 $\ell$-Lipschitz 连续的。令 $\mathcal{N}$ 为定义在 $\Omega$ 上的函数类，并记 $\psi\circ\mathcal{N}=\{\psi\circ u:x\mapsto\psi(x,u(x)), u\in\mathcal{N}\}$，则有：
-$$ \mathfrak{R}(\psi\circ\mathcal{N})\leq\ell \ \mathfrak{R}(\mathcal{N}). $$
-\end{lemma}
-该引理的严谨推导可参见文献 \cite{ledoux2013probability} 中的推论 3.17。基于此推论，对于引理\ref{lemma:staerr:Rad234}的第二个不等式，由于此情形下的 Lipschitz 常数为 $2\mathcal{B}^{2}$，我们可得：
-$$ \sup _{u \in \mathcal{N}^{2}}\left|\mathcal{L}_{k, 2}(u)-\widehat{\mathcal{L}}_{k, 2}(u)\right| \leq |\Omega|\mathfrak{R}\left(\left\{w u^{2}:u\in \mathcal{N}^{2}\right\}\right) \leq 2|\Omega|\mathcal{B}^{2}\mathfrak{R}\left(\mathcal{N}^{2}\right). $$
-
-同理，第三个不等式亦可由此得出，其对应的 Lipschitz 常数为 $2\mathcal{B}$。
-
-至于最后两个不等式，我们使用如下不等式： 
-\begin{equation*} 
-|a^{2}-b^{2}|\leq 2|a||a-b|+|a-b|^{2}. 
-\end{equation*}
-利用类似的方法即可推导得出相应结论。
-
-接下来，我们单独处理第一个不等式。由于梯度算子 $\nabla$ 不具备 Lipschitz 连续性，无法直接应用引理 \ref{lemma:staerr:liprad}。为此，我们需要证明 $\nabla u$ 的平方项（即 $|\nabla u|^2$）可由 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 混合网络实现。具体而言，受 Baur-Strassen 关于多项式及其偏导数计算复杂度的理论启发 \cite{baur1983complexity}，我们提出如下引理：
-
-\begin{lemma}\label{lem:gradcomplexity}
-设 $u$ 为由深度 $\mathcal{D}$、宽度 $\mathcal{W}$ 的 $\mathrm{ReLU}^{2}$ 神经网络所实现的函数，则其梯度的平方项 $|\nabla u|^2$ 可由一个深度不超过 $2\mathcal{D}$、宽度不超过 $(2\mathcal{D}+4)\mathcal{W} + 2d$ 的 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 混合网络精确表示。
-\end{lemma}
-
-\begin{proof}
-为表述简便，下文将 $\mathrm{ReLU}$ 与 $\mathrm{ReLU}^{2}$ 激活函数分别记为 $\sigma_1$ 与 $\sigma_2$。容易观察到导数关系 $\sigma_2'(x)=2\sigma_1(x)$。我们将通过构造法来证明本引理。沿用定义 \ref{def:fnn} 中的记号，设 $u^{(k)}$ 为原 $\mathrm{ReLU}^{2}$ 网络第 $k$ 层的激活值，令 $z^{(k)} = W^{(k)}u^{(k-1)} + b^{(k)}$，且 $u^{(k)}=\sigma_2(z^{(k)})$。不失一般性，假设原网络具有单神经元线性输出，即 $u = z_1^{(\mathcal{D})}$。整个构造过程可划分为以下三个阶段：
-
-首先，我们利用 $\mathrm{ReLU}$-$\mathrm{ReLU}^{2}$ 网络重现原网络的前向计算，并同时记录反向推导所需的全部局部导数。记第 $k$ 层的局部导数为 $c^{(k)}$，则有：
-$$c^{(k)} = \sigma_2'(z^{(k)}) = 2\sigma_1(z^{(k)})$$
-利用 $\sigma_1$ 函数的性质，恒等映射可精确表示为 $x = \sigma_1(x) - \sigma_1(-x)$。因此，在网络传播过程中传递并保留这些局部导数只需使用 $\sigma_1$ 激活函数。为了完整复现原网络的计算并缓存所有局部导数，此阶段需要深度 $\mathcal{D}$。在计算第 $k$ 层时，计算激活值 $u^{(k)}$ 至多消耗 $\mathcal{W}$ 个神经元，而缓存前 $k$ 层的局部导数至多消耗 $2k\mathcal{W}$ 个神经元。由此可知，该阶段的最大宽度受限于 $\mathcal{W} + 2\mathcal{D}\mathcal{W} = (2\mathcal{D}+1)\mathcal{W}$。
-
-第二步，计算伴随变量，这里伴随变量定义为网络输出对各层预激活值的梯度，即 $\delta^{(k)} = \nabla_{z^{(k)}} u$。初始化 $\delta^{(\mathcal{D})} = 1$。根据多元微积分的链式法则，可得如下反向递推关系：
-$$\delta_q^{(k)} = c_q^{(k)} \cdot \sum_{p=1}^{n_{k+1}} W_{pq}^{(k+1)} \delta_p^{(k+1)}$$
-令 $v_q^{(k)} = \sum_{p=1}^{n_{k+1}} W_{pq}^{(k+1)} \delta_p^{(k+1)}$。注意到 $v_q^{(k)}$ 仅为第 $k+1$ 层伴随变量的线性组合，无需消耗额外的非线性计算深度。利用极化恒等式（$xy=\frac{1}{4}\left[(x+y)^2-(x-y)^2\right]$），两个标量 $c_q^{(k)}$ 与 $v_q^{(k)}$ 的乘法操作可通过一个单隐藏层内包含 $4$ 个 $\sigma_2$ 神经元的子网络精确实现：
-$$c_q^{(k)} \cdot v_q^{(k)} = \frac{1}{4}\left[\sigma_2(c_q^{(k)}+v_q^{(k)}) + \sigma_2(-c_q^{(k)}-v_q^{(k)}) - \sigma_2(c_q^{(k)}-v_q^{(k)}) - \sigma_2(-c_q^{(k)}+v_q^{(k)})\right]$$
-我们将原网络的计算图进行反向展开，针对 $k$ 从 $\mathcal{D}-1$ 递减至 $1$，逐层构造上述乘法子网络以计算 $\delta^{(k)}$。由于 $c_q^{(k)}$ 和 $v_q^{(k)}$ 均可由已有的网络节点通过线性组合获得，每次计算 $\delta^{(k)}$ 仅需通过 $1$ 层 $\sigma_2$ 激活函数。该反向递推共需进行 $\mathcal{D}-1$ 次，因此本阶段消耗的深度为 $\mathcal{D}-1$。在每层中，至多需要并行计算 $\mathcal{W}$ 个乘法，消耗 $4\mathcal{W}$ 个神经元。同时，网络需要继续向下层传递剩余未使用的缓存变量 $c^{(1)}, \dots, c^{(k-1)}$，这部分占用至多 $2(\mathcal{D}-1)\mathcal{W}$ 个神经元。因此，此阶段的最大宽度界限为 $4\mathcal{W} + 2\mathcal{D}\mathcal{W}$
-
-第三步，计算梯度并平方求和：当递推至第一层并获得 $\delta^{(1)}$ 后，即可一次性求出针对所有 $d$ 个输入变量的偏导数：
-$$\partial_i u = \sum_{p=1}^{n_1} W_{pi}^{(1)} \delta_p^{(1)}, \quad i=1, 2, \dots, d$$
-最后，计算梯度向量模长的平方：
-$$|\nabla u|^2 = \sum_{i=1}^d (D_i u)^2 = \sum_{i=1}^d \left[ \sigma_2(D_i u) + \sigma_2(-D_i u) \right]$$
-由于求偏导数 $D_iu$ 属于线性映射，最终的平方与求和操作只需增加 $1$ 层 $\sigma_2$ 非线性层。在此最终层内，需并行计算 $d$ 个维度分量的平方展开项，共消耗 $2d$ 个神经元。
-
-将上述三个阶段级联，所构造的目标混合网络的总复杂度受限于：
-\begin{itemize}
-    \item 总深度： $\mathcal{D}\left(|\nabla u|^2\right) = \mathcal{D} + (\mathcal{D}-1) + 1 = 2\mathcal{D}$
-    \item 总宽度： 取各计算阶段宽度的最大值：
-    $$\mathcal{W}\left(|\nabla u|^2\right) \leq \max\left\{ (2\mathcal{D}+1)\mathcal{W}, \ 2d \right\} \leq (2\mathcal{D}+4)\mathcal{W} + 2d$$
-\end{itemize}
+% \section{本章附录}\label{app:proofingen}
+% \subsection{引理 \ref{lemma:staerr:Rad234} 的证明}
 
 
-\end{proof}
+% \subsection{引理 \ref{lemma:staerr:Rad_cover} 的证明}
 
-\end{proof}
 
-\subsection{引理 \ref{lemma:staerr:Rad_cover} 的证明}
-\begin{proof}[引理 \ref{lemma:staerr:Rad_cover}]\label{pf:lemma:staerr:Rad_cover}
-首先，我们引入 Massart 有限类引理（Massart's finite class lemma），其详细证明可参阅文献 \cite{boucheron2013concentration}。
+% \subsection{引理 \ref{lemma:staerr:pdim} 的证明}
 
-\begin{lemma}[Massart 有限类引理 \cite{boucheron2013concentration}]\label{Mfinite}
-对于任意给定的有限集 $V\subset\mathbb{R}^{n}$，记其最大向量 $\ell_2$ 范数为 $D=\sup_{v\in V}\|v\|_{2}$。则有：
-$$ \mathbb{E}_{\Sigma_{n}}\left[ \sup_{v\in V}\frac{1}{n}\left| \sum_{i=1}^{n}\sigma_{i}v_{i} \right| \right] \leq \frac{D}{n}\sqrt{2\log(2|V|)}, $$
-其中 $\sigma_{i}$ 和 $\mathbb{E}_{\Sigma_{n}}$ 分别为定义 \ref{def:staerr:radcom} 中所述的 Rademacher 随机变量及其期望。
-\end{lemma}
-接下来，我们采用标准的链式推导（Chaining Method）。令 $\varepsilon_{k}=2^{-k+1} B$。记 $\mathcal{F}_{k}$ 为 $\mathcal{F}$ 在无穷范数下的一个 $\varepsilon_{k}$-覆盖集，其基数满足 $\left|\mathcal{F}_{k}\right|=\mathcal{C}\left(\varepsilon_{k}, \mathcal{F},\|\cdot\|_{\infty}\right)$。这意味着，对于任意函数 $u \in \mathcal{F}$，必定存在 $u_{k} \in \mathcal{F}_{k}$ 使得 $\left\|u-u_{k}\right\|_{\infty} \leq \varepsilon_{k}$。令 $K$ 为一个待定的正整数。通过项的分解与三角不等式，我们有：
-
-$$ \begin{aligned} 
-    &\quad\; \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits_{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i} u\left(Z_{i}\right)\right|\right] \\ &= \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right) + \sum\limits_{j=1}^{K-1} \sum\limits_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right) + \sum\limits_{i=1}^{n} \sigma_{i} u_{1}\left(Z_{i}\right)\right|\right] \\ &\leq \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right)\right|\right] \\ &\quad + \sum\limits_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right] \\ &\quad + \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i} u_{1}\left(Z_{i}\right)\right|\right]. 
-\end{aligned} $$
-由于零函数 $0 \in \mathcal{F}$，我们可以无妨设定 $\mathcal{F}_{1}=\{0\}$，从而消除上述不等式中的第三项。对于第一项，应用 Rademacher 变量的性质与 Hölder 不等式：
-\begin{equation*}
-\begin{aligned}
-{}&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{t=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right)\right|\right]\\
-\leq&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n} \sum\limits_{i=1}^{n}\left|\sigma_{i}\right|\left\|u-u_{K}\right\|_{\infty}\right] \leq \varepsilon_{K}
-\end{aligned}
-\end{equation*}
-对于第二项中的求和单元，定义向量 $v_{i}^{j}=u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)$，并应用引理 \ref{Mfinite}，得到：
-\begin{equation*}
-\begin{aligned}
-&\sum_{j=1}^{K-1} \mathbb{E}_{\{\sigma\}_{i=1}^{n}}\left[\sup _{u \in \mathcal{F}} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right]\\
-=&\sum_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{t}\right\}_{t=1}^{n}}\left[\sup _{v \in V_{j}} \frac{1}{n} \left| \sum_{i=1}^{n} \sigma_{i} v_{i}^{j}\right|\right] \leq \sum_{j=1}^{K-1} \frac{D_{j}}{n} \sqrt{2 \log \left(2\left|V_{j}\right|\right)}.
-\end{aligned}
-\end{equation*}
-根据集合 $V_{j}$ 的构造，其势满足界限 $\left|V_{j}\right| \leq\left|\mathcal{F}_{j}\right|\left|\mathcal{F}_{j+1}\right| \leq\left|\mathcal{F}_{j+1}\right|^{2}$。同时，向量的范数上界 $D_j$ 可被限制为：
-$$ \begin{aligned}
-     D_j &= \sup_{v \in V_j} \left(\sum_{i=1}^{n}\left|u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right|^{2}\right)^{1 / 2} \leq \sqrt{n}\left\|u_{j+1}-u_{j}\right\|_{\infty} \\ &\leq \sqrt{n}\left\|u_{j+1}-u\right\|_{\infty}+\sqrt{n}\left\|u_{j}-u\right\|_{\infty} = \sqrt{n} \varepsilon_{j+1}+\sqrt{n} \varepsilon_{j} = 3 \sqrt{n} \varepsilon_{j+1}. 
-\end{aligned} $$
-将其代入前式，有：
-\begin{equation*}
-\begin{aligned}
-&\sum_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{i}, Z_{t}\right\}_{t=1}^{n}}\left[\sup _{u \in \mathcal{F}} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right] \\
-&\leq \sum_{j=1}^{K-1} \frac{D_{j}}{n} \sqrt{2 \log \left(2\left|V_{j}\right|\right)} \leq \sum_{j=1}^{K-1} \frac{3 \varepsilon_{j+1}}{\sqrt{n}} \sqrt{2 \log \left(2\left|\mathcal{F}_{j+1}\right|^{2}\right)}
-\end{aligned}
-\end{equation*}
-结合上述所有界的估计，我们将离散求和转化为 Dudley 积分形式：
-\begin{equation*}
-\begin{aligned}
-&\mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup _{u \in \mathcal{F}} \frac{1}{n}\left|\sum_{i=1}^{n} \sigma_{i} u\left(Z_{i}\right)\right|\right] \leq \varepsilon_{K}+\sum_{j=1}^{K-1} \frac{6 \varepsilon_{j+2}}{\sqrt{n}} \sqrt{2 \log \left(2\left|\mathcal{F}_{j+1}\right|^{2}\right)} \\
-&=\varepsilon_{K}+\frac{6}{\sqrt{n}} \sum_{j=1}^{K-1}\left(\varepsilon_{j+1}-\varepsilon_{j+2}\right) \sqrt{2 \log \left(2 \mathcal{C}\left(\varepsilon_{j+1}, \mathcal{F},\|\cdot\|_{\infty}\right)^{2}\right)}\\
-&\leq \varepsilon_{K}+\frac{6}{\sqrt{n}} \int_{\varepsilon_{K+1}}^{B / 2} \sqrt{2 \log \left(2 \mathcal{C}\left(\varepsilon, \mathcal{F},\|\cdot\|_{\infty}\right)^{2}\right)} d \varepsilon.
-\end{aligned}
-\end{equation*}
-最后，对于任意给定的精度 $0<\delta<\frac{B}{2}$，我们总可以通过选取充分大的 $K$ 使得 $\varepsilon_{K+2}<\delta \leq \varepsilon_{K+1}$，从而完成引理的证明。
-\end{proof}
-
-\subsection{引理 \ref{lemma:staerr:pdim} 的证明}
-\begin{proof}[引理 \ref{lemma:staerr:pdim}]\label{pf:lemma:staerr:pdim}
-本引理的证明思路如下：首先，我们回顾打散与 VC 维的严格定义。
-
-为了估计多项式的 Pdim，我们引入以下引理（其详细证明见文献 \cite{anthony2009neural} 的定理 8.3）：
-
-\begin{lemma}\label{lemma:covering_number}
-设 $p_1,\cdots,p_m$ 为 $m$ 个具有 $n$ 个变量且最高次数不超过 $d$ 的多项式。若 $n \leq m$，则这些多项式符号组合的集合基数满足：
-\begin{equation*}
-|{(\operatorname{sign}(p_1(x)),\cdots,\operatorname{sign}(p_m(x))):x\in\mathbb{R}^n}| \leq 2\left(\frac{2emd}{n}\right)^n
-\end{equation*}
-
-\end{lemma}
-接下来的论证借鉴了文献 \cite{bartlett2019nearly} 中定理 6 的分析框架。需要指出的是，由于 $\mathrm{VCdim}(\operatorname{sign}(\mathcal{N})) \leq \mathrm{Pdim}(\mathcal{N})$，此处推导出的结论比原定理略强。
-
-我们构造一个新的示性函数族： 
-\begin{equation*}
-\mathcal{\widetilde{N}}={\widetilde{u}(x,y)=\operatorname{sign}(u(x)-y): u\in\mathcal{N}}
-\end{equation*}
-
-根据定义，显然有 $\mathrm{Pdim}(\mathcal{N}) \leq \mathrm{VCdim}(\widetilde{\mathcal{N}})$。因此，问题转化为界定 $\widetilde{\mathcal{N}}$ 的 VC 维。设 $\mathcal{M}$ 为实现 $\mathcal{N}$ 中函数的神经网络的参数（权重与偏置）总数。对于任意给定的点集 $\{x_i\}_{i=1}^{m}\subset X$ 和 $\{y_i\}_{i=1}^{m}\subset\mathbb{R}$，我们考察由网络参数 $a \in \mathbb{R}^{\mathcal{M}}$ 诱导的二分法（dichotomies）数量：
-\begin{equation*}
-K_{{x_i},{y_i}}(m):=|{(\operatorname{sign}(u(x_{1}, a)-y_1), \ldots, \operatorname{sign}(u(x_{m}, a)-y_m)): a \in \mathbb{R}^{\mathcal{M}}}|
-\end{equation*}
-由定义可知，$K_{\{x_i\},\{y_i\}}(m)$ 在所有可能的 $\{x_i\}_{i=1}^{m}$ 与 $\{y_i\}_{i=1}^{m}$ 上的上确界，即为函数族 $\widetilde{\mathcal{N}}$ 的增长函数（Growth function） $\mathcal{G}_{\widetilde{\mathcal{N}}}(m)$。
-
-为了能够应用引理 \ref{lemma:covering_number}，我们需要将参数空间 $\mathbb{R}^{\mathcal{M}}$ 划分为若干子区域，使得在每一个子区域内，网络输出 $u(x_i,a)-y_i$ 关于参数 $a$ 均表现为无断点（breakpoints）的多项式。沿用文献 \cite{bartlett2019nearly} 中的划分策略，我们将参数空间划分为 $\{P_1,P_2,\cdots,P_N\}$，其中区域总数 $N$ 满足：
-\begin{equation} \label{pdimb1}
-N\leq\prod_{i=1}^{\mathcal{D}-1}2\left(\frac{2emk_i(1+(i-1)2^{i-1})}{\mathcal{M}i}\right)^{\mathcal{M}i}
-\end{equation}
-上式中，$k_i$ 表示神经网络第 $i$ 层的神经元数量，而 $\mathcal{M}_i$ 表示截至第 $i$ 层（包含第 $i$ 层）所有神经元输入的参数总数。基于此划分，二分法总数可由各子区域内的二分法数量之和控制：
-\begin{equation} \label{pdimb2}
-K_{{x_i},{y_i}}(m)\leq\sum_{i=1}^{N}|{(\operatorname{sign}(u(x_{1}, a)-y_1), \cdots, \operatorname{sign}(u(x_{m}, a)-y_m)): a\in P_i}|
-\end{equation}
-
-注意到在每个子区域 $P_i$ 内，$u(x_i,a)-y_i$ 是关于 $a$ 的多项式。如文献 \cite{bartlett2019nearly} 所证，该多项式的次数与其自身次数一致，且上界为 $1 + (\mathcal{D}-1)2^{\mathcal{D}-1}$。因此，直接应用引理 \ref{lemma:covering_number} 可得每个子区域的界：
-\begin{align}
-& |{(\operatorname{sign}(u(x_{1}, a)-y_1), \cdots, \operatorname{sign}(u(x_{m}, a)-y_m)): a\in P_i}|\nonumber \\
-& \leq2\left(\frac{2em(1+(\mathcal{D}-1)2^{\mathcal{D}-1})}{\mathcal{M}{\mathcal{D}}}\right)^{\mathcal{M}{\mathcal{D}}}\label{pdimb3}.
-\end{align}
-将式 (\ref{pdimb1}) 和 (\ref{pdimb3}) 代入式 (\ref{pdimb2}) 中，可推导出：
-\begin{equation*}
-K_{{x_i},{y_i}}(m)\leq\prod_{i=1}^{\mathcal{D}}2\left(\frac{2emk_i(1+(i-1)2^{i-1})}{\mathcal{M}_i}\right)^{\mathcal{M}i}.
-\end{equation*}
-由于该上界对所有样本点集均一致成立，故增长函数满足：
-\begin{equation*}
-\mathcal{G}_{\widetilde{\mathcal{N}}}(m)\leq\prod_{i=1}^{\mathcal{D}}2\left(\frac{2emk_i(1+(i-1)2^{i-1})}{\mathcal{M}_i}\right)^{\mathcal{M}_i},
-\end{equation*}
-最终，通过类似于文献 \cite{bartlett2019nearly} 中定理 6 的代数化简（令 $\mathcal{G}_{\widetilde{\mathcal{N}}}(m) < 2^m$ 并求解 $m$ 的界），我们可得：
-\begin{equation*}
-\mathrm{Pdim}(\mathcal{N})\lesssim C\left(\mathcal{D}^2\mathcal{W}^2 \log \mathcal{U}+\mathcal{D}^3\mathcal{W}^2\right)
-\lesssim C\left(\mathcal{D}^2\mathcal{W}^2\left( \mathcal{D}+\log \mathcal{W}\right)\right)
-\end{equation*}
-其中常数 $C$ 与网络架构无关，$\mathcal{U}$ 为实现函数族 $\mathcal{N}$ 的神经网络中包含的神经元总数。至此，引理得证。
-\end{proof}
 
 
 
