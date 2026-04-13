@@ -114,7 +114,7 @@ R(u) = \frac{a(u,u)}{\langle u, u \rangle}
 \begin{itemize}
 \item 第一个困难在于如何确保神经网络近似解满足 Dirichlet 零边界条件。从函数空间的角度审视，标准神经网络生成的函数空间 $\mathcal{N}$ 通常仅满足 $\mathcal{N} \subset H^{1}(\Omega)$，而非 $\mathcal{N} \subset H^{1}_{0}(\Omega)$。
 虽然部分现有工作（如 \cite{lu2021priorieigen}）尝试通过构造距离函数或特殊网络结构来“硬约束”边界条件，但这类方法往往局限于规则区域，难以推广至复杂几何形状，且增加了理论分析的难度。
-针对一般区域的 PDE 问题，边界惩罚法提供了一种更为灵活的“软约束”策略 \cite{duan2021analysis, Mller2021ErrorEF}。其核心思想是引入如下修正的双线性形式：
+针对一般区域的 PDE 问题，边界惩罚法提供了一种更为灵活的“软约束”策略 \cite{duan2022convergence, Mller2021ErrorEF}。其核心思想是引入如下修正的双线性形式：
 \begin{equation}\label{eq:penalty_bilinear}
 a^{\mu_1}(u,v) = a(u,v) + \mu_1\int_{\partial \Omega}uv \text{d}s,
   \end{equation}
@@ -579,8 +579,6 @@ W\leq \psi(\frac{1}{16s^{d+1}d}\mathcal{W})\leq\psi(\mathcal{W}),
 统一记 $\mu$ 为 $\Omega$ 或 $\partial \Omega$ 上的均匀分布。给定 $n$ 个来自 $\mu$ 的独立同分布样本 $\mathbf{Z}_{n}=\{Z_{i}\}_{i=1}^{n}$（其中 $Z_i$ 代表 $X_i$ 或 $Y_i$，且 $n$ 对应 $N$ 或 $M$），我们将用Rademacher 复杂度来量化神经网络假设空间 $\mathcal{N}$ 在给定经验样本 $\mathbf{Z}_{n}$ 上的容量。
 
 界定统计误差的整体逻辑框架如下：1.定义容量指标：在定义 \ref{def:staerr:radcom} 至 \ref{def:staerr:pdim} 中，依次了给出Rademacher复杂度 $\mathfrak{R}$、覆盖数$\mathcal{C}_{\infty}$ 以及伪维数（Pdim）的严谨数学定义。2.误差项分解控制：利用Rademacher复杂度，通过引理 \ref{lemma:staerr:Rad234} 对上述各分解项的泛化间隙进行约束。3.复杂度链式传递：引理 \ref{lemma:staerr:Rad_cover} 建立起通过覆盖数积分控制Rademacher复杂度的桥梁；随后，引理 \ref{lemma:staerr:cover_Pdim} 进一步证明覆盖数可由伪维数所控制。4.网络结构关联：引理 \ref{lemma:staerr:pdim} 显式给出了具有特定深度与宽度的神经网络的伪维数阶数。最终，定理 \ref{thm:staerr:finalthm} 将上述所有理论组件整合，推导出总体统计误差的显式上界。
-
-为保证正文逻辑的流畅性与可读性，本节先陈述核心的引理与定理，所有相关结论的详细证明均收录于附录 \ref{app:proofingen} 中。
 
 
 \begin{lemma}\label{lemma:staerr:Rad234}

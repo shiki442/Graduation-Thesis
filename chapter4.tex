@@ -2,7 +2,7 @@
 承接第\ref{chap:eigen}章关于高维线性多重特征值问题的探讨，本章将DRM进一步拓展至更为复杂的非线性系统，系统研究基于 DRM 求解高维半线性椭圆偏微分方程的算法架构与理论基础。
 \section{问题背景与预备知识}\label{sec:pre}
 \subsection{半线性偏微分方程问题概述}
-半线性椭圆偏微分方程是刻画自然界复杂演化过程（如流体力学中的涡旋动力学、非线性光学中的孤子传播与反应扩散系统等）的核心数学模型之一。此类方程的显著特征在于，其非线性项仅依赖于未知函数本身及其低阶导数。当上述物理模型向高维空间拓展时，传统基于网格剖分的数值离散方法会遭遇明显的”维数灾难”，计算自由度与内存开销随空间维数 $d$ 显著增长。
+半线性椭圆偏微分方程是刻画自然界复杂演化过程（如流体力学中的涡旋动力学、非线性光学中的孤子传播与反应扩散系统等）的核心数学模型之一\cite{nonlinearbook}。此类方程的显著特征在于，其非线性项仅依赖于未知函数本身及其低阶导数。当上述物理模型向高维空间拓展时，传统基于网格剖分的数值离散方法会遭遇明显的”维数灾难”，计算自由度与内存开销随空间维数 $d$ 显著增长。
 
 近年来，以 DRM 为代表的无网格深度学习算法为突破高维 PDE 的算力瓶颈提供了新的思路，并在纯线性或低阶方程域建立了较为完善的误差分析体系。然而，将 DRM 推广至半线性体系时，非线性项的引入从根本上改变了问题的变分结构与解的正则性。一方面，非线性特征往往导致解场存在多重分支甚至奇异性；另一方面，高阶或指数形式的非线性增长会使得能量泛函高度非凸，且失去全局 Lipschitz 连续性，导致神经网络的经验风险极易陷入发散或局部陷阱。当前理论框架尚未能从严格数学角度完全量化并控制由”非线性诱导的统计与逼近误差”，这构成了当前科学机器学习领域有待研究的重要课题。
 
@@ -51,7 +51,7 @@ J(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial
 在假设 \ref{ass:f} 成立的条件下，方程 \eqref{eq:maineq} 存在唯一的解 $u \in H^2(\Omega)$，且满足如下正则性估计：
 $$\|u\|_{H^2(\Omega)} \le C \left( \|g - V(u)\|_{L^2(\Omega)} + \|h\|_{H^{1/2}(\partial \Omega)} + \|u\|_{H^1(\Omega)} \right)$$
 \end{theorem}
-本定理的证明参考了 \cite{2013Roubiek}（第二节）、\cite{evans2010partial}（第八章） 以及 \cite{brezis2011functional}（第八、九章）中关于椭圆方程经典正则性理论的结论。
+本定理的证明参考了 \cite{roubicek2013nonlinear}（第二节）、\cite{evans2010partial}（第八章） 以及 \cite{brezis2011functional}（第八、九章）中关于椭圆方程经典正则性理论的结论。
 \begin{proof}[Robin边界条件]
 定义泛函 $J: H^1(\Omega) \to \mathbb{R}$ 为：
 $$J(u) = \frac{1}{2}\int_{\Omega} |\nabla u|^2 \, dx + \frac{\mu}{2}\int_{\partial \Omega} u^2 \, dS + \int_{\Omega} W(u) \, dx - \int_{\Omega} gu \, dx - \mu \int_{\partial \Omega} hu \, dS$$
@@ -489,7 +489,7 @@ u^{\varepsilon}_{\mathcal{B}}(x)=\int \mathcal{B}^{q}\rho\left(\frac{y}{\mathcal
 注意到 $\lambda_{\mathbf{I}}$ 是一次数至多为 $d$ 的分段多项式函数，不难推导出 $\lambda_{\mathbf{I}}$ 可由宽度为 $4d$、深度为 $\lceil \log_{2}d\rceil+3$ 的 $\mathrm{ReLU}^{2}$-神经网络精确表示。
 \end{definition}
 
-基于多项式逼近理论 \cite{1984Arcangeli}，我们有如下局部误差估计：
+基于多项式逼近理论 \cite{arcangeli1984estimation}，我们有如下局部误差估计：
 \begin{lemma}[局部逼近]
 设 $f\in W^{s,p}(\Omega)\cap W^{1,\infty}(\Omega)$，其中 $s\in (1,2]$。对于任意多重指标 $\mathbf{I}$，存在一个宽度为 $\{d,\frac{d^{2}+3d+2}{2},1\}$ 的 $\mathrm{ReLU}^{2}$-神经网络 $\Psi_{\mathbf{I}}[f]$，使得：
 \begin{enumerate}
@@ -499,7 +499,7 @@ u^{\varepsilon}_{\mathcal{B}}(x)=\int \mathcal{B}^{q}\rho\left(\frac{y}{\mathcal
 \end{enumerate}
 \end{lemma}
 \begin{proof}
-通过审慎选择参数 $\{a_{i},b_{i}\}$，可确保集合 $\{\mathrm{ReLU}^{2}(a_{i}^{T}x+b_{i})\}$ 构成多项式空间 $P(V_{\mathbf{I}})$ 的一组完备线性基（维数为 $\frac{d^{2}+3d+2}{2}$）。上述逼近界则是文献 \cite{1984Arcangeli} 工作的直接推论。证毕。
+通过审慎选择参数 $\{a_{i},b_{i}\}$，可确保集合 $\{\mathrm{ReLU}^{2}(a_{i}^{T}x+b_{i})\}$ 构成多项式空间 $P(V_{\mathbf{I}})$ 的一组完备线性基（维数为 $\frac{d^{2}+3d+2}{2}$）。上述逼近界则是文献 \cite{arcangeli1984estimation} 工作的直接推论。证毕。
 \end{proof}
 
 将局部逼近函数通过单位分解拼接，即 $\tilde{f}=\sum_{\mathbf{I}}\lambda_{\mathbf{I}}\Psi_{\mathbf{I}}[f]$，即可得到如下全局逼近引理：

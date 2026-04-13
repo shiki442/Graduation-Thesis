@@ -2,52 +2,114 @@
 
 \bibitem{lagaris1998artificial}
 Isaac~E Lagaris, Aristidis Likas, and Dimitrios~I Fotiadis.
-\newblock Artificial neural networks for solving ordinary and partial differential equations.
-\newblock {\em IEEE transactions on neural networks}, 9(5):987--1000, 1998.
+\newblock Artificial neural networks for solving ordinary and partial
+  differential equations.
+\newblock {\em IEEE Transactions on Neural Networks}, 9(5):987--1000, 1998.
 
 \bibitem{raissi2019physics}
 Maziar Raissi, Paris Perdikaris, and George~E Karniadakis.
-\newblock Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations.
-\newblock {\em Journal of Computational physics}, 378:686--707, 2019.
+\newblock Physics-informed neural networks: A deep learning framework for
+  solving forward and inverse problems involving nonlinear partial differential
+  equations.
+\newblock {\em Journal of Computational Physics}, 378:686--707, 2019.
 
-\bibitem{wang2021understanding}
-Sifan Wang, Yujun Teng, and Paris Perdikaris.
-\newblock Understanding and mitigating gradient flow pathologies in physics-informed neural networks.
-\newblock {\em SIAM Journal on Scientific Computing}, 43(5):A3055--A3081, 2021.
+\bibitem{raissi2017physics}
+Maziar Raissi, Paris Perdikaris, and George~Em Karniadakis.
+\newblock Physics informed deep learning (part {I}): Data-driven solutions of
+  nonlinear partial differential equations.
+\newblock {\em arXiv preprint arXiv:1711.10561}, 2017.
 
 \bibitem{jagtap2020conservative}
 Ameya~D Jagtap, Ehsan Kharazmi, and George~Em Karniadakis.
-\newblock Conservative physics-informed neural networks on discrete domains for conservation laws: Applications to forward and inverse problems.
-\newblock {\em Computer Methods in Applied Mechanics and Engineering}, 365:113028, 2020.
+\newblock Conservative physics-informed neural networks on discrete domains for
+  conservation laws: Applications to forward and inverse problems.
+\newblock {\em Computer Methods in Applied Mechanics and Engineering},
+  365:113028, 2020.
 
 \bibitem{jagtap2021extended}
 Ameya~D Jagtap and George~E Karniadakis.
-\newblock Extended physics-informed neural networks (xpinns): A generalized space-time domain decomposition based deep learning framework for nonlinear partial differential equations.
+\newblock Extended physics-informed neural networks ({XPINNs}): A generalized
+  space-time domain decomposition based deep learning framework for nonlinear
+  partial differential equations.
 \newblock In {\em AAAI Spring Symposium: MLPS}, pages 2002--2041, 2021.
+
+\bibitem{Pang2018fPINNsFP}
+Guofei Pang, Lu~Lu, and George~Em Karniadakis.
+\newblock f{PINNs}: Fractional physics-informed neural networks.
+\newblock {\em SIAM J. Sci. Comput.}, 41:A2603--A2626, 2018.
+
+\bibitem{gu2021selectnet}
+Yiqi Gu, Haizhao Yang, and Chao Zhou.
+\newblock {SelectNet}: Self-paced learning for high-dimensional partial
+  differential equations.
+\newblock {\em Journal of Computational Physics}, 441:110444, 2021.
+
+\bibitem{lu2021deepxde}
+Lu~Lu, Xuhui Meng, Zhiping Mao, and George~Em Karniadakis.
+\newblock {DeepXDE}: A deep learning library for solving differential
+  equations.
+\newblock {\em SIAM Review}, 63(1):208--228, 2021.
+
+\bibitem{GUO2022115523}
+Ling Guo, Hao Wu, Xiaochen Yu, and Tao Zhou.
+\newblock {Monte Carlo} {fPINNs}: Deep learning method for forward and inverse
+  problems involving high dimensional fractional partial differential
+  equations.
+\newblock {\em Computer Methods in Applied Mechanics and Engineering},
+  400:115523, 2022.
+
+\bibitem{han2018solving}
+Jiequn Han, Arnulf Jentzen, and Weinan E.
+\newblock Solving high-dimensional partial differential equations using deep
+  learning.
+\newblock {\em Proceedings of the National Academy of Sciences},
+  115(34):8505--8510, 2018.
 
 \bibitem{Weinan2017The}
 Weinan E and Bing Yu.
-\newblock The deep ritz method: a deep learning-based numerical algorithm for solving variational problems.
+\newblock The deep {Ritz} method: A deep learning-based numerical algorithm for
+  solving variational problems.
 \newblock {\em Communications in Mathematics and Statistics}, 6(1):1--12, 2018.
 
 \bibitem{Justin2018DGM}
 Justin Sirignano and Konstantinos Spiliopoulos.
-\newblock Dgm: A deep learning algorithm for solving partial differential equations.
-\newblock {\em Journal of computational physics}, 375:1339--1364, 2018.
+\newblock {DGM}: A deep learning algorithm for solving partial differential
+  equations.
+\newblock {\em Journal of Computational Physics}, 375:1339--1364, 2018.
+
+\bibitem{wan2020zang}
+Yaohua Zang, Gang Bao, Xiaojing Ye, and Haomin Zhou.
+\newblock Weak adversarial networks for high-dimensional partial differential
+  equations.
+\newblock {\em Journal of Computational Physics}, 411:109409, 2020.
+
+\bibitem{chen2023friedrichs}
+Fan Chen, Jianguo Huang, Chunmei Wang, and Haizhao Yang.
+\newblock {Friedrichs} learning: Weak solutions of partial differential
+  equations via deep learning.
+\newblock {\em SIAM Journal on Scientific Computing}, 45(3):A1271--A1299, 2023.
+
+\bibitem{mishra2023estimates}
+Siddhartha Mishra and Roberto Molinaro.
+\newblock Estimates on the generalization error of physics-informed neural
+  networks for approximating {PDEs}.
+\newblock {\em IMA Journal of Numerical Analysis}, 43(1):1--43, 2023.
 
 \bibitem{yarotsky2017error}
 Dmitry Yarotsky.
-\newblock Error bounds for approximations with deep relu networks.
-\newblock {\em Neural networks}, 94:103--114, 2017.
+\newblock Error bounds for approximations with deep {ReLU} networks.
+\newblock {\em Neural Networks}, 94:103--114, 2017.
 
 \bibitem{yarotsky2018optimal}
 Dmitry Yarotsky.
-\newblock Optimal approximation of continuous functions by very deep relu networks.
-\newblock In {\em Conference on learning theory}, pages 639--649. PMLR, 2018.
+\newblock Optimal approximation of continuous functions by very deep {ReLU}
+  networks.
+\newblock In {\em Conference on Learning Theory}, pages 639--649. PMLR, 2018.
 
 \bibitem{guhring2020error}
 Ingo G{\"u}hring, Gitta Kutyniok, and Philipp Petersen.
-\newblock Error bounds for approximations with deep relu neural networks in w s, p norms.
+\newblock Error bounds for approximations with deep relu neural networks in
+  $w^{s,p}$ norms.
 \newblock {\em Analysis and Applications}, 18(05):803--859, 2020.
 
 \bibitem{lu2021deep}
@@ -57,287 +119,193 @@ Jianfeng Lu, Zuowei Shen, Haizhao Yang, and Shijun Zhang.
 
 \bibitem{shin2020convergence}
 Yeonjong Shin, Jerome Darbon, and George~Em Karniadakis.
-\newblock On the convergence of physics informed neural networks for linear second-order elliptic and parabolic type pdes.
+\newblock On the convergence of physics informed neural networks for linear
+  second-order elliptic and parabolic type {PDEs}.
 \newblock {\em arXiv preprint arXiv:2004.01806}, 2020.
-
-\bibitem{evans2010partial}
-Lawrence~C. Evans.
-\newblock {\em Partial Differential Equations}, volume~19 of {\em Graduate Studies in Mathematics}.
-\newblock American Mathematical Society (AMS), {Second} edition, 2010.
-
-\bibitem{brezis1978remarks}
-Haiem Brezis and Tosio Kato.
-\newblock Remarks on the schr{\"o}dinger operator with singular complex potentials.
-\newblock Technical report, 1978.
-
-\bibitem{willem2012minimax}
-Michel Willem.
-\newblock {\em Minimax theorems}, volume~24.
-\newblock Springer Science \& Business Media, 2012.
-
-\bibitem{johnson2004convergence}
-Oliver Johnson.
-\newblock Convergence of the poincar{\'e} constant.
-\newblock {\em Theory of Probability \& Its Applications}, 48(3):535--541, 2004.
-
-\bibitem{courtade2020bounds}
-Thomas~A Courtade.
-\newblock Bounds on the poincar{\'e} constant for convolution measures.
-\newblock In {\em Annales de l'Institut Henri Poincar{\'e}, Probabilit{\'e}s et Statistiques}, volume~56, 2020.
-
-\bibitem{berezin2012schrodinger}
-Feliks~Aleksandrovich Berezin and Mikhail Shubin.
-\newblock {\em The Schr{\"o}dinger Equation}, volume~66.
-\newblock Springer Science \& Business Media, 2012.
-
-\bibitem{li1983schrodinger}
-Peter Li and Shing-Tung Yau.
-\newblock On the schr{\"o}dinger equation and the eigenvalue problem.
-\newblock {\em Communications in Mathematical Physics}, 88(3):309--318, 1983.
-
-\bibitem{fortunato1998eigenvalue}
-Vieri~Benci—Donato Fortunato.
-\newblock An eigenvalue problem for the schrodinger--maxwell equations.
-\newblock {\em Journal of the Juliusz Schauder Center}, 11:283--293, 1998.
-
-\bibitem{chen2021friedrichs}
-Fan Chen, Jianguo Huang, Chunmei Wang, and Haizhao Yang.
-\newblock Friedrichs learning: Weak solutions of partial differential equations via deep learning.
-\newblock {\em SIAM Journal on Scientific Computing}, 45(3):A1271--A1299, 2023.
-
-\bibitem{gu2021selectnet}
-Yiqi Gu, Haizhao Yang, and Chao Zhou.
-\newblock Selectnet: Self-paced learning for high-dimensional partial differential equations.
-\newblock {\em Journal of Computational Physics}, 441:110444, 2021.
-
-\bibitem{wan2020zang}
-Yaohua Zang, Gang Bao, Xiaojing Ye, and Haomin Zhou.
-\newblock Weak adversarial networks for high-dimensional partial differential equations.
-\newblock {\em Journal of Computational Physics}, 411:109409, 2020.
-
-\bibitem{han2018solving}
-Jiequn Han, Arnulf Jentzen, and Weinan E.
-\newblock Solving high-dimensional partial differential equations using deep learning.
-\newblock {\em Proceedings of the National Academy of Sciences}, 115(34):8505--8510, 2018.
-
-\bibitem{raissi2017physics}
-Maziar Raissi, Paris Perdikaris, and George~Em Karniadakis.
-\newblock Physics informed deep learning (part i): Data-driven solutions of nonlinear partial differential equations.
-\newblock {\em arXiv preprint arXiv:1711.10561}, 2017.
-
-\bibitem{PhysRevResearc}
-David Pfau, James~S Spencer, Alexander~GDG Matthews, and W~Matthew~C Foulkes.
-\newblock Ab initio solution of the many-electron schr{\"o}dinger equation with deep neural networks.
-\newblock {\em Physical Review Research}, 2(3):033429, 2020.
-
-\bibitem{2019Deep}
-Jan Hermann, Zeno Sch{\"a}tzle, and Frank No{\'e}.
-\newblock Deep-neural-network solution of the electronic schr{\"o}dinger equation.
-\newblock {\em Nature Chemistry}, 12(10):891--897, 2020.
-
-\bibitem{HAN2020109792}
-Jiequn Han, Jianfeng Lu, and Mo~Zhou.
-\newblock Solving high-dimensional eigenvalue problems using deep neural networks: A diffusion monte carlo like approach.
-\newblock {\em Journal of Computational Physics}, 423:109792, 2020.
-
-\bibitem{HAN2019108929}
-Jiequn Han, Linfeng Zhang, and Weinan E.
-\newblock Solving many-electron schr{\"o}dinger equation using deep neural networks.
-\newblock {\em Journal of Computational Physics}, 399:108929, 2019.
-
-\bibitem{li2022semigroup}
-Haoya Li and Lexing Ying.
-\newblock A semigroup method for high dimensional elliptic pdes and eigenvalue problems based on neural networks.
-\newblock {\em Journal of Computational Physics}, 453:110939, 2022.
-
-\bibitem{cai2023deepmartnet}
-Wei Cai.
-\newblock Deepmartnet--a martingale based deep neural network learning algorithm for eigenvalue/bvp problems and optimal stochastic controls.
-\newblock {\em arXiv preprint arXiv:2307.11942}, 2023.
-
-\bibitem{ben2023deep}
-Ido Ben-Shaul, Leah Bar, Dalia Fishelov, and Nir Sochen.
-\newblock Deep learning solution of the eigenvalue problem for differential operators.
-\newblock {\em Neural Computation}, 35(6):1100--1134, 2023.
-
-\bibitem{zhang2024deep}
-Sen Zhang, Jian Zu, and Jingqi Zhang.
-\newblock Deep learning method for finding eigenpairs in sturm-liouville eigenvalue problems.
-\newblock {\em Electronic Journal of Differential Equations}, 2024(01-83):53--17, 2024.
-
-\bibitem{yoo2025physics}
-Seongjoon Yoo, Minseo Kang, Heonjun Yoon, and Taejin Kim.
-\newblock A physics-informed neural network approach for solving structural eigenvalue problem.
-\newblock {\em International Journal of Precision Engineering and Manufacturing}, pages 1--14, 2025.
-
-\bibitem{duan2022convergence}
-Chenguang Duan, Yuling Jiao, Yanming Lai, Dingwei Li, Xiliang Lu, and Jerry~Zhijian Yang.
-\newblock Convergence rate analysis for deep ritz method.
-\newblock {\em Communications in Computational Physics}, 31(4):1020--1048, 2022.
-
-\bibitem{mishra2023estimates}
-Siddhartha Mishra and Roberto Molinaro.
-\newblock Estimates on the generalization error of physics-informed neural networks for approximating pdes.
-\newblock {\em IMA Journal of Numerical Analysis}, 43(1):1--43, 2023.
-
-\bibitem{lu2021deepxde}
-Lu~Lu, Xuhui Meng, Zhiping Mao, and George~Em Karniadakis.
-\newblock Deepxde: A deep learning library for solving differential equations.
-\newblock {\em SIAM review}, 63(1):208--228, 2021.
-
-\bibitem{lu2021priorieigen}
-Jianfeng Lu and Yulong Lu.
-\newblock A priori generalization error analysis of two-layer neural networks for solving high dimensional schr{\"o}dinger eigenvalue problems.
-\newblock {\em Communications of the American Mathematical Society}, 2(01):1--21, 2022.
-
-\bibitem{duan2021analysis}
-Chenguang Duan, Yuling Jiao, Yanming Lai, Xiliang Lu, Qimeng Quan, and Jerry~Zhijian Yang.
-\newblock Deep ritz methods for laplace equations with dirichlet boundary condition.
-\newblock {\em Communications in Computational Physics}, 31(4):1020--1048, 2022.
-
-\bibitem{Mller2021ErrorEF}
-Johannes M{\"u}ller and Marius Zeinhofer.
-\newblock Error estimates for the variational training of neural networks with boundary penalty.
-\newblock {\em ArXiv}, 2103.01007, 2021.
-
-\bibitem{Maury2009Numerical}
-Bertrand Maury.
-\newblock Numerical analysis of a finite element/volume penalty method.
-\newblock {\em SIAM Journal on Numerical Analysis}, 47(2):1126--1148, 2009.
-
-\bibitem{fefferman_2005}
-Charles~L Fefferman.
-\newblock A sharp form of whitney's extension theorem.
-\newblock {\em Annals of mathematics}, 161(1):509--577, 2005.
-
-\bibitem{hon2021simultaneous}
-Sean Hon and Haizhao Yang.
-\newblock Simultaneous neural network approximations in sobolev spaces, 2021.
-
-\bibitem{grisvard2011elliptic}
-Pierre Grisvard.
-\newblock {\em Elliptic Problems in Nonsmooth Domains}, volume~69 of {\em Classics in Applied Mathematics}.
-\newblock SIAM, Philadelphia, PA, 2011.
-\newblock Reprint of the 1985 original.
-
-\bibitem{dudley}
-Richard~M Dudley.
-\newblock The sizes of compact subsets of hilbert space and continuity of gaussian processes.
-\newblock {\em Journal of Functional Analysis}, 1(3):290--330, 1967.
-
-\bibitem{bartlett2019nearly}
-Peter~L Bartlett, Nick Harvey, Christopher Liaw, and Abbas Mehrabian.
-\newblock Nearly-tight vc-dimension and pseudodimension bounds for piecewise linear neural networks.
-\newblock {\em The Journal of Machine Learning Research}, 20(1):2285--2301, 2019.
-
-\bibitem{anthony2009neural}
-Martin Anthony and Peter~L Bartlett.
-\newblock {\em Neural network learning: Theoretical foundations}.
-\newblock cambridge university press, 2009.
-
-\bibitem{ledoux2013probability}
-Michel Ledoux and Michel Talagrand.
-\newblock {\em Probability in Banach Spaces: isoperimetry and processes}.
-\newblock Springer Science \& Business Media, 2013.
-
-\bibitem{baur1983complexity}
-Walter Baur and Volker Strassen.
-\newblock The complexity of partial derivatives.
-\newblock {\em Theoretical computer science}, 22(3):317--330, 1983.
-
-\bibitem{boucheron2013concentration}
-St{\'e}phane Boucheron, G{\'a}bor Lugosi, and Pascal Massart.
-\newblock {\em Concentration inequalities: A nonasymptotic theory of independence}.
-\newblock Oxford university press, 2013.
-
-\bibitem{lawal2022physics}
-Zaharaddeen~Karami Lawal, Hayati Yassin, Daphne Teck~Ching Lai, and Azam Che~Idris.
-\newblock Physics-informed neural network (pinn) evolution and beyond: A systematic literature review and bibliometric analysis.
-\newblock {\em Big Data and Cognitive Computing}, 6(4):140, 2022.
-
-\bibitem{wight2020solving}
-Colby~L Wight and Jia Zhao.
-\newblock Solving allen-cahn and cahn-hilliard equations using the adaptive physics informed neural networks.
-\newblock {\em arXiv preprint arXiv:2007.04542}, 2020.
-
-\bibitem{jiao2024gaussian}
-Yuling Jiao, Di~Li, Xiliang Lu, Jerry~Zhijian Yang, and Cheng Yuan.
-\newblock A gaussian mixture distribution-based adaptive sampling method for physics-informed neural networks.
-\newblock {\em Engineering Applications of Artificial Intelligence}, 135:108770, 2024.
-
-\bibitem{qiu2025data}
-Wei-Xin Qiu, Zhi-Zeng Si, Da-Sheng Mou, Chao-Qing Dai, Ji-Tao Li, and Wei Liu.
-\newblock Data-driven vector degenerate and nondegenerate solitons of coupled nonlocal nonlinear schr{\"o}dinger equation via improved pinn algorithm.
-\newblock {\em Nonlinear Dynamics}, 113(5):4063--4076, 2025.
 
 \bibitem{wang2022and}
 Sifan Wang, Xinling Yu, and Paris Perdikaris.
-\newblock When and why pinns fail to train: A neural tangent kernel perspective.
+\newblock When and why {PINNs} fail to train: A neural tangent kernel
+  perspective.
 \newblock {\em Journal of Computational Physics}, 449:110768, 2022.
 
-\bibitem{bonfanti2024challenges}
-Andrea Bonfanti, Giuseppe Bruno, and Cristina Cipriani.
-\newblock The challenges of the nonlinear regime for physics-informed neural networks.
-\newblock {\em Advances in neural information processing systems}, 37:41852--41881, 2024.
+\bibitem{wang2021understanding}
+Sifan Wang, Yujun Teng, and Paris Perdikaris.
+\newblock Understanding and mitigating gradient flow pathologies in
+  physics-informed neural networks.
+\newblock {\em SIAM Journal on Scientific Computing}, 43(5):A3055--A3081, 2021.
 
 \bibitem{zhang2024priori}
-Guangtao Zhang, Jiani Lin, Qijia Zhai, Huiyu Yang, Xujun Chen, Ieng~Tak Leong, and Fang Zhu.
-\newblock A priori error estimation of physics-informed neural networks solving allen--cahn and cahn--hilliard equations.
+Guangtao Zhang, Jiani Lin, Qijia Zhai, Huiyu Yang, Xujun Chen, Ieng~Tak Leong,
+  and Fang Zhu.
+\newblock A priori error estimation of physics-informed neural networks solving
+  {Allen--Cahn} and {Cahn--Hilliard} equations.
 \newblock {\em arXiv preprint arXiv:2402.02667}, 2024.
 
 \bibitem{de2024error}
 Tim De~Ryck, Ameya~D Jagtap, and Siddhartha Mishra.
-\newblock Error estimates for physics-informed neural networks approximating the navier--stokes equations.
+\newblock Error estimates for physics-informed neural networks approximating
+  the {Navier--Stokes} equations.
 \newblock {\em IMA Journal of Numerical Analysis}, 44(1):83--119, 2024.
 
 \bibitem{qian2023physics}
 Yanxia Qian, Yongchao Zhang, Yunqing Huang, and Suchuan Dong.
-\newblock Physics-informed neural networks for approximating dynamic (hyperbolic) pdes of second order in time: Error analysis and algorithms.
+\newblock Physics-informed neural networks for approximating dynamic
+  (hyperbolic) {PDEs} of second order in time: Error analysis and algorithms.
 \newblock {\em Journal of Computational Physics}, 495:112527, 2023.
+
+\bibitem{lu2021priorieigen}
+Jianfeng Lu and Yulong Lu.
+\newblock A priori generalization error analysis of two-layer neural networks
+  for solving high dimensional {Schr{\"o}dinger} eigenvalue problems.
+\newblock {\em Communications of the American Mathematical Society},
+  2(01):1--21, 2022.
+
+\bibitem{duan2022convergence}
+Chenguang Duan, Yuling Jiao, Yanming Lai, Xiliang Lu, Qimeng Quan, and
+  Jerry~Zhijian Yang.
+\newblock Deep {Ritz} methods for {Laplace} equations with {Dirichlet} boundary
+  condition.
+\newblock {\em Communications in Computational Physics}, 31(4):1020--1048,
+  2022.
 
 \bibitem{jiao2024error}
 Yuling Jiao, Yanming Lai, Yisu Lo, Yang Wang, and Yunfei Yang.
-\newblock Error analysis of deep ritz methods for elliptic equations.
+\newblock Error analysis of deep {Ritz} methods for elliptic equations.
 \newblock {\em Analysis and Applications}, 22(01):57--87, 2024.
-
-\bibitem{ding2025convergence}
-Zhao Ding, Yuling Jiao, Xiliang Lu, Peiying Wu, and Jerry~Zhijian Yang.
-\newblock Convergence analysis of deep ritz method with over-parameterization.
-\newblock {\em Neural Networks}, 184:107110, 2025.
 
 \bibitem{jiao2025error}
 Yuling Jiao, Yanming Lai, and Yang Wang.
-\newblock Error analysis of three-layer neural network trained with pgd for deep ritz method.
+\newblock Error analysis of three-layer neural network trained with {PGD} for
+  deep {Ritz} method.
 \newblock {\em IEEE Transactions on Information Theory}, 2025.
 
-\bibitem{2013Roubiek}
-T.~Roubiek.
-\newblock {\em Nonlinear Partial Differential Equations with Applications}.
-\newblock Birkhauser, Basel, 2013.
+\bibitem{ding2025convergence}
+Zhao Ding, Yuling Jiao, Xiliang Lu, Peiying Wu, and Jerry~Zhijian Yang.
+\newblock Convergence analysis of deep {Ritz} method with
+  over-parameterization.
+\newblock {\em Neural Networks}, 184:107110, 2025.
 
-\bibitem{brezis2011functional}
-Haim Brezis and Haim Br{\'e}zis.
-\newblock {\em Functional analysis, Sobolev spaces and partial differential equations}, volume~2.
-\newblock Springer, 2011.
+\bibitem{li1983schrodinger}
+Peter Li and Shing-Tung Yau.
+\newblock On the {Schr{\"o}dinger} equation and the eigenvalue problem.
+\newblock {\em Communications in Mathematical Physics}, 88(3):309--318, 1983.
 
-\bibitem{chen2021quasi}
-Jingrun Chen, Rui Du, Panchi Li, and Liyao Lyu.
-\newblock Quasi-monte carlo sampling for solving partial differential equations by deep neural networks.
-\newblock {\em Numerical Mathematics}, 14:377--404, 2021.
+\bibitem{HAN2019108929}
+Jiequn Han, Linfeng Zhang, and Weinan E.
+\newblock Solving many-electron {Schr{\"o}dinger} equation using deep neural
+  networks.
+\newblock {\em Journal of Computational Physics}, 399:108929, 2019.
 
-\bibitem{siegel2022high}
-Jonathan~W Siegel and Jinchao Xu.
-\newblock High-order approximation rates for shallow neural networks with cosine and reluk activation functions.
-\newblock {\em Applied and Computational Harmonic Analysis}, 58:1--26, 2022.
+\bibitem{johnson2004convergence}
+Oliver Johnson.
+\newblock Convergence of the poincar{\'e} constant.
+\newblock {\em Theory of Probability \& Its Applications}, 48(3):535--541,
+  2004.
 
-\bibitem{1984Arcangeli}
-AM~Sanchez and R~Arcangeli.
-\newblock Estimation of the best polynomial approximation error and the lagrange interpolation error in fractional-order ssobolev spaces.
-\newblock {\em Numerische Mathematik}, 45:301--321, 1984.
+\bibitem{courtade2020bounds}
+Thomas~A Courtade.
+\newblock Bounds on the poincar{\'e} constant for convolution measures.
+\newblock In {\em Annales de l'Institut Henri Poincar{\'e}, Probabilit{\'e}s et
+  Statistiques}, volume~56, 2020.
+
+\bibitem{berezin2012schrodinger}
+Feliks~Aleksandrovich Berezin and Mikhail Shubin.
+\newblock {\em The {Schr{\"o}dinger} Equation}, volume~66.
+\newblock Springer Science \& Business Media, 2012.
+
+\bibitem{fortunato1998eigenvalue}
+Donato Fortunato and Vieri Benci.
+\newblock An eigenvalue problem for the {Schr{\"o}dinger--Maxwell} equations.
+\newblock {\em Journal of the Juliusz Schauder Center}, 11:283--293, 1998.
+
+\bibitem{PhysRevResearc}
+David Pfau, James~S Spencer, Alexander~GDG Matthews, and W~Matthew~C Foulkes.
+\newblock Ab initio solution of the many-electron {Schr{\"o}dinger} equation
+  with deep neural networks.
+\newblock {\em Physical Review Research}, 2(3):033429, 2020.
+
+\bibitem{hermann2020deep}
+Jan Hermann, Zeno Sch{\"a}tzle, and Frank No{\'e}.
+\newblock Deep-neural-network solution of the electronic {Schr{\"o}dinger}
+  equation.
+\newblock {\em Nature Chemistry}, 12(10):891--897, 2020.
+
+\bibitem{HAN2020109792}
+Jiequn Han, Jianfeng Lu, and Mo~Zhou.
+\newblock Solving high-dimensional eigenvalue problems using deep neural
+  networks: A diffusion {Monte Carlo} like approach.
+\newblock {\em Journal of Computational Physics}, 423:109792, 2020.
+
+\bibitem{li2022semigroup}
+Haoya Li and Lexing Ying.
+\newblock A semigroup method for high dimensional elliptic {PDEs} and
+  eigenvalue problems based on neural networks.
+\newblock {\em Journal of Computational Physics}, 453:110939, 2022.
+
+\bibitem{cai2023deepmartnet}
+Wei Cai.
+\newblock {DeepMartNet}--a martingale based deep neural network learning
+  algorithm for eigenvalue/{BVP} problems and optimal stochastic controls.
+\newblock {\em arXiv preprint arXiv:2307.11942}, 2023.
+
+\bibitem{ben2023deep}
+Ido Ben-Shaul, Leah Bar, Dalia Fishelov, and Nir Sochen.
+\newblock Deep learning solution of the eigenvalue problem for differential
+  operators.
+\newblock {\em Neural Computation}, 35(6):1100--1134, 2023.
+
+\bibitem{zhang2024deep}
+Sen Zhang, Jian Zu, and Jingqi Zhang.
+\newblock Deep learning method for finding eigenpairs in {Sturm-Liouville}
+  eigenvalue problems.
+\newblock {\em Electronic Journal of Differential Equations},
+  2024(01-83):53--17, 2024.
+
+\bibitem{yoo2025physics}
+Seongjoon Yoo, Minseo Kang, Heonjun Yoon, and Taejin Kim.
+\newblock A physics-informed neural network approach for solving structural
+  eigenvalue problem.
+\newblock {\em International Journal of Precision Engineering and
+  Manufacturing}, pages 1--14, 2025.
+
+\bibitem{lawal2022physics}
+Zaharaddeen~Karami Lawal, Hayati Yassin, Daphne Teck~Ching Lai, and Azam
+  Che~Idris.
+\newblock Physics-informed neural network ({PINN}) evolution and beyond: A
+  systematic literature review and bibliometric analysis.
+\newblock {\em Big Data and Cognitive Computing}, 6(4):140, 2022.
+
+\bibitem{wight2020solving}
+Colby~L Wight and Jia Zhao.
+\newblock Solving {Allen-Cahn} and {Cahn-Hilliard} equations using the adaptive
+  physics informed neural networks.
+\newblock {\em arXiv preprint arXiv:2007.04542}, 2020.
+
+\bibitem{jiao2024gaussian}
+Yuling Jiao, Di~Li, Xiliang Lu, Jerry~Zhijian Yang, and Cheng Yuan.
+\newblock A {Gaussian} mixture distribution-based adaptive sampling method for
+  physics-informed neural networks.
+\newblock {\em Engineering Applications of Artificial Intelligence},
+  135:108770, 2024.
+
+\bibitem{qiu2025data}
+Wei-Xin Qiu, Zhi-Zeng Si, Da-Sheng Mou, Chao-Qing Dai, Ji-Tao Li, and Wei Liu.
+\newblock Data-driven vector degenerate and nondegenerate solitons of coupled
+  nonlocal nonlinear {Schr{\"o}dinger} equation via improved {PINN} algorithm.
+\newblock {\em Nonlinear Dynamics}, 113(5):4063--4076, 2025.
+
+\bibitem{bonfanti2024challenges}
+Andrea Bonfanti, Giuseppe Bruno, and Cristina Cipriani.
+\newblock The challenges of the nonlinear regime for physics-informed neural
+  networks.
+\newblock {\em Advances in Neural Information Processing Systems},
+  37:41852--41881, 2024.
 
 \bibitem{Trucu2010space}
 Dumitru Trucu, Derek~B. Ingham, and Daniel Lesnic.
-\newblock Space-dependent perfusion coefficient identification in the transient bio-heat equation.
+\newblock Space-dependent perfusion coefficient identification in the transient
+  bio-heat equation.
 \newblock {\em Journal of Engineering Mathematics}, 67(12):307--315, 2010.
 
 \bibitem{Choulli2021Some}
@@ -347,18 +315,22 @@ Mourad Choulli.
 
 \bibitem{Engl1989convergence}
 H~W Engl, K~Kunisch, and A~Neubauer.
-\newblock Convergence rates for tikhonov regularisation of non-linear ill-posed problems.
+\newblock Convergence rates for {Tikhonov} regularisation of non-linear
+  ill-posed problems.
 \newblock {\em Inverse Problems}, 5(4):523, aug 1989.
 
 \bibitem{Hao2010convergence}
 Dinh~Nho H{\`a}o and Tran Nhan~Tam Quyen.
-\newblock Convergence rates for tikhonov regularization of coefficient identification problems in laplace-type equations.
+\newblock Convergence rates for {Tikhonov} regularization of coefficient
+  identification problems in {Laplace}-type equations.
 \newblock {\em Inverse Problems}, 26(12):125014, nov 2010.
 
 \bibitem{Nickl2020Convergence}
 Richard Nickl, Sara van~de Geer, and Sven Wang.
-\newblock Convergence rates for penalized least squares estimators in pde constrained regression problems.
-\newblock {\em SIAM/ASA Journal on Uncertainty Quantification}, 8(1):374--413, 2020.
+\newblock Convergence rates for penalized least squares estimators in {PDE}
+  constrained regression problems.
+\newblock {\em SIAM/ASA Journal on Uncertainty Quantification}, 8(1):374--413,
+  2020.
 
 \bibitem{jin2024stochastic}
 Bangti Jin, Qimeng Quan, and Wenlong Zhang.
@@ -367,42 +339,34 @@ Bangti Jin, Qimeng Quan, and Wenlong Zhang.
 
 \bibitem{MITUSCH2021110651}
 Sebastian~K. Mitusch, Simon~W. Funke, and Miroslav Kuchta.
-\newblock Hybrid fem-nn models: Combining artificial neural networks with the finite element method.
+\newblock Hybrid {FEM-NN} models: Combining artificial neural networks with the
+  finite element method.
 \newblock {\em Journal of Computational Physics}, 446:110651, 2021.
 
 \bibitem{Cen2023HybridNF}
 Siyu Cen, Bangti Jin, Qimeng Quan, and Zhi Zhou.
-\newblock Hybrid neural-network fem approximation of diffusion coefficient in elliptic and parabolic problems.
-\newblock {\em ArXiv}, abs/2302.10773, 2023.
-
-\bibitem{Karniadakis2021physics}
-George~Em Karniadakis, Ioannis~G Kevrekidis, Lu~Lu, Paris Perdikaris, Sifan Wang, and Liu Yang.
-\newblock Physics-informed machine learning.
-\newblock {\em Nature Reviews Physics}, 3(6):422--440, 2021.
+\newblock Hybrid neural-network {FEM} approximation of diffusion coefficient in
+  elliptic and parabolic problems.
+\newblock {\em arXiv}, abs/2302.10773, 2023.
 
 \bibitem{Lu2021Physics}
-Lu~Lu, Rapha\"{e}l Pestourie, Wenjie Yao, Zhicheng Wang, Francesc Verdugo, and Steven~G. Johnson.
-\newblock Physics-informed neural networks with hard constraints for inverse design.
+Lu~Lu, Rapha\"{e}l Pestourie, Wenjie Yao, Zhicheng Wang, Francesc Verdugo, and
+  Steven~G. Johnson.
+\newblock Physics-informed neural networks with hard constraints for inverse
+  design.
 \newblock {\em SIAM Journal on Scientific Computing}, 43(6):B1105--B1132, 2021.
 
 \bibitem{Jin2022Imaging}
 Bangti Jin, Xiyao Li, and Xiliang Lu.
-\newblock Imaging conductivity from current density magnitude using neural networks.
+\newblock Imaging conductivity from current density magnitude using neural
+  networks.
 \newblock {\em Inverse Problems}, 38(7):075003, jun 2022.
 
-\bibitem{jin2023conductivity}
-Bangti Jin, Xiyao Li, Qimeng Quan, and Zhi Zhou.
-\newblock Conductivity imaging from internal measurements with mixed least-squares deep neural networks, 2023.
-
-\bibitem{Pang2018fPINNsFP}
-Guofei Pang, Lu~Lu, and George~Em Karniadakis.
-\newblock fpinns: Fractional physics-informed neural networks.
-\newblock {\em SIAM J. Sci. Comput.}, 41:A2603--A2626, 2018.
-
-\bibitem{GUO2022115523}
-Ling Guo, Hao Wu, Xiaochen Yu, and Tao Zhou.
-\newblock Monte carlo fpinns: Deep learning method for forward and inverse problems involving high dimensional fractional partial differential equations.
-\newblock {\em Computer Methods in Applied Mechanics and Engineering}, 400:115523, 2022.
+\bibitem{Karniadakis2021physics}
+George~Em Karniadakis, Ioannis~G Kevrekidis, Lu~Lu, Paris Perdikaris, Sifan
+  Wang, and Liu Yang.
+\newblock Physics-informed machine learning.
+\newblock {\em Nature Reviews Physics}, 3(6):422--440, 2021.
 
 \bibitem{Bao2020Numerical}
 Gang Bao, Xiaojing Ye, Yaohua Zang, and Haomin Zhou.
@@ -411,12 +375,14 @@ Gang Bao, Xiaojing Ye, Yaohua Zang, and Haomin Zhou.
 
 \bibitem{cao2025potential}
 Kai Cao and Fang Yan.
-\newblock Potential coefficient identification problem in parabolic equation with deep neural networks.
+\newblock Potential coefficient identification problem in parabolic equation
+  with deep neural networks.
 \newblock {\em Inverse Problems}, 2025.
 
 \bibitem{Jin2023Convergence}
 Bangti Jin, Xiliang Lu, Qimeng Quan, and Zhi Zhou.
-\newblock Convergence rate analysis of galerkin approximation of inverse potential problem.
+\newblock Convergence rate analysis of {Galerkin} approximation of inverse
+  potential problem.
 \newblock {\em Inverse Problems}, 39(1):015008, dec 2022.
 
 \bibitem{susanne1994mathematical}
@@ -426,8 +392,143 @@ C~Susanne, L~Brenner, and LR~Scott.
 
 \bibitem{Liu2023recovery}
 Hui Zhang and Jijun Liu.
-\newblock On the recovery of internal source for an elliptic system by neural network approximation.
-\newblock {\em Journal of Inverse and Ill-posed Problems}, 2023.
+\newblock On the recovery of internal source for an elliptic system by neural
+  network approximation.
+\newblock {\em Journal of Inverse and Ill-Posed Problems}, 2023.
+
+\bibitem{evans2010partial}
+Lawrence~C. Evans.
+\newblock {\em Partial Differential Equations}, volume~19 of {\em Graduate
+  Studies in Mathematics}.
+\newblock American Mathematical Society, {Second} edition, 2010.
+
+\bibitem{brezis1978remarks}
+Ha\"{i}em Brezis and Tosio Kato.
+\newblock Remarks on the {Schr\"{o}dinger} operator with singular complex
+  potentials.
+\newblock {\em Journal de Math\"{e}matiques Pures et Appliqu\"{e}es},
+  58(2):137--151, 1979.
+
+\bibitem{willem2012minimax}
+Michel Willem.
+\newblock {\em Minimax theorems}, volume~24 of {\em Progress in Nonlinear
+  Differential Equations and their Applications}.
+\newblock Birkh\"auser Boston, 1996.
+
+\bibitem{he2015deep}
+Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun.
+\newblock Deep residual learning for image recognition.
+\newblock {\em Proceedings of the IEEE Conference on Computer Vision and
+  Pattern Recognition (CVPR)}, pages 770--778, 2015.
+
+\bibitem{Mller2021ErrorEF}
+Johannes M{\"u}ller and Marius Zeinhofer.
+\newblock Error estimates for the variational training of neural networks with
+  boundary penalty.
+\newblock {\em arXiv}, 2103.01007, 2021.
+
+\bibitem{Maury2009Numerical}
+Bertrand Maury.
+\newblock Numerical analysis of a finite element/volume penalty method.
+\newblock {\em SIAM Journal on Numerical Analysis}, 47(2):1126--1148, 2009.
+
+\bibitem{fefferman_2005}
+Charles~L Fefferman.
+\newblock A sharp form of {Whitney}'s extension theorem.
+\newblock {\em Annals of Mathematics}, 161(1):509--577, 2005.
+
+\bibitem{hon2021simultaneous}
+Sean Hon and Haizhao Yang.
+\newblock Simultaneous neural network approximations in {Sobolev} spaces.
+\newblock 2021.
+
+\bibitem{grisvard2011elliptic}
+Pierre Grisvard.
+\newblock {\em Elliptic Problems in Nonsmooth Domains}, volume~69 of {\em
+  Classics in Applied Mathematics}.
+\newblock SIAM, Philadelphia, PA, 2011.
+\newblock Reprint of the 1985 original.
+
+\bibitem{ledoux2013probability}
+Michel Ledoux and Michel Talagrand.
+\newblock {\em Probability in {Banach} Spaces: Isoperimetry and Processes}.
+\newblock Springer Science \& Business Media, 2013.
+
+\bibitem{baur1983complexity}
+Walter Baur and Volker Strassen.
+\newblock The complexity of partial derivatives.
+\newblock {\em Theoretical Computer Science}, 22(3):317--330, 1983.
+
+\bibitem{dudley}
+Richard~M Dudley.
+\newblock The sizes of compact subsets of hilbert space and continuity of
+  gaussian processes.
+\newblock {\em Journal of Functional Analysis}, 1(3):290--330, 1967.
+
+\bibitem{boucheron2013concentration}
+St{\'e}phane Boucheron, G{\'a}bor Lugosi, and Pascal Massart.
+\newblock {\em Concentration Inequalities: A Nonasymptotic Theory of
+  Independence}.
+\newblock Oxford University Press, 2013.
+
+\bibitem{bartlett2019nearly}
+Peter~L Bartlett, Nick Harvey, Christopher Liaw, and Abbas Mehrabian.
+\newblock Nearly-tight {VC}-dimension and pseudodimension bounds for piecewise
+  linear neural networks.
+\newblock {\em The Journal of Machine Learning Research}, 20(1):2285--2301,
+  2019.
+
+\bibitem{anthony2009neural}
+Martin Anthony and Peter~L Bartlett.
+\newblock {\em Neural Network Learning: Theoretical Foundations}.
+\newblock Cambridge University Press, 2009.
+
+\bibitem{nonlinearbook}
+Herv{\'e} Le~Dret.
+\newblock {\em Nonlinear Elliptic Partial Differential Equations}.
+\newblock Springer, Cham, Switzerland, 2018.
+
+\bibitem{roubicek2013nonlinear}
+T.~Roub{\'i}{\v c}ek.
+\newblock {\em Nonlinear Partial Differential Equations with Applications}.
+\newblock Birkh{\"a}user, Basel, 2013.
+
+\bibitem{brezis2011functional}
+Haim Brezis and Haim Br{\'e}zis.
+\newblock {\em Functional analysis, Sobolev spaces and partial differential
+  equations}, volume~2.
+\newblock Springer, 2011.
+
+\bibitem{chen2021quasi}
+Jingrun Chen, Rui Du, Panchi Li, and Liyao Lyu.
+\newblock {Quasi-Monte Carlo} sampling for solving partial differential
+  equations by deep neural networks.
+\newblock {\em Numerical Mathematics}, 14:377--404, 2021.
+
+\bibitem{siegel2022high}
+Jonathan~W Siegel and Jinchao Xu.
+\newblock High-order approximation rates for shallow neural networks with
+  cosine and {ReLU}$^k$ activation functions.
+\newblock {\em Applied and Computational Harmonic Analysis}, 58:1--26, 2022.
+
+\bibitem{arcangeli1984estimation}
+AM~Sanchez and R~Arcangeli.
+\newblock Estimation of the best polynomial approximation error and the
+  {Lagrange} interpolation error in fractional-order {Sobolev} spaces.
+\newblock {\em Numerische Mathematik}, 45:301--321, 1984.
+
+\bibitem{jin2023conductivity}
+Bangti Jin, Xiyao Li, Qimeng Quan, and Zhi Zhou.
+\newblock Conductivity imaging from internal measurements with mixed
+  least-squares deep neural networks.
+\newblock 2023.
+
+\bibitem{duan2024recovering}
+Chenguang Duan, Yuling Jiao, Jerry~Zhijian Yang, and Pingwen Zhang.
+\newblock Recovering the source term in elliptic equation via deep learning:
+  Method and convergence analysis.
+\newblock {\em East Asian Journal on Applied Mathematics}, 14(3):460--489,
+  2024.
 
 \bibitem{mitusch2019dolfin}
 Sebastian Mitusch, Simon Funke, and J{\o}rgen Dokken.
@@ -435,18 +536,21 @@ Sebastian Mitusch, Simon Funke, and J{\o}rgen Dokken.
 \newblock {\em Journal of Open Source Software}, 4(38):1292, 2019.
 
 \bibitem{alnaes2015fenics}
-Martin Aln{\ae}s, Jan Blechta, Johan Hake, August Johansson, Benjamin Kehlet, Anders Logg, Chris Richardson, Johannes Ring, Marie~E Rognes, and Garth~N Wells.
-\newblock The fenics project version 1.5.
-\newblock {\em Archive of numerical software}, 3(100), 2015.
+Martin Aln{\ae}s, Jan Blechta, Johan Hake, August Johansson, Benjamin Kehlet,
+  Anders Logg, Chris Richardson, Johannes Ring, Marie~E Rognes, and Garth~N
+  Wells.
+\newblock The {FEniCS} project version 1.5.
+\newblock {\em Archive of Numerical Software}, 3(100), 2015.
 
 \bibitem{grossmann2024can}
-Tamara~G Grossmann, Urszula~Julia Komorowska, Jonas Latz, and Carola-Bibiane Sch{\"o}nlieb.
+Tamara~G Grossmann, Urszula~Julia Komorowska, Jonas Latz, and Carola-Bibiane
+  Sch{\"o}nlieb.
 \newblock Can physics-informed neural networks beat the finite element method?
 \newblock {\em IMA Journal of Applied Mathematics}, 89(1):143--174, 2024.
 
 \bibitem{engl1996regularization}
 Heinz~Werner Engl, Martin Hanke, and Andreas Neubauer.
-\newblock {\em Regularization of inverse problems}, volume 375.
+\newblock {\em Regularization of Inverse Problems}, volume 375.
 \newblock Springer Science \& Business Media, 1996.
 
 \end{thebibliography}

@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xelatex -interaction=nonstopmode PhdTemplate.tex)"
+      "Bash(xelatex -interaction=nonstopmode PhdTemplate.tex)",
+      "mcp__ide__executeCode",
+      "Bash(python:*)"
     ]
   }
 }
