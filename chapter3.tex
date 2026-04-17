@@ -363,7 +363,10 @@ $$\delta^{2} \mathcal{L}_{k}(\xi_k;\delta u)=\frac{1}{2}(\lambda_{k}-\lambda_{l_
     \item 采用随机梯度下降类算法求解离散后的非凸优化问题。
 \end{enumerate}
 
-下面将 DRM 应用于求解上述变分极小化问题\eqref{eq:conloss}。令假设空间为 $\mathcal{N}^{1,2}=\mathcal{N}(\mathcal{D},\mathcal{W},\{2\},m)$。针对第 $k$ 个特征函数，定义其连续损失函数为：
+下面将 DRM 应用于求解上述变分极小化问题\eqref{eq:conloss}。令假设空间为：
+$$\mathcal{N}^{1,2}=\mathcal{N}(\mathcal{D},\mathcal{W},\{2\},m)$$。
+
+针对第 $k$ 个特征函数，定义其连续损失函数为：
 \begin{equation}\label{eq:conlossphi}
 \mathcal{L}_{\phi k}(v)=\frac{1}{2} a^{\mu_{1}}(v, v)+\frac{\mu_{2}}{4}\left[Q(v)^{2}+2 \sum_{i<k}\left\langle v, \frac{\xi_{\phi i}}{\left|\xi_{\phi i}\right|}\right\rangle^{2}\right],
 \end{equation}
@@ -672,7 +675,11 @@ $$ \mathbb{E}_{\Sigma_{n}}\left[ \sup_{v\in V}\frac{1}{n}\left| \sum_{i=1}^{n}\s
 接下来，我们采用标准的链式推导（Chaining Method）。令 $\varepsilon_{k}=2^{-k+1} B$。记 $\mathcal{F}_{k}$ 为 $\mathcal{F}$ 在无穷范数下的一个 $\varepsilon_{k}$-覆盖集，其基数满足 $\left|\mathcal{F}_{k}\right|=\mathcal{C}\left(\varepsilon_{k}, \mathcal{F},\|\cdot\|_{\infty}\right)$。这意味着，对于任意函数 $u \in \mathcal{F}$，必定存在 $u_{k} \in \mathcal{F}_{k}$ 使得 $\left\|u-u_{k}\right\|_{\infty} \leq \varepsilon_{k}$。令 $K$ 为一个待定的正整数。通过项的分解与三角不等式，我们有：
 
 $$ \begin{aligned} 
-    &\quad\; \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits_{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i} u\left(Z_{i}\right)\right|\right] \\ &= \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right) + \sum\limits_{j=1}^{K-1} \sum\limits_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right) + \sum\limits_{i=1}^{n} \sigma_{i} u_{1}\left(Z_{i}\right)\right|\right] \\ &\leq \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right)\right|\right] \\ &\quad + \sum\limits_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right] \\ &\quad + \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i} u_{1}\left(Z_{i}\right)\right|\right]. 
+&\quad\; \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits_{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i} u\left(Z_{i}\right)\right|\right] \\
+&= \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right) + \sum\limits_{j=1}^{K-1} \sum\limits_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right) + \sum\limits_{i=1}^{n} \sigma_{i} u_{1}\left(Z_{i}\right)\right|\right] \\ 
+&\leq \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u\left(Z_{i}\right)-u_{K}\left(Z_{i}\right)\right)\right|\right] \\
+&\quad + \sum\limits_{j=1}^{K-1} \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i}\left(u_{j+1}\left(Z_{i}\right)-u_{j}\left(Z_{i}\right)\right)\right|\right] \\
+&\quad + \mathbb{E}_{\left\{\sigma_{i}, Z_{i}\right\}_{i=1}^{n}}\left[\sup\limits _{u \in \mathcal{F}} \frac{1}{n}\left|\sum\limits_{i=1}^{n} \sigma_{i} u_{1}\left(Z_{i}\right)\right|\right]. 
 \end{aligned} $$
 由于零函数 $0 \in \mathcal{F}$，我们可以无妨设定 $\mathcal{F}_{1}=\{0\}$，从而消除上述不等式中的第三项。对于第一项，应用 Rademacher 变量的性质与 Hölder 不等式：
 \begin{equation*}

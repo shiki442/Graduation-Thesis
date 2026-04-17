@@ -1,6 +1,6 @@
 \chapter{预备知识与符号系统}
 \section{预备知识}
-本节将简要回顾与本文研究相关的椭圆型偏微分方程的基础理论与先验估计（Priori Estimates）。本文考察如下形式的椭圆型方程：
+本节将简要回顾与本文研究相关的椭圆型偏微分方程的基础理论与先验估计。本文考察如下形式的椭圆型方程：
 \begin{equation}\label{eq:general_elliptic}
   -\Delta u(x) + f(x, u) = g(x), \quad x \in \Omega,
 \end{equation}
@@ -66,8 +66,7 @@ $$\int_{\Omega} \nabla u \cdot \nabla \varphi \, dx \le \int_{\Omega} a(x)u\varp
 \subsection{神经网络架构与参数}
 本节将建立全连接深度神经网络的数学框架并引入相关记号。
 
-\begin{definition}[全连接神经网络，Fully Connected Neural Network, FNN]\label{def:fnn}
-我们将全连接深度神经网络表示为参数化函数 $v_{\phi}: \mathbb{R}^{d} \to \mathbb{R}$。该网络通过层级递归的方式定义如下：
+\begin{definition}[全连接神经网络，Fully Connected Neural Network, FNN]\label{def:fnn} 我们将全连接深度神经网络表示为参数化函数 $v_{\phi}: \mathbb{R}^{d} \to \mathbb{R}$。该网络通过层级递归的方式定义如下：
 \begin{equation}\label{eq:nn:fcnetwork}
 \begin{aligned}
 v_{0}(x) &= x, \\

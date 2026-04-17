@@ -510,7 +510,7 @@ u^{\varepsilon}_{\mathcal{B}}(x)=\int \mathcal{B}^{q}\rho\left(\frac{y}{\mathcal
 \end{equation*}
 \end{lemma}
 \begin{proof}
-由于 $\lambda_{\mathbf{I}}$ 和 $\Psi_{\mathbf{I}}[f]$ 均为 $\mathrm{ReLU}^{2}$ 网络，拼接后的 $\tilde{f}$ 宽度至多为 $N^{d}\left(2d^{2}+6d+2\right)$。计算全局导数误差有：
+$\lambda_{\mathbf{I}}$ 和 $\Psi_{\mathbf{I}}[f]$ 均为 $\mathrm{ReLU}^{2}$ 网络，拼接后的 $\tilde{f}$ 宽度至多为 $N^{d}\left(2d^{2}+6d+2\right)$。计算全局导数误差有：
 \begin{equation*}
 \begin{aligned}
 \left\|\partial_{i}f-\partial_{i}\tilde{f} \right\|_{L^{p}(\Omega)} &\leq \sum\limits_{\mathbf{I}}\left\|\partial_{i}\lambda_{\mathbf{I}}\left(f-\Psi_{\mathbf{I}}[f]\right)\right\|_{L^{p}(\Omega)}+\sum\limits_{\mathbf{I}}\left\|\lambda_{\mathbf{I}}\partial_{i}\left(f-\Psi_{\mathbf{I}}[f]\right)\right\|_{L^{p}(\Omega)}\\
@@ -778,7 +778,7 @@ $$g_1(\mathbf{x}) = 4\pi^2 u_1(\mathbf{x}) + 2\sum_{i=2}^{5} \frac{u_1(\mathbf{x
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.9\textwidth]{./figures2/eq1_twopeak_diagonal.png}
-    \caption{沿对角线方向的解对比图}
+    \caption{双峰问题沿对角线方向的解对比图}
     \label{fig:diagonal}
 \end{figure}
 
@@ -825,7 +825,7 @@ $$g_2(\mathbf{x}) = \begin{cases}
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.9\textwidth]{./figures2/eq2_nondiff_diagonal.png}
-    \caption{沿对角线方向的解对比图}
+    \caption{不光滑问题沿对角线方向的解对比图}
     \label{fig:diagonaleq3}
 \end{figure}
 本节的数值实验表明，本文所采用的深度学习方法具有较强的几何灵活性和非线性表达能力，能够较好地处理带有不光滑特征的高维偏微分方程。
@@ -855,7 +855,7 @@ Tu& = h_3(x) & \text{on }  & \partial\Omega.\\
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{./figures2/eq3_liouville_heatmap.png}
-\caption{精确解、预测解与误差分布}
+\caption{Liouville方程的精确解、预测解与误差分布}
 \label{fig:heatmapeq3}
 \end{figure}
 
@@ -886,7 +886,7 @@ $$u_4 = \left(\frac{\sqrt{d(d-2)}}{1 + |x-x_0|^2} \right)^{\frac{d}{2}-1}$$
 方程中的边界条件 $h_4(x)$ 即由该精确解在边界 $\partial\Omega$ 上的迹给定。Talenti 泡的中心取为$x_0=0.3$。选取此类具有临界非线性特征且解结构复杂的方程进行测试，旨在验证本文所提方法在处理高维强非线性问题时的鲁棒性与泛化能力。
 
 在具体的数值实验中，我们考虑三维情形（即 $d=3$）。在网络训练的数据准备阶段，我们在区域内部 $\Omega$ 和边界 $\partial\Omega$ 分别随机采样了 1,500,000 和 500,000 个配置点。模型优化采用学习率为 0.002 的优化算法，共计训练 2,000 个迭代步。训练过程中的损失函数下降轨迹与验证误差演化如图 \ref{fig:loss_curveeq4} 所示。
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{./figures2/eq4_loss_val_error_curves.png}
 \caption{Yamabe方程的训练损失与验证误差曲线}
@@ -894,10 +894,10 @@ $$u_4 = \left(\frac{\sqrt{d(d-2)}}{1 + |x-x_0|^2} \right)^{\frac{d}{2}-1}$$
 \end{figure}
 
 借助热力图\ref{fig:heatmapeq4}，我们直观地评估模型的数值求解精度，并对比在特定截面上的精确解、神经网络预测解，以及两者之间的绝对误差分布。
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{./figures2/eq4_yamabe_heatmap.png}
-\caption{精确解、预测解与误差分布}
+\caption{Yamabe 方程的精确解、预测解与误差分布}
 \label{fig:heatmapeq4}
 \end{figure}
 

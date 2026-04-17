@@ -246,7 +246,9 @@ $$ \begin{aligned}
 至此，我们证明了在适当的正则化策略和优化精度下，反势能问题的重构解随着噪声水平 $\delta \to 0$ 能够以 $\mathcal{O}(\delta^{1/2})$ 的速率收敛。然而，该误差受到状态解 $u^\dagger$ 的加权影响。为了脱离权函数获得势能 $V$ 的绝对误差界，我们需要引入如下引理中的正性条件假设。
 
 \begin{lemma}\label{lem:positivity}\cite{jin2024stochastic}
-假设 $V_1, V_2 \in H^1(\Omega)$ 且 $f \in L^2(\Omega)$，并满足 $\| \nabla V_1 \|_{L^2(\Omega)}, \| \nabla V_2 \|_{L^2(\Omega)} \leq c_V$。设 $u(V_1)$ 和 $u(V_2)$ 为问题 (1.1) 对应的弱解。则存在一个依赖于 $c_V$ 的常数 $C$，使得：
+假设 $V_1, V_2 \in H^1(\Omega)$ 且 $f \in L^2(\Omega)$，并满足： 
+$$\| \nabla V_1 \|_{L^2(\Omega)}, \| \nabla V_2 \|_{L^2(\Omega)} \leq c_V$$。
+设 $u(V_1)$ 和 $u(V_2)$ 为问题 (1.1) 对应的弱解。则存在一个依赖于 $c_V$ 的常数 $C$，使得：
 $$\|(V_1 - V_2)u(V_1)\|_{L^2(\Omega)} \leq C\|u(V_1) - u(V_2)\|_{H^1(\Omega)}^{1/2}$$
 此外，如果存在 $\beta \geq 0$，使得在 $\Omega$ 中几乎处处（a.e.）满足：
 $$u(V_1)(x) \geq C \text{dist}(x, \partial\Omega)^\beta \quad (2.1)$$
