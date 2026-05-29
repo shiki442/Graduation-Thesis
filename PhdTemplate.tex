@@ -41,31 +41,33 @@
 \Cspeciality{深度学习与科学计算}                     % 研究方向
 \Especiality{Deep Learning and Scientific Computing}   % 研究方向
 \Schoolname{School of Mathematics and Statistics} %学院英文名. 不确定的话, 请看一下自己学院的网页上是怎么写的. 别搞错了!
-\date{二〇二六年五月一日}               %  要注意和英文日期一致!!
-\Edate{May 1, 2026}                 % 英文封面日期
+\date{二〇二六年五月二十二日}               %  要注意和英文日期一致!!
+\Edate{May 22, 2026}                 % 英文封面日期
 
 %-----------------------------------------------------------------------------
 \pdfbookmark[0]{封面}{title}         % 封面页加到 pdf 书签
-
 \maketitle
 
 %-----------------------------------------------------------------------------
 \include{includefile/frontmatter}    % 加入英文封面, 论文创新点, 等等目录之前的部分.
 \frontmatter
 \pagenumbering{Roman}               % 正文之前的页码用大写罗马字母编号.
-%---把目录加入到书签---%%%%%%%%%%%%%%
-\pdfbookmark[0]{目录}{toc}%%%%%%%%%%%%
-\pagestyle{oldplain}
-\tableofcontents
-\pagestyle{oldplain}\cleardoublepage
+\cleardoublepage
 \newpage  \pagestyle{fancy} \fancyfancy
+
 %------------------------------------------------------------------------------
 \include{includefile/midmatter}      % 加入中英文摘要.
+
+%---把目录加入到书签---%%%%%%%%%%%%%%
+\pdfbookmark[0]{目录}{toc}%%%%%%%%%%%%
+
+\tableofcontents
+
 %------------------------------------------------------------------------------
 \mainmatter %% 以下是正文
 \baselineskip=20pt  % 正文行距为 20 磅
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+\zihao{-4}%正文宋体小四号字
 \input{chapter1.tex}
 \input{chapter2.tex}
 \input{chapter3.tex}

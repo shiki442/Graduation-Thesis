@@ -42,7 +42,7 @@
 
 %===============================================页眉设置=====================================================%
 \renewcommand{\headrulewidth}{0.5pt}    %在页眉下画一个0.5pt宽的分隔线
-\renewcommand{\footrulewidth}{0pt}      % 在页脚不画分隔线。
+\renewcommand{\footrulewidth}{0pt}      % 在页脚不画分隔线.
 
 \let\ps@oldplain\ps@plain
 
@@ -73,8 +73,9 @@
     \vspace*{15mm} %插入空白
     {\songti \zihao{2} \ziju{1} %武汉大学 
     \includegraphics[width=0.4\textwidth]{wudaname.eps}
-    \\[3mm]  博士学位论文}\\
-    \vspace{2cm}
+    \\[3mm] 博士学位论文}\\[3mm]
+    {\songti\zihao{3}(学术学位)}\\
+    \vspace{1.8cm}
     {\kaishu \zihao{1}  \@title \par}%
 %    \vspace{4cm}
      \vfill\vfill\vfill
